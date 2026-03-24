@@ -2,10 +2,10 @@
   "name": "galeto-system",
   "version": "1.0.0",
   "description": "Sistema Garagem do Galeto",
-  "main": "main.js",
+  "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "server": "node main.js"
+    "server": "node src/main/main.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
