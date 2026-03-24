@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galeto Master — Cardápio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            --red:      #e8271c;
+            --red-dk:   #c01624;
+            --red-lt:   #fdecea;
+            --ink:      #111827;
+            --ink-2:    #374151;
+            --ink-3:    #6b7280;
+            --bg:       #f3f4f6;
+            --white:    #ffffff;
+            --border:   #e5e7eb;
+            --green:    #16a34a;
+            --radius:   16px;
+            --shadow:   0 2px 8px rgba(0,0,0,.08), 0 6px 20px rgba(0,0,0,.06);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 110px;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 20px 14px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .header-inner { max-width: 520px; margin: 0 auto; }
+        .brand-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+        .brand-icon {
+            width: 40px; height: 40px;
+            background: var(--red);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .brand-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.15rem;
+        }
+        .brand-tagline { font-size: .8rem; color: var(--ink-3); margin-left: 50px; }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f0fdf4;
+            color: var(--green);
+            font-size: .72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-left: 50px;
+            margin-top: 8px;
+        }
+        .status-dot {
+            width: 6px; height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink 1.4s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+        /* ── CATEGORIAS ── */
+        .cat-wrap {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 98px;
+            z-index: 40;
+        }
+        .cat-inner {
+            max-width: 520px;
+            margin: 0 auto;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 12px 20px;
+            scrollbar-width: none;
+        }
+        .cat-inner::-webkit-scrollbar { display: none; }
+        .cat-btn {
+            flex-shrink: 0;
+            border: none;
+            background: var(--bg);
+            color: var(--ink-3);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .cat-btn.ativo {
+            background: var(--red);
+            color: white;
+            box-shadow: 0 3px 10px rgba(232,39,28,.3);
+        }
+
+        /* ── CONTAINER ── */
+        .container { max-width: 520px; margin: 0 auto; padding: 0 16px; }
+
+        /* ── SEÇÃO ── */
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 22px 0 12px;
+            color: var(--ink);
+        }
+
+        /* ── PRODUTO CARD ── */
+        .produto {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,.06);
+            border: 1.5px solid transparent;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .produto:active { border-color: var(--red); box-shadow: var(--shadow); }
+
+        .prod-info { flex: 1; padding-right: 14px; }
+        .prod-nome { font-weight: 600; font-size: .95rem; margin-bottom: 5px; }
+        .prod-desc {
+            font-size: .8rem;
+            color: var(--ink-3);
+            line-height: 1.45;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .prod-preco { font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+
+        .prod-foto-wrap { position: relative; flex-shrink: 0; }
+        .prod-foto {
+            width: 96px; height: 96px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: var(--bg);
+        }
+        .prod-add {
+            position: absolute;
+            bottom: -8px; right: -8px;
+            width: 36px; height: 36px;
+            background: var(--white);
+            color: var(--red);
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,.15);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .prod-add:active { background: var(--red); color: white; transform: scale(.9); }
+        .prod-add .material-icons-round { font-size: 1.3rem; }
+
+        /* ── BARRA DO CARRINHO ── */
+        .cart-bar {
+            position: fixed;
+            bottom: 16px; left: 16px; right: 16px;
+            max-width: 488px;
+            margin: 0 auto;
+            background: var(--red);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(232,39,28,.4);
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+            animation: slideUp .3s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes slideUp { from{ transform:translateY(80px);opacity:0 } to{ transform:translateY(0);opacity:1 } }
+
+        .cart-left   { display: flex; flex-direction: column; gap: 1px; }
+        .cart-qtd    { font-size: .75rem; opacity: .85; }
+        .cart-total  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+        .cart-cta    { font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: 6px; }
+
+        /* ── MODAL ── */
+        .overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .overlay.open { display: flex; }
+
+        .sheet {
+            background: var(--white);
+            width: 100%;
+            max-width: 520px;
+            max-height: 92vh;
+            overflow-y: auto;
+            border-radius: 24px 24px 0 0;
+            padding: 8px 20px 28px;
+            animation: sheetUp .3s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes sheetUp { from{ transform:translateY(100%) } to{ transform:translateY(0) } }
+
+        .sheet-handle {
+            width: 40px; height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin: 10px auto 18px;
+        }
+        .sheet-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sheet-close {
+            background: var(--bg);
+            border: none;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--ink-3);
+        }
+
+        /* Resumo */
+        .resumo-box {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+        .resumo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: .88rem;
+        }
+        .resumo-row:last-child { border: none; }
+        .resumo-row.total-row {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--red);
+            padding-top: 12px;
+        }
+        .resumo-rem-btn {
+            background: none;
+            border: none;
+            color: var(--ink-3);
+            cursor: pointer;
+            font-size: .8rem;
+            padding: 0;
+            display: flex; align-items: center;
+        }
+
+        /* Formulário */
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: 6px; color: var(--ink-2); }
+        .form-input {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            font-family: inherit;
+            font-size: .95rem;
+            color: var(--ink);
+            outline: none;
+            transition: border .2s, background .2s;
+        }
+        .form-input:focus { border-color: var(--red); background: var(--white); }
+
+        /* Pagamento chips */
+        .pag-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+        .pag-chip {
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--ink-2);
+            transition: all .2s;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .pag-chip.selected { border-color: var(--red); background: var(--red-lt); color: var(--red); }
+
+        .btn-confirmar {
+            width: 100%;
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 18px;
+            box-shadow: 0 4px 12px rgba(232,39,28,.3);
+            transition: background .2s, transform .1s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-confirmar:active { background: var(--red-dk); transform: scale(.98); }
+        .btn-confirmar:disabled { background: var(--ink-3); box-shadow: none; cursor: not-allowed; }
+
+        /* Sucesso */
+        .success-view {
+            display: none;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 14px;
+            display: block;
+        }
+        .success-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+        .success-sub { font-size: .9rem; color: var(--ink-3); line-height: 1.5; }
+
+        /* ── FOTO placeholder ── */
+        .foto-placeholder {
+            width: 96px; height: 96px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #fde8e8, #ffd2d0);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin .9s linear infinite; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="brand-row">
+            <div class="brand-icon">
+                <span class="material-icons-round" style="font-size:1.3rem">local_fire_department</span>
+            </div>
+            <div class="brand-name">Galeto Master</div>
+        </div>
+        <div class="brand-tagline">O verdadeiro sabor mineiro na sua mesa</div>
+        <div class="status-badge">
+            <div class="status-dot"></div> Aberto agora · Entrega e retirada
+        </div>
+    </div>
+</header>
+
+<div class="cat-wrap">
+    <div class="cat-inner">
+        <button class="cat-btn ativo" onclick="filtrarCat('todos', this)">🔥 Todos</button>
+        <button class="cat-btn" onclick="filtrarCat('galeto', this)">🍗 Galetos</button>
+        <button class="cat-btn" onclick="filtrarCat('porcao', this)">🥗 Porções</button>
+        <button class="cat-btn" onclick="filtrarCat('bebida', this)">🥤 Bebidas</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- GALETOS -->
+    <div class="section-title" data-cat="galeto">🍗 Galetos</div>
+
+    <div class="produto" data-cat="galeto">
+        <div class="prod-info">
+            <div class="prod-nome">Galeto Completo — Família</div>
+            <div class="prod-desc">Galeto assado na brasa, acompanha farofa crocante, vinagrete fresco e arroz branco. Serve 2–3 pessoas.</div>
+            <div class="prod-preco">R$ 50,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🍗</div>
+            <button class="prod-add" onclick="addItem('Galeto Completo Família', 50)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="galeto">
+        <div class="prod-info">
+            <div class="prod-nome">Galeto Individual</div>
+            <div class="prod-desc">Um galeto inteiro assado na brasa com farofa e vinagrete. Perfeito para uma pessoa.</div>
+            <div class="prod-preco">R$ 28,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🍗</div>
+            <button class="prod-add" onclick="addItem('Galeto Individual', 28)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PORÇÕES -->
+    <div class="section-title" data-cat="porcao">🥗 Porções</div>
+
+    <div class="produto" data-cat="porcao">
+        <div class="prod-info">
+            <div class="prod-nome">Salpicão Tradicional (500g)</div>
+            <div class="prod-desc">Frango desfiado, cenoura, maionese da casa e bastante batata palha por cima.</div>
+            <div class="prod-preco">R$ 25,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🥗</div>
+            <button class="prod-add" onclick="addItem('Salpicão Tradicional', 25)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="porcao">
+        <div class="prod-info">
+            <div class="prod-nome">Feijão Tropeiro Mineiro</div>
+            <div class="prod-desc">Feijão vermelho, farinha de mandioca, torresmo, linguiça, ovo e couve. Aquele sabor de minas!</div>
+            <div class="prod-preco">R$ 25,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🫘</div>
+            <button class="prod-add" onclick="addItem('Feijão Tropeiro Mineiro', 25)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="porcao">
+        <div class="prod-info">
+            <div class="prod-nome">Farofa Especial (300g)</div>
+            <div class="prod-desc">Farofa de mandioca torrada com ovos, bacon e temperos da casa.</div>
+            <div class="prod-preco">R$ 15,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🟡</div>
+            <button class="prod-add" onclick="addItem('Farofa Especial', 15)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- BEBIDAS -->
+    <div class="section-title" data-cat="bebida">🥤 Bebidas</div>
+
+    <div class="produto" data-cat="bebida">
+        <div class="prod-info">
+            <div class="prod-nome">Refrigerante Lata (350ml)</div>
+            <div class="prod-desc">Coca-Cola, Guaraná ou Sprite. Geladinho!</div>
+            <div class="prod-preco">R$ 6,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🥤</div>
+            <button class="prod-add" onclick="addItem('Refrigerante Lata', 6)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="bebida">
+        <div class="prod-info">
+            <div class="prod-nome">Suco Natural (500ml)</div>
+            <div class="prod-desc">Laranja, maracujá ou goiaba. Feito na hora.</div>
+            <div class="prod-preco">R$ 9,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">🍊</div>
+            <button class="prod-add" onclick="addItem('Suco Natural', 9)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="bebida">
+        <div class="prod-info">
+            <div class="prod-nome">Água Mineral (500ml)</div>
+            <div class="prod-desc">Com ou sem gás.</div>
+            <div class="prod-preco">R$ 4,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <div class="foto-placeholder">💧</div>
+            <button class="prod-add" onclick="addItem('Água Mineral', 4)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- BARRA CARRINHO -->
+<div class="cart-bar" id="cart-bar" onclick="abrirCheckout()">
+    <div class="cart-left">
+        <span class="cart-qtd" id="cart-qtd-label">0 itens</span>
+        <span class="cart-total" id="cart-total-label">R$ 0,00</span>
+    </div>
+    <div class="cart-cta">
+        Ver sacola <span class="material-icons-round">shopping_bag</span>
+    </div>
+</div>
+
+<!-- OVERLAY / SHEET DE CHECKOUT -->
+<div class="overlay" id="overlay" onclick="fecharOverlay(event)">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+
+        <!-- FORM VIEW -->
+        <div id="form-view">
+            <div class="sheet-title">
+                Meu Pedido
+                <button class="sheet-close" onclick="fecharCheckout()">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+
+            <!-- Resumo -->
+            <div class="resumo-box" id="resumo-box"></div>
+
+            <!-- Nome -->
+            <div class="form-group">
+                <label class="form-label">Seu nome *</label>
+                <input type="text" id="inp-nome" class="form-input" placeholder="Ex: Maria Silva" autocomplete="name">
+            </div>
+
+            <!-- Telefone -->
+            <div class="form-group">
+                <label class="form-label">WhatsApp (com DDD) *</label>
+                <input type="tel" id="inp-tel" class="form-input" placeholder="Ex: 27 99999-9999" autocomplete="tel">
+            </div>
+
+            <!-- Pagamento -->
+            <div class="form-group">
+                <label class="form-label">Forma de pagamento *</label>
+                <div class="pag-chips">
+                    <button class="pag-chip selected" data-pag="Pix" onclick="selecionarPag(this)">
+                        <span>💳</span> Pix
+                    </button>
+                    <button class="pag-chip" data-pag="Cartão" onclick="selecionarPag(this)">
+                        <span>💳</span> Cartão
+                    </button>
+                    <button class="pag-chip" data-pag="Dinheiro" onclick="selecionarPag(this)">
+                        <span>💵</span> Dinheiro
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn-confirmar" id="btn-confirmar" onclick="enviarPedido()">
+                <span class="material-icons-round">check_circle</span>
+                CONFIRMAR PEDIDO
+            </button>
+        </div>
+
+        <!-- SUCCESS VIEW -->
+        <div class="success-view" id="success-view">
+            <span class="success-icon">🎉</span>
+            <div class="success-title">Pedido Recebido!</div>
+            <p class="success-sub">
+                Seu pedido foi enviado com sucesso.<br>
+                Em breve entraremos em contato pelo WhatsApp para confirmar os detalhes.
+            </p>
+            <button class="btn-confirmar" onclick="fecharCheckout()" style="margin-top:20px">
+                <span class="material-icons-round">storefront</span>
+                Continuar Comprando
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:3000/novo-pedido';
+
+    // ── CARRINHO ──────────────────────────────────────
+    let carrinho = []; // [{ id, nome, preco }]
+    let idCounter = 0;
+    let pagSelecionado = 'Pix';
+
+    function addItem(nome, preco) {
+        if (navigator.vibrate) navigator.vibrate(40);
+        carrinho.push({ id: ++idCounter, nome, preco });
+        atualizarBarra();
+    }
+
+    function remItem(id) {
+        carrinho = carrinho.filter(i => i.id !== id);
+        atualizarBarra();
+        renderResumo();
+    }
+
+    function totalCarrinho() {
+        return carrinho.reduce((a, i) => a + i.preco, 0);
+    }
+
+    function atualizarBarra() {
+        const qtd = carrinho.length;
+        const tot = totalCarrinho();
+        document.getElementById('cart-qtd-label').textContent  = `${qtd} item${qtd !== 1 ? 's' : ''}`;
+        document.getElementById('cart-total-label').textContent = tot.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        const bar = document.getElementById('cart-bar');
+        bar.style.display = qtd > 0 ? 'flex' : 'none';
+    }
+
+    // ── FILTRO DE CATEGORIAS ─────────────────────────
+    function filtrarCat(cat, btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('ativo'));
+        btn.classList.add('ativo');
+
+        document.querySelectorAll('.produto, .section-title').forEach(el => {
+            if (cat === 'todos') {
+                el.style.display = '';
+            } else {
+                el.style.display = (el.dataset.cat === cat) ? '' : 'none';
+            }
+        });
+    }
+
+    // ── CHECKOUT ──────────────────────────────────────
+    function abrirCheckout() {
+        if (!carrinho.length) return;
+        document.getElementById('overlay').classList.add('open');
+        document.getElementById('form-view').style.display = 'block';
+        document.getElementById('success-view').style.display = 'none';
+        renderResumo();
+    }
+
+    function fecharCheckout() {
+        document.getElementById('overlay').classList.remove('open');
+    }
+
+    function fecharOverlay(e) {
+        if (e.target === document.getElementById('overlay')) fecharCheckout();
+    }
+
+    function selecionarPag(btn) {
+        document.querySelectorAll('.pag-chip').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        pagSelecionado = btn.dataset.pag;
+    }
+
+    function renderResumo() {
+        const box = document.getElementById('resumo-box');
+        const linhas = carrinho.map(i => `
+            <div class="resumo-row">
+                <span>${i.nome}</span>
+                <span style="display:flex;align-items:center;gap:10px">
+                    ${i.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    <button class="resumo-rem-btn" onclick="remItem(${i.id})" title="Remover">
+                        <span class="material-icons-round" style="font-size:1rem">remove_circle_outline</span>
+                    </button>
+                </span>
+            </div>
+        `).join('');
+
+        const total = totalCarrinho().toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        box.innerHTML = linhas + `
+            <div class="resumo-row total-row">
+                <span>Total</span>
+                <strong>${total}</strong>
+            </div>
+        `;
+    }
+
+    // ── ENVIO ─────────────────────────────────────────
+    async function enviarPedido() {
+        const nome = document.getElementById('inp-nome').value.trim();
+        const tel  = document.getElementById('inp-tel').value.trim().replace(/\D/g, '');
+
+        if (!nome) { alert('Por favor, informe seu nome.'); return; }
+        if (tel.length < 10) { alert('Informe um WhatsApp válido com DDD.'); return; }
+        if (!carrinho.length) { alert('Seu carrinho está vazio.'); return; }
+
+        const payload = {
+            nome,
+            telefone: tel,
+            pedido: carrinho.map(i => i.nome).join(', '),
+            total: totalCarrinho(),
+            pagamento: pagSelecionado,
+            origem: 'Site',
+        };
+
+        const btn = document.getElementById('btn-confirmar');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="material-icons-round spin">autorenew</span> Enviando...`;
+
+        try {
+            const resp = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!resp.ok) throw new Error('Servidor retornou erro');
+
+            // Sucesso
+            carrinho = [];
+            atualizarBarra();
+            document.getElementById('inp-nome').value = '';
+            document.getElementById('inp-tel').value = '';
+
+            document.getElementById('form-view').style.display = 'none';
+            document.getElementById('success-view').style.display = 'block';
+
+        } catch (err) {
+            console.error(err);
+            alert('😓 Não foi possível enviar o pedido.\nVerifique sua conexão ou tente pelo WhatsApp.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-icons-round">check_circle</span> CONFIRMAR PEDIDO`;
+        }
+    }
+</script>
+</body>
+</html>
