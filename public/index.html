@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Galeto Master — Gestão</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-name">
+            <span class="material-icons-round" style="font-size:1.3rem">local_fire_department</span>
+            Galeto Master
+        </div>
+        <div class="brand-sub">Sistema de gestão</div>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-label">Principal</div>
+        <div class="nav-item active" onclick="showView('dashboard', this)">
+            <span class="material-icons-round">dashboard</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="showView('pedidos', this)">
+            <span class="material-icons-round">receipt_long</span> Pedidos
+            <span class="badge-count" id="badge-pendentes">0</span>
+        </div>
+        <div class="nav-label">Operação</div>
+        <div class="nav-item" onclick="showView('estoque', this)">
+            <span class="material-icons-round">inventory_2</span> Estoque
+        </div>
+        <div class="nav-item" onclick="showView('historico', this)">
+            <span class="material-icons-round">history</span> Histórico
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="nav-item" style="color:rgba(255,255,255,.3)">
+            <span class="material-icons-round">logout</span> Sair
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <span class="topbar-title" id="topbar-title">Dashboard</span>
+        <div class="topbar-right">
+            <div class="live-dot"></div>
+            <span class="live-label">Ao vivo</span>
+            <button class="btn btn-ghost" onclick="carregarTudo()">
+                <span class="material-icons-round" style="font-size:1rem">refresh</span> Atualizar
+            </button>
+            <button class="btn btn-primary" onclick="window.open('http://localhost:3000/cardapio.html','_blank')">
+                <span class="material-icons-round" style="font-size:1rem">open_in_new</span> Cardápio
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══ VIEW: DASHBOARD ═══ -->
+    <div class="view active" id="view-dashboard">
+
+        <div class="kpi-grid">
+            <div class="kpi red">
+                <div class="kpi-label">Faturamento Hoje</div>
+                <div class="kpi-value" id="kpi-fat">R$ 0</div>
+                <div class="kpi-sub" id="kpi-fat-sub">0 pedidos finalizados</div>
+            </div>
+            <div class="kpi amber">
+                <div class="kpi-label">Aguardando</div>
+                <div class="kpi-value" id="kpi-pend">0</div>
+                <div class="kpi-sub">pedidos pendentes</div>
+            </div>
+            <div class="kpi green">
+                <div class="kpi-label">Via WhatsApp</div>
+                <div class="kpi-value" id="kpi-zap">0</div>
+                <div class="kpi-sub">pedidos hoje</div>
+            </div>
+            <div class="kpi blue">
+                <div class="kpi-label">Via Site</div>
+                <div class="kpi-value" id="kpi-site">0</div>
+                <div class="kpi-sub">pedidos hoje</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">⚡ Pedidos em Aberto</span>
+                <span style="font-size:.8rem; color: var(--ink-3);" id="atualizado-em"></span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Origem</th>
+                        <th>Cliente</th>
+                        <th>Pedido</th>
+                        <th>Pagamento</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-abertos"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- ═══ VIEW: PEDIDOS ═══ -->
+    <div class="view" id="view-pedidos">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Todos os Pedidos de Hoje</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Horário</th>
+                        <th>Origem</th>
+                        <th>Cliente</th>
+                        <th>Pedido</th>
+                        <th>Pagamento</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-todos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ VIEW: ESTOQUE ═══ -->
+    <div class="view" id="view-estoque">
+        <div class="card" style="margin-bottom:22px;">
+            <div class="card-header">
+                <span class="card-title">Estoque em Tempo Real</span>
+            </div>
+            <div style="padding: 20px;">
+                <div class="estoque-grid" id="grid-estoque"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ VIEW: HISTÓRICO ═══ -->
+    <div class="view" id="view-historico">
+        <div class="card">
+            <div class="card-header" style="display: flex; gap: 10px;">
+                <span class="card-title">Histórico de Pedidos</span>
+                <input type="date" id="filtro-data" class="status-select" onchange="carregarHistorico()">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Data / Hora</th>
+                        <th>Origem</th>
+                        <th>Cliente</th>
+                        <th>Pedido</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-hist"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div><!-- .main -->
+
+<!-- TOAST -->
+<div id="toast">
+    <span class="material-icons-round" style="font-size:1rem">notifications</span>
+    <span id="toast-msg">Novo pedido recebido!</span>
+</div>
+
+<script src="js/dashboard.js"></script>
+</body>
+</html>

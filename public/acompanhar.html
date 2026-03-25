@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhar Pedido — Galeto Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e8271c;
+            --ink: #111827;
+            --ink-2: #374151;
+            --ink-3: #6b7280;
+            --bg: #f3f4f6;
+            --white: #ffffff;
+            --border: #e5e7eb;
+            --green: #16a34a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.05);
+            padding: 30px;
+            text-align: center;
+        }
+        .icon {
+            font-size: 3rem;
+            color: var(--red);
+            margin-bottom: 10px;
+            display: block;
+        }
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .status-box {
+            background: #fffbeb;
+            border: 1.5px solid #fcd34d;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            background: var(--red);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        .pedido-desc {
+            font-size: 0.95rem;
+            color: var(--ink-2);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .pedido-total {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-top: 10px;
+            color: var(--ink);
+        }
+        .btn-voltar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            color: var(--ink-2);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn-voltar:hover { background: var(--border); }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .s-EmPreparo { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+        .s-Pronto    { background: #f0fdf4; border-color: #86efac; color: #166534; }
+        .s-Entregue  { background: var(--bg); border-color: var(--border); color: var(--ink-3); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <span class="material-icons-round icon">moped</span>
+    <h1>Acompanhe seu Pedido</h1>
+    
+    <div id="loader">
+        <span class="material-icons-round spin" style="font-size: 2rem; color: var(--ink-3);">autorenew</span>
+        <p style="margin-top:10px; color: var(--ink-3);">Buscando informações do seu pedido...</p>
+    </div>
+
+    <div id="status-container" style="display: none;">
+        <div class="status-box" id="s-box">
+            <span class="status-badge" id="s-badge">Pendente</span>
+            <p id="s-msg" style="color: var(--ink-2); font-size: 0.9rem;">Seu pedido foi recebido e estamos aguardando a confirmação do pagamento / início do preparo.</p>
+        </div>
+        <div class="pedido-desc" id="p-desc"></div>
+        <div class="pedido-desc" id="p-pag"></div>
+        <div class="pedido-total" id="p-total"></div>
+    </div>
+
+    <a href="/cardapio.html" class="btn-voltar">
+        <span class="material-icons-round">restaurant_menu</span> Voltar ao Cardápio
+    </a>
+</div>
+
+<footer style="text-align: center; padding: 20px; font-size: 0.85rem; color: var(--ink-3); font-weight: 500;">
+    Desenvolvido com <span style="color: var(--red);">♥</span> por <strong style="font-weight: 800; color: var(--ink);">Santirine Tech</strong>
+</footer>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    async function checarStatus() {
+        if (!id) {
+            document.getElementById('loader').innerHTML = '<p style="color:red">Pedido não encontrado.</p>';
+            return;
+        }
+        try {
+            const res = await fetch('/api/pedido/' + id);
+            if (!res.ok) throw new Error('Falha');
+            const data = await res.json();
+            
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('status-container').style.display = 'block';
+
+            const badge = document.getElementById('s-badge');
+            const box = document.getElementById('s-box');
+            const msg = document.getElementById('s-msg');
+
+            badge.textContent = data.status;
+            
+            // Lógica de cores baseada no status
+            box.className = 'status-box';
+            badge.style.background = 'var(--red)';
+            
+            if (data.status === 'Preparando') {
+                box.classList.add('s-EmPreparo');
+                badge.style.background = '#2563eb';
+                msg.textContent = 'Estamos preparando seu pedido com muito carinho! O cheirinho já está bom.';
+            } else if (data.status === 'Saiu para Entrega') {
+                box.classList.add('s-Pronto');
+                badge.style.background = '#f59e0b';
+                msg.textContent = 'O motoboy já saiu para entrega! Fique atento(a) no seu endereço.';
+            } else if (data.status === 'Entregue') {
+                box.classList.add('s-Entregue');
+                badge.style.background = 'var(--ink-3)';
+                msg.textContent = 'Pedido finalizado. Muito obrigado pela preferência e bom apetite!';
+            } else if (data.status === 'Cancelado') {
+                box.classList.add('s-Entregue');
+                badge.style.background = 'var(--red)';
+                msg.textContent = 'Infelizmente este pedido foi cancelado. Qualquer dúvida, chame no WhatsApp.';
+            }
+
+            document.getElementById('p-desc').textContent = data.pedido_desc;
+            document.getElementById('p-pag').textContent = 'Pagameto: ' + data.forma_pagamento;
+            document.getElementById('p-total').textContent = 'Total: ' + (data.total).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+
+        } catch(e) {
+            document.getElementById('loader').innerHTML = '<p style="color:red">Erro ao buscar status do pedido.</p>';
+        }
+    }
+
+    checarStatus();
+    // Atualiza a cada 10 segundos
+    setInterval(checarStatus, 10000);
+</script>
+
+</body>
+</html>

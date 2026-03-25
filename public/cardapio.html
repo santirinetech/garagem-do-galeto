@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galeto Master — Cardápio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="css/cardapio.css">
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="brand-row">
+            <div class="brand-icon">
+                <span class="material-icons-round" style="font-size:1.3rem">local_fire_department</span>
+            </div>
+            <div class="brand-name">Galeto Master</div>
+        </div>
+        <div class="brand-tagline">O verdadeiro sabor mineiro na sua mesa</div>
+        <div class="status-badge">
+            <div class="status-dot"></div> Aberto agora · Entrega e retirada
+        </div>
+    </div>
+</header>
+
+<div class="hero-banner" style="background: url('/img/banner.png') center/cover no-repeat; height: 260px; position: relative; z-index: 1;">
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, var(--bg-color) 0%, transparent 60%);"></div>
+</div>
+
+<div class="cat-wrap" style="top: 76px;">
+    <div class="cat-inner">
+        <button class="cat-btn ativo" onclick="filtrarCat('todos', this)">🔥 Todos</button>
+        <button class="cat-btn" onclick="filtrarCat('galeto', this)">🍗 Galetos</button>
+        <button class="cat-btn" onclick="filtrarCat('porcao', this)">🥗 Porções</button>
+        <button class="cat-btn" onclick="filtrarCat('bebida', this)">🥤 Bebidas</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- GALETOS -->
+    <div class="section-title" data-cat="galeto">🍗 Galetos</div>
+
+    <div class="produto" data-cat="galeto">
+        <div class="prod-info">
+            <div class="prod-nome">Galeto Completo — Família</div>
+            <div class="prod-desc">Galeto assado na brasa, acompanha farofa crocante, vinagrete fresco e arroz branco. Serve 2–3 pessoas.</div>
+            <div class="prod-preco">R$ 50,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/galeto.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Galeto Completo Família', 50)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="galeto">
+        <div class="prod-info">
+            <div class="prod-nome">Galeto Individual</div>
+            <div class="prod-desc">Um galeto inteiro assado na brasa com farofa e vinagrete. Perfeito para uma pessoa.</div>
+            <div class="prod-preco">R$ 28,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/galeto.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Galeto Individual', 28)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PORÇÕES -->
+    <div class="section-title" data-cat="porcao">🥗 Porções</div>
+
+    <div class="produto" data-cat="porcao">
+        <div class="prod-info">
+            <div class="prod-nome">Salpicão Tradicional (500g)</div>
+            <div class="prod-desc">Frango desfiado, cenoura, maionese da casa e bastante batata palha por cima.</div>
+            <div class="prod-preco">R$ 25,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/salpicao.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Salpicão Tradicional', 25)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="porcao">
+        <div class="prod-info">
+            <div class="prod-nome">Feijão Tropeiro Mineiro</div>
+            <div class="prod-desc">Feijão vermelho, farinha de mandioca, torresmo, linguiça, ovo e couve. Aquele sabor de minas!</div>
+            <div class="prod-preco">R$ 25,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/feijao.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Feijão Tropeiro Mineiro', 25)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="porcao">
+        <div class="prod-info">
+            <div class="prod-nome">Farofa Especial (300g)</div>
+            <div class="prod-desc">Farofa de mandioca torrada com ovos, bacon e temperos da casa.</div>
+            <div class="prod-preco">R$ 15,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/salpicao.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Farofa Especial', 15)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- BEBIDAS -->
+    <div class="section-title" data-cat="bebida">🥤 Bebidas</div>
+
+    <div class="produto" data-cat="bebida">
+        <div class="prod-info">
+            <div class="prod-nome">Refrigerante Lata (350ml)</div>
+            <div class="prod-desc">Coca-Cola, Guaraná ou Sprite. Geladinho!</div>
+            <div class="prod-preco">R$ 6,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/bebidas.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Refrigerante Lata', 6)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="bebida">
+        <div class="prod-info">
+            <div class="prod-nome">Suco Natural (500ml)</div>
+            <div class="prod-desc">Laranja, maracujá ou goiaba. Feito na hora.</div>
+            <div class="prod-preco">R$ 9,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/bebidas.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Suco Natural', 9)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="produto" data-cat="bebida">
+        <div class="prod-info">
+            <div class="prod-nome">Água Mineral (500ml)</div>
+            <div class="prod-desc">Com ou sem gás.</div>
+            <div class="prod-preco">R$ 4,00</div>
+        </div>
+        <div class="prod-foto-wrap">
+            <img src="/img/bebidas.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <button class="prod-add" onclick="addItem('Água Mineral', 4)">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- BARRA CARRINHO -->
+<div class="cart-bar" id="cart-bar" onclick="abrirCheckout()">
+    <div class="cart-left">
+        <span class="cart-qtd" id="cart-qtd-label">0 itens</span>
+        <span class="cart-total" id="cart-total-label">R$ 0,00</span>
+    </div>
+    <div class="cart-cta">
+        Ver sacola <span class="material-icons-round">shopping_bag</span>
+    </div>
+</div>
+
+<!-- OVERLAY / SHEET DE CHECKOUT -->
+<div class="overlay" id="overlay" onclick="fecharOverlay(event)">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+
+        <!-- FORM VIEW -->
+        <div id="form-view">
+            <div class="sheet-title">
+                Meu Pedido
+                <button class="sheet-close" onclick="fecharCheckout()">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+
+            <!-- Resumo -->
+            <div class="resumo-box" id="resumo-box"></div>
+
+            <!-- Nome -->
+            <div class="form-group">
+                <label class="form-label">Seu nome *</label>
+                <input type="text" id="inp-nome" class="form-input" placeholder="Ex: Maria Silva" autocomplete="name">
+            </div>
+
+            <!-- Telefone -->
+            <div class="form-group">
+                <label class="form-label">WhatsApp (com DDD) *</label>
+                <input type="tel" id="inp-tel" class="form-input" placeholder="Ex: 27 99999-9999" autocomplete="tel">
+            </div>
+
+            <!-- Pagamento -->
+            <div class="form-group">
+                <label class="form-label">Forma de pagamento *</label>
+                <div class="pag-chips">
+                    <button class="pag-chip selected" data-pag="Pix" onclick="selecionarPag(this)">
+                        <span>💳</span> Pix
+                    </button>
+                    <button class="pag-chip" data-pag="Cartão" onclick="selecionarPag(this)">
+                        <span>💳</span> Cartão
+                    </button>
+                    <button class="pag-chip" data-pag="Dinheiro" onclick="selecionarPag(this)">
+                        <span>💵</span> Dinheiro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Detalhes do Pagamento Condicional -->
+            <div class="form-group" id="pag-detalhe-container" style="margin-top: 12px;"></div>
+
+            <!-- Erro amigável para evitar travamento mobile (Bugfix) -->
+            <div id="form-erro" style="color: var(--red); font-size: 0.85rem; font-weight: 600; text-align: center; margin-top: 10px; display: none;"></div>
+
+            <button class="btn-confirmar" id="btn-confirmar" onclick="enviarPedido()">
+                <span class="material-icons-round">check_circle</span>
+                CONFIRMAR PEDIDO
+            </button>
+        </div>
+
+        <!-- SUCCESS VIEW -->
+        <div class="success-view" id="success-view">
+            <span class="success-icon">🎉</span>
+            <div class="success-title">Pedido Recebido!</div>
+            <p class="success-sub">
+                Seu pedido foi enviado com sucesso.<br>
+                Em breve entraremos em contato pelo WhatsApp para confirmar os detalhes.
+            </p>
+            <button class="btn-confirmar" onclick="fecharCheckout()" style="margin-top:20px">
+                <span class="material-icons-round">storefront</span>
+                Continuar Comprando
+            </button>
+        </div>
+    </div>
+</div>
+
+<footer style="text-align: center; padding: 40px 20px 120px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; font-family: var(--font-body);">
+    Desenvolvido com <span style="color: var(--brand-primary)">♥</span> por <strong style="font-weight: 800; color: var(--text-main);">Santirine Tech</strong>
+</footer>
+
+<script src="js/cardapio.js"></script>
+</body>
+</html>
