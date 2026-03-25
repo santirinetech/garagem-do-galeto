@@ -4,3 +4,7 @@ npm-debug.log
 .DS_Store
 dist/
 build/
+*.db
+*.zip
+node_modules/
+.env
