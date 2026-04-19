@@ -36,6 +36,24 @@ body {
     line-height: 1.5;
 }
 
+.footer-main {
+    text-align: center;
+    padding: 40px 20px 120px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-family: var(--font-body);
+}
+
+.footer-heart {
+    color: var(--brand-primary);
+}
+
+.footer-author {
+    font-weight: 800;
+    color: var(--text-main);
+}
+
 /* ── HEADER GLASSMORPHISM ── */
 header {
     background: rgba(255, 255, 255, 0.85);
@@ -72,7 +90,7 @@ header {
     box-shadow: var(--shadow-sm);
 }
 
-.brand-icon .material-icons-round {
+.brand-icon .material-icons-round, .brand-icon-icon {
     font-size: 1.6rem;
 }
 
@@ -119,6 +137,22 @@ header {
     50% { opacity: 0.4; transform: scale(0.8); }
 }
 
+/* ── HERO BANNER ── */
+.hero-banner {
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 260px;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, var(--bg-color) 0%, transparent 60%);
+}
+
 /* ── CATEGORIAS ── */
 .cat-wrap {
     background: rgba(248, 250, 252, 0.95);
@@ -129,6 +163,10 @@ header {
     z-index: 40;
     padding: 16px 0;
     border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.cat-wrap-sticky {
+    top: 76px;
 }
 
 .cat-inner {
@@ -264,6 +302,8 @@ header {
     justify-content: center;
     font-size: 2.8rem;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+    object-fit: cover;
+    border: none;
 }
 
 .prod-add {
@@ -482,6 +522,12 @@ header {
     margin-top: 8px;
 }
 
+.resumo-price-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .resumo-rem-btn {
     background: none;
     border: none;
@@ -589,6 +635,63 @@ header {
     animation: fadeIn 0.3s ease-out;
 }
 
+.pag-detalhe-spaced {
+    margin-top: 12px;
+}
+
+.pix-box {
+    background: var(--green-lt);
+    color: var(--green-success);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.pix-key {
+    font-size: 1.1rem;
+    font-family: monospace;
+}
+
+.pix-label-spaced {
+    margin-top: 16px;
+}
+
+.pix-input-upload {
+    padding: 10px;
+}
+
+/* ── LGPD ── */
+.lgpd-container {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: #fafafa;
+    padding: 12px;
+    border-radius: 10px;
+}
+
+.lgpd-checkbox {
+    margin-top: 3px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.lgpd-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1.3;
+}
+
+.lgpd-link {
+    color: var(--brand-primary);
+    font-weight: 700;
+}
+
 .btn-confirmar {
     width: 100%;
     background: var(--brand-gradient);
@@ -617,6 +720,10 @@ header {
 .btn-confirmar:active {
     transform: translateY(0);
     box-shadow: var(--shadow-brand);
+}
+
+.btn-confirmar-spaced {
+    margin-top: 20px;
 }
 
 .btn-confirmar:disabled {

@@ -13,7 +13,7 @@
 <aside class="sidebar">
     <div class="brand">
         <div class="brand-name">
-            <span class="material-icons-round" style="font-size:1.3rem">local_fire_department</span>
+            <span class="material-icons-round brand-name-icon">local_fire_department</span>
             Galeto Master
         </div>
         <div class="brand-sub">Sistema de gestão</div>
@@ -35,10 +35,13 @@
         <div class="nav-item" onclick="showView('historico', this)">
             <span class="material-icons-round">history</span> Histórico
         </div>
+        <div class="nav-item" onclick="showView('clientes', this)">
+            <span class="material-icons-round">people</span> Clientes (LGPD)
+        </div>
     </nav>
 
     <div class="sidebar-footer">
-        <div class="nav-item" style="color:rgba(255,255,255,.3)">
+        <div class="nav-item sidebar-logout">
             <span class="material-icons-round">logout</span> Sair
         </div>
     </div>
@@ -54,10 +57,10 @@
             <div class="live-dot"></div>
             <span class="live-label">Ao vivo</span>
             <button class="btn btn-ghost" onclick="carregarTudo()">
-                <span class="material-icons-round" style="font-size:1rem">refresh</span> Atualizar
+                <span class="material-icons-round icon-small">refresh</span> Atualizar
             </button>
-            <button class="btn btn-primary" onclick="window.open('http://localhost:3000/cardapio.html','_blank')">
-                <span class="material-icons-round" style="font-size:1rem">open_in_new</span> Cardápio
+            <button class="btn btn-primary" onclick="window.open('http://168.75.84.230:3000/cardapio.html','_blank')">
+                <span class="material-icons-round icon-small">open_in_new</span> Cardápio
             </button>
         </div>
     </div>
@@ -91,7 +94,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-title">⚡ Pedidos em Aberto</span>
-                <span style="font-size:.8rem; color: var(--ink-3);" id="atualizado-em"></span>
+                <span class="card-header-date" id="atualizado-em"></span>
             </div>
             <table>
                 <thead>
@@ -137,20 +140,40 @@
 
     <!-- ═══ VIEW: ESTOQUE ═══ -->
     <div class="view" id="view-estoque">
-        <div class="card" style="margin-bottom:22px;">
+        <div class="card card-spaced">
             <div class="card-header">
                 <span class="card-title">Estoque em Tempo Real</span>
             </div>
-            <div style="padding: 20px;">
+            <div class="card-padded">
                 <div class="estoque-grid" id="grid-estoque"></div>
             </div>
         </div>
     </div>
 
-    <!-- ═══ VIEW: HISTÓRICO ═══ -->
+    <!-- ═══ VIEW: CLIENTES ═══ -->
+    <div class="view" id="view-clientes">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Base de Clientes (Privacidade)</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Pedidos</th>
+                        <th>Total Gasto</th>
+                        <th>Último Pedido</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-clientes"></tbody>
+            </table>
+        </div>
+    </div>
     <div class="view" id="view-historico">
         <div class="card">
-            <div class="card-header" style="display: flex; gap: 10px;">
+            <div class="card-header card-header-flex">
                 <span class="card-title">Histórico de Pedidos</span>
                 <input type="date" id="filtro-data" class="status-select" onchange="carregarHistorico()">
             </div>
@@ -175,7 +198,7 @@
 
 <!-- TOAST -->
 <div id="toast">
-    <span class="material-icons-round" style="font-size:1rem">notifications</span>
+    <span class="material-icons-round icon-small">notifications</span>
     <span id="toast-msg">Novo pedido recebido!</span>
 </div>
 

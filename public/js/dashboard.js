@@ -1,5 +1,30 @@
+// ── AUTENTICAÇÃO E SESSÃO ─────────────────────────────
+async function verificarSessao() {
+    try {
+        const res = await fetch('/api/check-session');
+        const data = await res.json();
+        if (!data.logado) {
+            window.location.href = 'login.html';
+        }
+    } catch (e) {
+        window.location.href = 'login.html';
+    }
+}
+
+async function logout() {
+    try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = 'login.html';
+    } catch (e) {
+        console.error('Erro ao sair:', e);
+    }
+}
+
+// Chamar verificação imediatamente
+verificarSessao();
+
 // ── NAVEGAÇÃO ──────────────────────────────────────
-const titles = { dashboard:'Dashboard', pedidos:'Pedidos', estoque:'Estoque', historico:'Histórico' };
+const titles = { dashboard:'Dashboard', pedidos:'Pedidos', estoque:'Estoque', historico:'Histórico', clientes:'Clientes (Privacidade)' };
 function showView(name, el) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -10,7 +35,7 @@ function showView(name, el) {
 }
 
 // ── STATUS ──────────────────────────────────────────
-const STATUS_OPTS = ['Pendente', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
+const STATUS_OPTS = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
 
 function statusSelectHTML(pedidoId, current) {
     const opts = STATUS_OPTS.map(s =>
@@ -33,12 +58,12 @@ async function mudarStatus(id, status) {
 function origemBadge(origem) {
     const cls = origem === 'Site' ? 'o-Site' : 'o-WhatsApp';
     const icon = origem === 'Site' ? 'language' : 'whatsapp';
-    return `<span class="origem-pill ${cls}"><span class="material-icons-round" style="font-size:.8rem">${icon}</span>${origem}</span>`;
+    return `<span class="origem-pill ${cls}"><span class="material-icons-round icon-small">${icon}</span>${origem}</span>`;
 }
 
 function statusBadge(status) {
     const cls = 's-' + status.replace(/ /g, '-');
-    const dots = { Pendente:'●', Preparando:'◐', 'Saiu para Entrega':'🛵', Entregue:'✔', Cancelado:'✖' };
+    const dots = { Pendente:'●', Visto:'👁', Preparando:'◐', 'Saiu para Entrega':'🛵', Entregue:'✔', Cancelado:'✖' };
     return `<span class="status-pill ${cls}">${dots[status] || '●'} ${status}</span>`;
 }
 
@@ -131,6 +156,7 @@ async function carregarTudo() {
     if (view === 'pedidos')    await carregarTodos();
     if (view === 'estoque')    await carregarEstoque();
     if (view === 'historico')  await carregarHistorico();
+    if (view === 'clientes')   await carregarClientes();
     
     // Sempre atualiza badge de pendentes
     try {
@@ -204,15 +230,21 @@ async function carregarDashboard() {
                     <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
                     <td>
                         ${p.forma_pagamento || '—'}
-                        ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" style="font-size:0.75rem; color:var(--blue); font-weight:700;">Ver Comprovante</a>` : ''}
+                        ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" class="btn-link-small">Ver Comprovante</a>` : ''}
                     </td>
                     <td><strong>${fmtReal(p.total)}</strong></td>
                     <td>
-                        ${statusSelectHTML(p.id, p.status)}
-                        <br>
-                        <button class="btn-imprimir" onclick="imprimirComanda(${p.id})">
-                            <span class="material-icons-round" style="font-size:14px;">print</span> Imprimir
-                        </button>
+                        <div class="flex-col-gap">
+                            ${statusSelectHTML(p.id, p.status)}
+                            ${p.status === 'Pendente' ? `
+                                <button class="btn-visto" onclick="mudarStatus(${p.id}, 'Visto')">
+                                    <span class="material-icons-round">visibility</span> Visto
+                                </button>
+                            ` : ''}
+                            <button class="btn-imprimir" onclick="imprimirComanda(${p.id})">
+                                <span class="material-icons-round icon-small">print</span> Imprimir
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 `;
@@ -257,11 +289,17 @@ async function carregarTodos() {
                 </td>
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>
-                    ${statusSelectHTML(p.id, p.status)}
-                    <br>
-                    <button class="btn-imprimir" onclick="imprimirComanda(${p.id})">
-                        <span class="material-icons-round" style="font-size:14px;">print</span> Imprimir
-                    </button>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        ${statusSelectHTML(p.id, p.status)}
+                        ${p.status === 'Pendente' ? `
+                            <button class="btn-visto" onclick="mudarStatus(${p.id}, 'Visto')">
+                                <span class="material-icons-round">visibility</span> Visto
+                            </button>
+                        ` : ''}
+                        <button class="btn-imprimir" onclick="imprimirComanda(${p.id})">
+                            <span class="material-icons-round" style="font-size:14px;">print</span> Imprimir
+                        </button>
+                    </div>
                 </td>
             </tr>
             `;
@@ -287,15 +325,15 @@ async function carregarEstoque() {
                 <div class="estoque-item ${low ? 'estoque-low' : ''}">
                     <div class="estoque-nome">${it.item}</div>
                     
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
-                        <button onclick="ajustarEstoque(${it.id}, ${it.quantidade - 1})" style="width:30px; height:30px; border:none; border-radius:6px; background:var(--bg); cursor:pointer; font-weight:bold; color:var(--ink-2); transition: background 0.2s;">-</button>
+                    <div class="flex-between-spaced">
+                        <button onclick="ajustarEstoque(${it.id}, ${it.quantidade - 1})" class="btn-ajuste-minus">-</button>
                         
-                        <div style="text-align:center;">
-                            <span class="estoque-qtd" style="font-size:1.5rem">${it.quantidade}</span>
+                        <div class="text-center">
+                            <span class="estoque-qtd text-large">${it.quantidade}</span>
                             <span class="estoque-un">un</span>
                         </div>
                         
-                        <button onclick="ajustarEstoque(${it.id}, ${it.quantidade + 1})" style="width:30px; height:30px; border:none; border-radius:6px; background:var(--green-lt); color:var(--green); cursor:pointer; font-weight:bold; transition: background 0.2s;">+</button>
+                        <button onclick="ajustarEstoque(${it.id}, ${it.quantidade + 1})" class="btn-ajuste-plus">+</button>
                     </div>
 
                     <div class="estoque-bar">
@@ -410,6 +448,47 @@ async function carregarHistorico() {
     } catch(e) {}
 }
 
+// ── CLIENTES (LGPD) ──────────────────────────────────
+async function carregarClientes() {
+    try {
+        const res = await fetch('/api/clientes');
+        const clientes = await res.json();
+        const tbody = document.getElementById('tbody-clientes');
+
+        if (!clientes || !clientes.length) {
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="material-icons-round">people</span><p>Nenhum cliente cadastrado.</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = clientes.map(c => `
+            <tr>
+                <td><strong>${c.nome}</strong></td>
+                <td>${c.telefone}</td>
+                <td>${c.compras_qtd || 0}</td>
+                <td>${fmtReal(c.valor_gasto)}</td>
+                <td>${fmtData(c.ultimo_pedido)}</td>
+                <td>
+                    <button class="btn-erro" onclick="excluirCliente(${c.id})" style="padding: 5px 10px; border-radius: 6px; border:none; background:var(--red-lt); color:var(--red); cursor:pointer; font-weight:700;">
+                        <span class="material-icons-round" style="font-size:14px">delete</span> Excluir
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch(e) {}
+}
+
+async function excluirCliente(id) {
+    if (!confirm('ATENÇÃO (LGPD): Você tem certeza que deseja excluir todos os dados deste cliente? Esta ação não pode ser desfeita.')) return;
+    
+    try {
+        const res = await fetch('/api/clientes/' + id, { method: 'DELETE' });
+        if (res.ok) {
+            showToast('Dados do cliente excluídos permanentemente.');
+            carregarClientes();
+        }
+    } catch(e) {}
+}
+
 // ── TOAST ─────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
@@ -423,3 +502,9 @@ function showToast(msg) {
 carregarTudo();
 // Polling substitui o IPC para que tudo funcione via Web Puro!
 setInterval(carregarTudo, 5000);
+
+// Bind logout
+document.querySelector('.sidebar-logout')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    logout();
+});

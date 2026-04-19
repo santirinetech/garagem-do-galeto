@@ -1,0 +1,11 @@
+body { background: var(--bg-color); padding: 40px 20px; line-height: 1.6; }
+
+.doc-card { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.05); }
+
+h1 { font-family: 'Outfit', sans-serif; margin-bottom: 20px; color: var(--text-main); }
+
+h2 { font-family: 'Outfit', sans-serif; margin-top: 30px; margin-bottom: 10px; font-size: 1.2rem; }
+
+p { margin-bottom: 15px; color: var(--text-muted); }
+
+.back-btn { display: inline-block; margin-top: 30px; padding: 10px 20px; background: var(--brand-primary); color: white; border-radius: 10px; text-decoration: none; font-weight: 600; }

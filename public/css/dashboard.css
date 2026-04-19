@@ -55,6 +55,10 @@
             align-items: center;
             gap: 8px;
         }
+
+        .brand-name-icon {
+            font-size: 1.3rem;
+        }
         .brand-sub {
             font-size: .7rem;
             color: rgba(255,255,255,.3);
@@ -108,6 +112,10 @@
             border-top: 1px solid rgba(255,255,255,.07);
         }
 
+        .sidebar-logout {
+            color: rgba(255,255,255,.3) !important;
+        }
+
         /* ── MAIN ── */
         .main {
             flex: 1;
@@ -150,6 +158,10 @@
         .btn-primary:hover { background: var(--red-dk); }
         .btn-ghost { background: var(--bg); color: var(--ink-2); }
         .btn-ghost:hover { background: var(--border); }
+
+        .icon-small {
+            font-size: 1rem !important;
+        }
 
         .live-dot {
             width: 8px; height: 8px;
@@ -200,6 +212,66 @@
         .kpi-value { font-family: 'Outfit', sans-serif; font-size: 1.9rem; font-weight: 800; color: var(--ink); line-height: 1; }
         .kpi-sub   { font-size: .75rem; color: var(--ink-3); margin-top: 6px; }
 
+        .flex-col-gap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .flex-between-spaced {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .btn-link-small {
+            font-size: 0.75rem;
+            color: var(--blue);
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .text-large {
+            font-size: 1.5rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .btn-ajuste-minus, .btn-ajuste-plus {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-ajuste-minus {
+            background: var(--bg);
+            color: var(--ink-2);
+        }
+
+        .btn-ajuste-minus:hover {
+            background: var(--border);
+        }
+
+        .btn-ajuste-plus {
+            background: var(--green-lt);
+            color: var(--green);
+        }
+
+        .btn-ajuste-plus:hover {
+            background: #d1fae5;
+        }
+
+        .btn-ajuste-minus:active, .btn-ajuste-plus:active {
+            transform: scale(0.9);
+        }
+
         /* ── STATUS PILLS ── */
         .status-pill {
             display: inline-flex;
@@ -212,6 +284,7 @@
             white-space: nowrap;
         }
         .s-Pendente          { color: var(--amber); background: var(--amber-lt); border-color: #fcd34d; }
+        .s-Visto             { color: #6366f1; background: #eef2ff; border-color: #a5b4fc; }
         .s-Preparando        { color: var(--blue); background: var(--blue-lt); border-color: #93c5fd; }
         .s-Saiu-para-Entrega { color: var(--green); background: var(--green-lt); border-color: #86efac; }
         .s-Entregue          { color: var(--ink-3); background: var(--bg); border-color: #cbd5e1; }
@@ -246,6 +319,24 @@
             justify-content: space-between;
         }
         .card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .95rem; }
+
+        .card-header-date {
+            font-size: .8rem;
+            color: var(--ink-3);
+        }
+
+        .card-header-flex {
+            display: flex;
+            gap: 10px;
+        }
+
+        .card-spaced {
+            margin-bottom: 22px;
+        }
+
+        .card-padded {
+            padding: 20px;
+        }
 
         table { width: 100%; border-collapse: collapse; }
         th {
@@ -291,6 +382,25 @@
             color: var(--ink-2);
         }
         .status-select:focus { outline: none; border-color: var(--red); }
+
+        .btn-visto, .btn-imprimir {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: .75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            width: 100%;
+        }
+        .btn-visto { background: #eef2ff; color: #6366f1; border: 1px solid #a5b4fc; }
+        .btn-visto:hover { background: #6366f1; color: white; }
+        .btn-imprimir { background: var(--bg); color: var(--ink-2); border: 1px solid var(--border); }
+        .btn-imprimir:hover { background: var(--border); }
 
         /* ── ESTOQUE ── */
         .estoque-grid {

@@ -14,9 +14,9 @@
     <div class="header-inner">
         <div class="brand-row">
             <div class="brand-icon">
-                <span class="material-icons-round" style="font-size:1.3rem">local_fire_department</span>
+                <span class="material-icons-round brand-icon-icon">local_fire_department</span>
             </div>
-            <div class="brand-name">Galeto Master</div>
+            <div class="brand-name">Garagem do Galeto</div>
         </div>
         <div class="brand-tagline">O verdadeiro sabor mineiro na sua mesa</div>
         <div class="status-badge">
@@ -25,11 +25,11 @@
     </div>
 </header>
 
-<div class="hero-banner" style="background: url('/img/banner.png') center/cover no-repeat; height: 260px; position: relative; z-index: 1;">
-    <div style="position: absolute; inset: 0; background: linear-gradient(to top, var(--bg-color) 0%, transparent 60%);"></div>
+<div class="hero-banner">
+    <div class="hero-gradient"></div>
 </div>
 
-<div class="cat-wrap" style="top: 76px;">
+<div class="cat-wrap cat-wrap-sticky">
     <div class="cat-inner">
         <button class="cat-btn ativo" onclick="filtrarCat('todos', this)">🔥 Todos</button>
         <button class="cat-btn" onclick="filtrarCat('galeto', this)">🍗 Galetos</button>
@@ -50,7 +50,7 @@
             <div class="prod-preco">R$ 50,00</div>
         </div>
         <div class="prod-foto-wrap">
-            <img src="/img/galeto.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
+            <img src="/img/galeto.png" class="foto-placeholder">
             <button class="prod-add" onclick="addItem('Galeto Completo Família', 50)">
                 <span class="material-icons-round">add</span>
             </button>
@@ -222,6 +222,15 @@
             <!-- Detalhes do Pagamento Condicional -->
             <div class="form-group" id="pag-detalhe-container" style="margin-top: 12px;"></div>
 
+            <!-- LGPD Consent -->
+            <div class="lgpd-container">
+                <input type="checkbox" id="chk-lgpd" class="lgpd-checkbox">
+                <label for="chk-lgpd" class="lgpd-label">
+                    Eu aceito que meus dados sejam utilizados exclusivamente para a entrega deste pedido, conforme a 
+                    <a href="politica-privacidade.html" target="_blank" class="lgpd-link">Política de Privacidade</a>.
+                </label>
+            </div>
+
             <!-- Erro amigável para evitar travamento mobile (Bugfix) -->
             <div id="form-erro" style="color: var(--red); font-size: 0.85rem; font-weight: 600; text-align: center; margin-top: 10px; display: none;"></div>
 
@@ -239,7 +248,7 @@
                 Seu pedido foi enviado com sucesso.<br>
                 Em breve entraremos em contato pelo WhatsApp para confirmar os detalhes.
             </p>
-            <button class="btn-confirmar" onclick="fecharCheckout()" style="margin-top:20px">
+            <button class="btn-confirmar btn-confirmar-spaced" onclick="fecharCheckout()">
                 <span class="material-icons-round">storefront</span>
                 Continuar Comprando
             </button>
@@ -247,8 +256,8 @@
     </div>
 </div>
 
-<footer style="text-align: center; padding: 40px 20px 120px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; font-family: var(--font-body);">
-    Desenvolvido com <span style="color: var(--brand-primary)">♥</span> por <strong style="font-weight: 800; color: var(--text-main);">Santirine Tech</strong>
+<footer class="footer-main">
+    Desenvolvido com <span class="footer-heart">♥</span> por <strong class="footer-author">Santirine Tech</strong>
 </footer>
 
 <script src="js/cardapio.js"></script>

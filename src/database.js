@@ -43,6 +43,22 @@ function initDb() {
             ultimo_pedido DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT UNIQUE,
+            senha TEXT
+        )`, () => {
+            // Criar admin padrão se não existirem usuários
+            db.get("SELECT count(*) as qtd FROM usuarios", (err, row) => {
+                if (row && row.qtd === 0) {
+                    const bcrypt = require('bcryptjs');
+                    const salt = bcrypt.genSaltSync(10);
+                    const hash = bcrypt.hashSync('admin123', salt);
+                    db.run("INSERT INTO usuarios (usuario, senha) VALUES (?, ?)", ['admin', hash]);
+                }
+            });
+        });
+
         // Estoque inicial somente se vazio
         db.get("SELECT count(*) as qtd FROM estoque", (err, row) => {
             if (row && row.qtd === 0) {

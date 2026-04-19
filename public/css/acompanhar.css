@@ -1,0 +1,133 @@
+:root {
+    --red: #e8271c;
+    --ink: #111827;
+    --ink-2: #374151;
+    --ink-3: #6b7280;
+    --bg: #f3f4f6;
+    --white: #ffffff;
+    --border: #e5e7eb;
+    --green: #16a34a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 20px;
+}
+
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+    padding: 30px;
+    text-align: center;
+}
+
+.icon {
+    font-size: 3rem;
+    color: var(--red);
+    margin-bottom: 10px;
+    display: block;
+}
+
+h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.status-box {
+    background: #fffbeb;
+    border: 1.5px solid #fcd34d;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.status-badge {
+    display: inline-block;
+    background: var(--red);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+}
+
+.pedido-desc {
+    font-size: 0.95rem;
+    color: var(--ink-2);
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.pedido-total {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-top: 10px;
+    color: var(--ink);
+}
+
+.btn-voltar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    color: var(--ink-2);
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-top: 20px;
+    transition: background 0.2s;
+}
+
+.btn-voltar:hover { background: var(--border); }
+
+.spin { animation: spin 1s linear infinite; }
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.s-EmPreparo { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+.s-Pronto    { background: #f0fdf4; border-color: #86efac; color: #166534; }
+.loader-icon {
+    font-size: 2rem; 
+    color: var(--ink-3);
+}
+
+.loader-text {
+    margin-top: 10px; 
+    color: var(--ink-3);
+}
+
+.status-msg {
+    color: var(--ink-2); 
+    font-size: 0.9rem;
+}
+
+.footer-acompanhar {
+    text-align: center; 
+    padding: 20px; 
+    font-size: 0.85rem; 
+    color: var(--ink-3); 
+    font-weight: 500;
+}
+
+.heart {
+    color: var(--red);
+}
+
+.author {
+    font-weight: 800; 
+    color: var(--ink);
+}
+
+.error {
+    color: var(--red);
+}

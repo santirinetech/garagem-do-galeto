@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Galeto Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-card">
+            
+            <div class="brand">
+                <span class="material-icons-round brand-icon">local_fire_department</span>
+                <h1 class="brand-name">Galeto Master</h1>
+                <p class="brand-sub">Gestão Profissional</p>
+            </div>
+
+            <div id="error-msg" class="error-message">
+                <span class="material-icons-round">error_outline</span>
+                <span id="error-text">Usuário ou senha inválidos.</span>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="usuario">Usuário</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round">person</span>
+                        <input type="text" id="usuario" placeholder="Seu usuário" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round">lock</span>
+                        <input type="password" id="senha" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login" id="btn-submit">
+                    <span class="btn-text">Entrar no Sistema</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+
+            <p class="footer-text">© 2026 Santirine Tech • Garagem do Galeto</p>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>

@@ -74,11 +74,11 @@ const API_URL = 'http://localhost:3000/novo-pedido';
         if (!container) return;
         if (pagSelecionado === 'Pix') {
             container.innerHTML = `
-                <div style="background: var(--green-lt); color: var(--green); padding: 12px; border-radius: 10px; font-size: 0.85rem; text-align: center; font-weight: 600;">
-                    Nossa chave PIX (Telefone): <br><span style="font-size: 1.1rem; font-family: monospace;">(27) 99999-9999</span>
+                <div class="pix-box">
+                    Nossa chave PIX (Telefone): <br><span class="pix-key">(27) 99999-9999</span>
                 </div>
-                <label class="form-label" style="margin-top:16px;">Envie o comprovante *</label>
-                <input type="file" id="inp-comprovante" accept="image/*" class="form-input" style="padding: 10px;">
+                <label class="form-label pix-label-spaced">Envie o comprovante *</label>
+                <input type="file" id="inp-comprovante" accept="image/*" class="form-input pix-input-upload">
             `;
         } else if (pagSelecionado === 'Dinheiro') {
             container.innerHTML = `
@@ -98,10 +98,10 @@ const API_URL = 'http://localhost:3000/novo-pedido';
         const linhas = carrinho.map(i => `
             <div class="resumo-row">
                 <span>${i.nome}</span>
-                <span style="display:flex;align-items:center;gap:10px">
+                <span class="resumo-price-container">
                     ${i.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                     <button class="resumo-rem-btn" onclick="remItem(${i.id})" title="Remover">
-                        <span class="material-icons-round" style="font-size:1rem">remove_circle_outline</span>
+                        <span class="material-icons-round icon-small">remove_circle_outline</span>
                     </button>
                 </span>
             </div>
@@ -116,6 +116,29 @@ const API_URL = 'http://localhost:3000/novo-pedido';
         `;
     }
 
+    // ── WHATSAPP ──────────────────────────────────────
+    const enviarParaWhatsapp = (dados, idPedido) => {
+        const numeroDono = "5527988573982"; // Número configurado pelo dono
+        let mensagem = `*Novo Pedido - Garagem do Galeto*%0A%0A`;
+        
+        mensagem += `*Pedido #ID:* ${idPedido}%0A`;
+        mensagem += `*Cliente:* ${dados.nome}%0A`;
+        mensagem += `*Telefone:* ${dados.telefone}%0A%0A`;
+        
+        mensagem += `*Itens:*%0A`;
+        dados.itens.forEach(item => {
+            mensagem += `• ${item.nome} (${item.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})%0A`;
+        });
+        
+        mensagem += `%0A*Total:* ${dados.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+        mensagem += `%0A*Pagamento:* ${dados.pagamento}%0A%0A`;
+        
+        mensagem += `_Confira os detalhes no painel: Pedido #${idPedido}_`;
+        
+        const link = `https://wa.me/${numeroDono}?text=${encodeURIComponent(decodeURIComponent(mensagem))}`;
+        window.open(link, '_blank');
+    }
+
     // ── ENVIO ─────────────────────────────────────────
     async function enviarPedido() {
         const nome = document.getElementById('inp-nome').value.trim();
@@ -126,6 +149,7 @@ const API_URL = 'http://localhost:3000/novo-pedido';
 
         if (!nome) { errBox.textContent = 'Por favor, informe seu nome.'; errBox.style.display = 'block'; return; }
         if (tel.length < 10) { errBox.textContent = 'Informe um WhatsApp válido com DDD.'; errBox.style.display = 'block'; return; }
+        if (!document.getElementById('chk-lgpd').checked) { errBox.textContent = 'Você precisa aceitar os termos de privacidade.'; errBox.style.display = 'block'; return; }
         if (!carrinho.length) { errBox.textContent = 'Seu carrinho está vazio.'; errBox.style.display = 'block'; return; }
 
         let pagamentoStr = pagSelecionado;
@@ -168,14 +192,17 @@ const API_URL = 'http://localhost:3000/novo-pedido';
 
             const dataRes = await resp.json();
 
-            // Sucesso
-            carrinho = [];
-            atualizarBarra();
-            document.getElementById('inp-nome').value = '';
-            document.getElementById('inp-tel').value = '';
+            // Dados para o WhatsApp
+            const dadosZap = {
+                nome,
+                telefone: tel,
+                total: totalCarrinho(),
+                pagamento: pagamentoStr,
+                itens: [...carrinho]
+            };
 
-            // Redireciona para acompanhamento
-            window.location.href = '/acompanhar.html?id=' + dataRes.id_pedido;
+            // Redireciona para o WhatsApp
+            enviarParaWhatsapp(dadosZap, dataRes.id_pedido);
 
             // Sucesso
             carrinho = [];

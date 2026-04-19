@@ -3,6 +3,10 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
 const { db, query, queryOne } = require('./database');
 
 const storage = multer.diskStorage({
@@ -13,14 +17,96 @@ const upload = multer({ storage });
 
 function startServer(mainWindow = null) {
     const server = express();
+    
+    // Segurança: Configuração de Cabeçalhos
+    server.use(helmet({
+        contentSecurityPolicy: false, // Desativado para simplificar carregamento de fontes/icones externos por enquanto
+        crossOriginEmbedderPolicy: false
+    }));
+
     server.use(bodyParser.json());
     server.use(cors());
+
+    // Configuração de Sessão
+    server.use(session({
+        secret: 'galeto-master-secret-key-2026',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { 
+            secure: false, // true em produção com HTTPS
+            maxAge: 1000 * 60 * 60 * 24 // 1 dia
+        }
+    }));
+
+    // Middleware de Proteção de Rotas
+    const authMiddleware = (req, res, next) => {
+        // Rotas que NÃO precisam de autenticação
+        const publicPaths = ['/api/login', '/api/novo-pedido'];
+        const isPublicApi = publicPaths.includes(req.path);
+        const isStaticFile = !req.path.startsWith('/api');
+
+        if (isPublicApi || isStaticFile || req.session.userId) {
+            return next();
+        }
+
+        res.status(401).json({ erro: 'Não autorizado. Por favor, faça login.' });
+    };
+
+    // Aplicar proteção apenas em rotas /api (exceto as públicas)
+    server.use('/api', authMiddleware);
+
+    // Rate Limiter: Evitar abusos (Max 15 pedidos por hora por IP)
+    const pedidoLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000, 
+        max: 15,
+        message: { erro: 'Muitos pedidos enviados deste IP. Tente novamente em uma hora.' }
+    });
 
     // Servir arquivos estáticos da pasta public
     server.use(express.static(path.join(__dirname, '../public')));
 
+    // ──────── APIs DE AUTENTICAÇÃO ────────
+
+    server.post('/api/login', async (req, res) => {
+        const { usuario, senha } = req.body;
+        
+        try {
+            const user = await queryOne("SELECT * FROM usuarios WHERE usuario = ?", [usuario]);
+            if (!user) {
+                return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
+            }
+
+            const match = await bcrypt.compare(senha, user.senha);
+            if (!match) {
+                return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
+            }
+
+            req.session.userId = user.id;
+            req.session.username = user.usuario;
+            res.json({ status: 'sucesso', usuario: user.usuario });
+        } catch (e) {
+            res.status(500).json({ erro: 'Erro interno no servidor' });
+        }
+    });
+
+    server.post('/api/logout', (req, res) => {
+        req.session.destroy(err => {
+            if (err) return res.status(500).json({ erro: 'Erro ao sair' });
+            res.clearCookie('connect.sid');
+            res.json({ status: 'sucesso' });
+        });
+    });
+
+    server.get('/api/check-session', (req, res) => {
+        if (req.session.userId) {
+            res.json({ logado: true, usuario: req.session.username });
+        } else {
+            res.json({ logado: false });
+        }
+    });
+
     // POST /api/novo-pedido
-    server.post('/api/novo-pedido', upload.single('comprovante'), (req, res) => {
+    server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), (req, res) => {
         const { nome, telefone, pedido, total, pagamento, origem } = req.body;
         const comprovante = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -61,7 +147,7 @@ function startServer(mainWindow = null) {
     server.patch('/pedido/:id/status', (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
-        const validos = ['Pendente', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
+        const validos = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
         if (!validos.includes(status)) return res.status(400).json({ erro: 'Status inválido' });
 
         db.run("UPDATE pedidos SET status = ? WHERE id = ?", [status, id], function (err) {
@@ -142,6 +228,22 @@ function startServer(mainWindow = null) {
             const rows = await query("SELECT * FROM despesas WHERE date(data_hora) = date('now','localtime') ORDER BY id DESC");
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    // ──────── APIs DE GESTÃO DE CLIENTES (LGPD) ────────
+    
+    server.get('/api/clientes', async (req, res) => {
+        try {
+            const rows = await query("SELECT * FROM clientes ORDER BY nome");
+            res.json(rows);
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.delete('/api/clientes/:id', (req, res) => {
+        db.run("DELETE FROM clientes WHERE id = ?", [req.params.id], function (err) {
+            if (err) return res.status(500).json({erro: err.message});
+            res.json({ status: 'ok' });
+        });
     });
 
     // CRM AUTOMÁTICO - Endpoint para o n8n consultar clientes antigos ("Saudades")
