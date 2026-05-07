@@ -3,297 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Galeto Master — Cardápio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <title>Garagem do Galeto | Premium Menu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/cardapio.css">
+    <link rel="stylesheet" href="css/cardapio.css?v=99">
+    <style>
+        /* Ajustes rápidos de última hora */
+        .btn-add { font-size: 1.2rem; font-weight: bold; }
+        .success-view { padding: 60px 20px; }
+        .resumo-row button { color: #ff3131; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0 10px; }
+    </style>
 </head>
 <body>
 
 <header>
     <div class="header-inner">
-        <div class="brand-row">
-            <div class="brand-icon">
-                <span class="material-icons-round brand-icon-icon">local_fire_department</span>
-            </div>
-            <div class="brand-name">Garagem do Galeto</div>
-        </div>
-        <div class="brand-tagline">O verdadeiro sabor mineiro na sua mesa</div>
-        <div class="status-badge">
-            <div class="status-dot"></div> Aberto agora · Entrega e retirada
-        </div>
+        <div class="brand-name">GARAGEM DO GALETO</div>
+        <div class="status-badge">ABERTO AGORA</div>
     </div>
 </header>
 
-<div class="hero-banner">
-    <div class="hero-gradient"></div>
-</div>
-
-<div class="cat-wrap cat-wrap-sticky">
-    <div class="cat-inner">
-        <button class="cat-btn ativo" onclick="filtrarCat('todos', this)">🔥 Todos</button>
-        <button class="cat-btn" onclick="filtrarCat('galeto', this)">🍗 Galetos</button>
-        <button class="cat-btn" onclick="filtrarCat('porcao', this)">🥗 Porções</button>
-        <button class="cat-btn" onclick="filtrarCat('bebida', this)">🥤 Bebidas</button>
-    </div>
+<div class="cat-nav">
+    <div class="cat-chip ativo" onclick="filtrarCat('todos', this)">Todos</div>
+    <div class="cat-chip" onclick="filtrarCat('galeto', this)">Galetos</div>
+    <div class="cat-chip" onclick="filtrarCat('porcao', this)">Porções</div>
+    <div class="cat-chip" onclick="filtrarCat('bebida', this)">Bebidas</div>
 </div>
 
 <div class="container">
-
-    <!-- GALETOS -->
-    <div class="section-title" data-cat="galeto">🍗 Galetos</div>
-
+    <div class="section-title" data-cat="galeto">🍗 GALETOS NA BRASA</div>
     <div class="produto" data-cat="galeto">
         <div class="prod-info">
-            <div class="prod-nome">Galeto Completo — Família</div>
-            <div class="prod-desc">Galeto assado na brasa, acompanha farofa crocante, vinagrete fresco e arroz branco. Serve 2–3 pessoas.</div>
-            <div class="prod-preco">R$ 50,00</div>
+            <h3 class="prod-nome">Galeto Completo Família</h3>
+            <p class="prod-desc">Arroz, farofa, vinagrete e o melhor galeto da região.</p>
+            <div class="prod-footer">
+                <span class="prod-preco">R$ 50,00</span>
+                <button class="btn-add" onclick="addItem('Galeto Completo Família', 50)">+</button>
+            </div>
         </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/galeto.png" class="foto-placeholder">
-            <button class="prod-add" onclick="addItem('Galeto Completo Família', 50)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
+        <div class="prod-img-wrap"><img src="img/galeto.png" class="prod-img"></div>
     </div>
 
     <div class="produto" data-cat="galeto">
         <div class="prod-info">
-            <div class="prod-nome">Galeto Individual</div>
-            <div class="prod-desc">Um galeto inteiro assado na brasa com farofa e vinagrete. Perfeito para uma pessoa.</div>
-            <div class="prod-preco">R$ 28,00</div>
+            <h3 class="prod-nome">Galeto Individual</h3>
+            <p class="prod-desc">Inteiro na brasa, suculento e bem temperado.</p>
+            <div class="prod-footer">
+                <span class="prod-preco">R$ 28,00</span>
+                <button class="btn-add" onclick="addItem('Galeto Individual', 28)">+</button>
+            </div>
         </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/galeto.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Galeto Individual', 28)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
+        <div class="prod-img-wrap"><img src="img/galeto.png" class="prod-img"></div>
     </div>
 
-    <!-- PORÇÕES -->
-    <div class="section-title" data-cat="porcao">🥗 Porções</div>
-
+    <div class="section-title" data-cat="porcao">🥗 PORÇÕES & EXTRAS</div>
     <div class="produto" data-cat="porcao">
         <div class="prod-info">
-            <div class="prod-nome">Salpicão Tradicional (500g)</div>
-            <div class="prod-desc">Frango desfiado, cenoura, maionese da casa e bastante batata palha por cima.</div>
-            <div class="prod-preco">R$ 25,00</div>
+            <h3 class="prod-nome">Feijão Tropeiro Mineiro</h3>
+            <p class="prod-desc">O clássico acompanhamento feito com carinho.</p>
+            <div class="prod-footer">
+                <span class="prod-preco">R$ 25,00</span>
+                <button class="btn-add" onclick="addItem('Feijão Tropeiro', 25)">+</button>
+            </div>
         </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/salpicao.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Salpicão Tradicional', 25)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
+        <div class="prod-img-wrap"><img src="img/salpicao.png" class="prod-img"></div>
     </div>
 
-    <div class="produto" data-cat="porcao">
-        <div class="prod-info">
-            <div class="prod-nome">Feijão Tropeiro Mineiro</div>
-            <div class="prod-desc">Feijão vermelho, farinha de mandioca, torresmo, linguiça, ovo e couve. Aquele sabor de minas!</div>
-            <div class="prod-preco">R$ 25,00</div>
-        </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/feijao.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Feijão Tropeiro Mineiro', 25)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
-    </div>
-
-    <div class="produto" data-cat="porcao">
-        <div class="prod-info">
-            <div class="prod-nome">Farofa Especial (300g)</div>
-            <div class="prod-desc">Farofa de mandioca torrada com ovos, bacon e temperos da casa.</div>
-            <div class="prod-preco">R$ 15,00</div>
-        </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/salpicao.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Farofa Especial', 15)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- BEBIDAS -->
-    <div class="section-title" data-cat="bebida">🥤 Bebidas</div>
-
+    <div class="section-title" data-cat="bebida">🥤 BEBIDAS</div>
     <div class="produto" data-cat="bebida">
         <div class="prod-info">
-            <div class="prod-nome">Refrigerante Lata (350ml)</div>
-            <div class="prod-desc">Coca-Cola, Guaraná ou Sprite. Geladinho!</div>
-            <div class="prod-preco">R$ 6,00</div>
+            <h3 class="prod-nome">Suco Natural 500ml</h3>
+            <p class="prod-desc">Laranja, Maracujá ou Goiaba.</p>
+            <div class="prod-footer">
+                <span class="prod-preco">R$ 9,00</span>
+                <button class="btn-add" onclick="addItem('Suco Natural 500ml', 9)">+</button>
+            </div>
         </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/bebidas.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Refrigerante Lata', 6)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
+        <div class="prod-img-wrap"><img src="img/bebidas.png" class="prod-img"></div>
     </div>
-
-    <div class="produto" data-cat="bebida">
-        <div class="prod-info">
-            <div class="prod-nome">Suco Natural (500ml)</div>
-            <div class="prod-desc">Laranja, maracujá ou goiaba. Feito na hora.</div>
-            <div class="prod-preco">R$ 9,00</div>
-        </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/bebidas.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Suco Natural', 9)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
-    </div>
-
-    <div class="produto" data-cat="bebida">
-        <div class="prod-info">
-            <div class="prod-nome">Água Mineral (500ml)</div>
-            <div class="prod-desc">Com ou sem gás.</div>
-            <div class="prod-preco">R$ 4,00</div>
-        </div>
-        <div class="prod-foto-wrap">
-            <img src="/img/bebidas.png" class="foto-placeholder" style="object-fit:cover; border:none; box-shadow:none;">
-            <button class="prod-add" onclick="addItem('Água Mineral', 4)">
-                <span class="material-icons-round">add</span>
-            </button>
-        </div>
-    </div>
-
 </div>
 
-<!-- BARRA CARRINHO -->
-<div class="cart-bar" id="cart-bar" onclick="abrirCheckout()">
-    <div class="cart-left">
-        <span class="cart-qtd" id="cart-qtd-label">0 itens</span>
+<div class="cart-pill" id="cart-bar" style="display:none" onclick="abrirCheckout()">
+    <div class="cart-info">
+        <span class="cart-count" id="cart-qtd-label">0 ITENS</span>
         <span class="cart-total" id="cart-total-label">R$ 0,00</span>
     </div>
-    <div class="cart-cta">
-        Ver sacola <span class="material-icons-round">shopping_bag</span>
-    </div>
+    <button class="btn-finalizar">Ver Sacola</button>
 </div>
 
-<!-- OVERLAY / SHEET DE CHECKOUT -->
 <div class="overlay" id="overlay" onclick="fecharOverlay(event)">
     <div class="sheet">
-        <div class="sheet-handle"></div>
-
-        <!-- FORM VIEW -->
         <div id="form-view">
-            <div class="sheet-title">
-                Meu Pedido
-                <button class="sheet-close" onclick="fecharCheckout()">
-                    <span class="material-icons-round">close</span>
-                </button>
-            </div>
-
-            <!-- Resumo -->
+            <div class="sheet-title">Sua Sacola <button class="sheet-close" onclick="fecharCheckout()">×</button></div>
             <div class="resumo-box" id="resumo-box"></div>
 
-            <!-- Nome -->
-            <div class="form-group">
-                <label class="form-label">Seu nome *</label>
-                <input type="text" id="inp-nome" class="form-input" placeholder="Ex: Maria Silva" autocomplete="name">
+            <label class="form-label">Nome Completo</label>
+            <input type="text" id="inp-nome" class="form-input" placeholder="Seu nome">
+
+            <label class="form-label">WhatsApp</label>
+            <input type="tel" id="inp-tel" class="form-input" placeholder="(00) 00000-0000">
+
+            <label class="form-label">Tipo de Pedido</label>
+            <div class="pag-chips" id="entrega-chips">
+                <button class="pag-chip selected" data-tipo="Entrega" onclick="selecionarEntrega(this)">Entrega</button>
+                <button class="pag-chip" data-tipo="Retirada" onclick="selecionarEntrega(this)">Retirada</button>
             </div>
 
-            <!-- Telefone -->
-            <div class="form-group">
-                <label class="form-label">WhatsApp (com DDD) *</label>
-                <input type="tel" id="inp-tel" class="form-input" placeholder="Ex: 27 99999-9999" autocomplete="tel">
-            </div>
-
-<<<<<<< HEAD
-=======
-            <!-- Entrega ou Retirada -->
-            <div class="form-group">
-                <label class="form-label">Como deseja receber? *</label>
-                <div class="pag-chips" id="entrega-chips">
-                    <button class="pag-chip selected" data-tipo="Entrega" onclick="selecionarEntrega(this)">
-                        <span>🛵</span> Entrega
-                    </button>
-                    <button class="pag-chip" data-tipo="Retirada" onclick="selecionarEntrega(this)">
-                        <span>🏬</span> Retirada
-                    </button>
-                </div>
-            </div>
-
-            <!-- Campos de Endereço (Ocultos se for Retirada) -->
             <div id="endereco-container">
-                <div class="form-group">
-                    <label class="form-label">Região / Bairro *</label>
-                    <select id="sel-regiao" class="form-input" onchange="atualizarFrete()">
-                        <option value="" disabled selected>Selecione sua região...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Endereço de Entrega *</label>
-                    <input type="text" id="inp-rua" class="form-input" placeholder="Rua e Número">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Ponto de Referência</label>
-                    <input type="text" id="inp-bairro" class="form-input" placeholder="Ex: Próximo ao banco">
-                </div>
+                <label class="form-label">Bairro</label>
+                <select id="sel-regiao" class="form-input" onchange="atualizarFrete()">
+                    <option value="" disabled selected>Selecione seu bairro...</option>
+                </select>
+                <label class="form-label">Rua e Número</label>
+                <input type="text" id="inp-rua" class="form-input" placeholder="Ex: Rua A, 123">
+                <label class="form-label">Referência</label>
+                <input type="text" id="inp-bairro" class="form-input" placeholder="Ex: Perto do posto">
             </div>
 
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
-            <!-- Pagamento -->
-            <div class="form-group">
-                <label class="form-label">Forma de pagamento *</label>
-                <div class="pag-chips">
-                    <button class="pag-chip selected" data-pag="Pix" onclick="selecionarPag(this)">
-                        <span>💳</span> Pix
-                    </button>
-                    <button class="pag-chip" data-pag="Cartão" onclick="selecionarPag(this)">
-                        <span>💳</span> Cartão
-                    </button>
-                    <button class="pag-chip" data-pag="Dinheiro" onclick="selecionarPag(this)">
-                        <span>💵</span> Dinheiro
-                    </button>
-                </div>
+            <label class="form-label">Pagamento</label>
+            <div class="pag-chips">
+                <button class="pag-chip selected" data-pag="Pix" onclick="selecionarPag(this)">Pix</button>
+                <button class="pag-chip" data-pag="Cartão" onclick="selecionarPag(this)">Cartão</button>
+                <button class="pag-chip" data-pag="Dinheiro" onclick="selecionarPag(this)">Dinheiro</button>
             </div>
 
-            <!-- Detalhes do Pagamento Condicional -->
-            <div class="form-group" id="pag-detalhe-container" style="margin-top: 12px;"></div>
+            <div id="pag-detalhe-container"></div>
 
-            <!-- LGPD Consent -->
-            <div class="lgpd-container">
-                <input type="checkbox" id="chk-lgpd" class="lgpd-checkbox">
-                <label for="chk-lgpd" class="lgpd-label">
-                    Eu aceito que meus dados sejam utilizados exclusivamente para a entrega deste pedido, conforme a 
-                    <a href="politica-privacidade.html" target="_blank" class="lgpd-link">Política de Privacidade</a>.
-                </label>
+            <div style="margin:15px 0; display:flex; gap:10px; font-size:0.75rem; color:#888;">
+                <input type="checkbox" id="chk-lgpd" checked>
+                <label for="chk-lgpd">Concordo com o uso dos dados para entrega.</label>
             </div>
 
-            <!-- Erro amigável para evitar travamento mobile (Bugfix) -->
-            <div id="form-erro" style="color: var(--red); font-size: 0.85rem; font-weight: 600; text-align: center; margin-top: 10px; display: none;"></div>
-
-            <button class="btn-confirmar" id="btn-confirmar" onclick="enviarPedido()">
-                <span class="material-icons-round">check_circle</span>
-                CONFIRMAR PEDIDO
-            </button>
+            <button class="btn-confirmar" id="btn-confirmar" onclick="enviarPedido()">FINALIZAR PEDIDO</button>
         </div>
 
-        <!-- SUCCESS VIEW -->
-        <div class="success-view" id="success-view">
-            <span class="success-icon">🎉</span>
-            <div class="success-title">Pedido Recebido!</div>
-            <p class="success-sub">
-                Seu pedido foi enviado com sucesso.<br>
-                Em breve entraremos em contato pelo WhatsApp para confirmar os detalhes.
-            </p>
-            <button class="btn-confirmar btn-confirmar-spaced" onclick="fecharCheckout()">
-                <span class="material-icons-round">storefront</span>
-                Continuar Comprando
-            </button>
+        <div class="success-view" id="success-view" style="display:none">
+            <span class="success-icon">🍗✨</span>
+            <h2 style="text-align:center; font-family:'Outfit';">PEDIDO ENVIADO!</h2>
+            <p style="text-align:center; color:#aaa; margin:20px 0;">Acompanhe pelo WhatsApp.</p>
+            <button class="btn-confirmar" onclick="location.reload()">VOLTAR AO CARDÁPIO</button>
         </div>
     </div>
 </div>
 
-<footer class="footer-main">
-    Desenvolvido com <span class="footer-heart">♥</span> por <strong class="footer-author">Santirine Tech</strong>
-</footer>
+<script>
+    // ── CONFIG ──
+    const NUMERO_DONO = "5527988573982";
+    let carrinho = [];
+    let pagSelecionado = 'Pix';
+    let tipoEntrega = 'Entrega';
+    let regioes = [];
+    let freteAtual = 0;
 
-<script src="js/cardapio.js"></script>
+    // ── CORE ──
+    function addItem(nome, preco) {
+        carrinho.push({ id: Date.now() + Math.random(), nome, preco });
+        atualizarBarra();
+    }
+
+    function remItem(id) {
+        carrinho = carrinho.filter(i => i.id !== id);
+        atualizarBarra();
+        renderResumo();
+    }
+
+    function atualizarBarra() {
+        const qtd = carrinho.length;
+        const total = carrinho.reduce((a, b) => a + b.preco, 0);
+        document.getElementById('cart-qtd-label').textContent = `${qtd} ITENS`;
+        document.getElementById('cart-total-label').textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('cart-bar').style.display = qtd > 0 ? 'flex' : 'none';
+    }
+
+    function filtrarCat(cat, btn) {
+        document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('ativo'));
+        btn.classList.add('ativo');
+        document.querySelectorAll('.produto, .section-title').forEach(el => {
+            if (cat === 'todos') el.style.display = 'flex';
+            else el.style.display = el.dataset.cat === cat ? 'flex' : 'none';
+        });
+    }
+
+    // ── CHECKOUT ──
+    function abrirCheckout() {
+        document.getElementById('overlay').classList.add('open');
+        carregarRegioes();
+        renderResumo();
+    }
+    function fecharCheckout() { document.getElementById('overlay').classList.remove('open'); }
+    function fecharOverlay(e) { if(e.target.id === 'overlay') fecharCheckout(); }
+
+    async function carregarRegioes() {
+        const resp = await fetch('/api/regioes');
+        regioes = await resp.json();
+        const sel = document.getElementById('sel-regiao');
+        if(sel && sel.options.length <= 1) {
+            regioes.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = `${r.nome} (${r.taxa.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`;
+                opt.dataset.taxa = r.taxa;
+                sel.appendChild(opt);
+            });
+        }
+    }
+
+    function atualizarFrete() {
+        const sel = document.getElementById('sel-regiao');
+        const opt = sel.options[sel.selectedIndex];
+        freteAtual = opt ? parseFloat(opt.dataset.taxa || 0) : 0;
+        renderResumo();
+    }
+
+    function selecionarEntrega(btn) {
+        document.querySelectorAll('#entrega-chips .pag-chip').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        tipoEntrega = btn.dataset.tipo;
+        document.getElementById('endereco-container').style.display = tipoEntrega === 'Entrega' ? 'block' : 'none';
+        if(tipoEntrega === 'Retirada') freteAtual = 0;
+        renderResumo();
+    }
+
+    function selecionarPag(btn) {
+        document.querySelectorAll('.pag-chips .pag-chip').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        pagSelecionado = btn.dataset.pag;
+        const det = document.getElementById('pag-detalhe-container');
+        if(pagSelecionado === 'Pix') det.innerHTML = '<p style="font-size:0.8rem; color:#aaa; margin:10px 0;">Chave PIX: 27988573982</p><input type="file" id="inp-comprovante" class="form-input">';
+        else if(pagSelecionado === 'Dinheiro') det.innerHTML = '<input type="text" id="inp-troco" class="form-input" placeholder="Troco para quanto?">';
+        else det.innerHTML = '';
+    }
+
+    function renderResumo() {
+        const box = document.getElementById('resumo-box');
+        let html = carrinho.map(i => `<div class="resumo-row"><span>${i.nome}</span><span>${i.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} <button onclick="remItem(${i.id})">×</button></span></div>`).join('');
+        const totalProdutos = carrinho.reduce((a, b) => a + b.preco, 0);
+        if(tipoEntrega === 'Entrega' && freteAtual > 0) html += `<div class="resumo-row" style="opacity:0.6"><span>Taxa de Entrega</span><span>${freteAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span></div>`;
+        html += `<div class="resumo-row total-row"><span>Total</span><span>${(totalProdutos + freteAtual).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span></div>`;
+        box.innerHTML = html;
+    }
+
+    async function enviarPedido() {
+        const nome = document.getElementById('inp-nome').value.trim();
+        const tel = document.getElementById('inp-tel').value.trim();
+        const btn = document.getElementById('btn-confirmar');
+
+        if(!nome || !tel) { alert("Por favor, preencha nome e WhatsApp."); return; }
+        if(tipoEntrega === 'Entrega' && !document.getElementById('sel-regiao').value) { alert("Selecione o bairro para entrega."); return; }
+        if(!document.getElementById('chk-lgpd').checked) { alert("Aceite os termos para continuar."); return; }
+
+        btn.disabled = true;
+        btn.textContent = "ENVIANDO...";
+
+        const payload = new FormData();
+        payload.append('nome', nome);
+        payload.append('telefone', tel);
+        payload.append('pedido', carrinho.map(i => i.nome).join(', '));
+        payload.append('total', carrinho.reduce((a, b) => a + b.preco, 0) + freteAtual);
+        payload.append('pagamento', pagSelecionado);
+        payload.append('origem', 'Site');
+        
+        let endereco = 'Retirada no Local';
+        if(tipoEntrega === 'Entrega') {
+            const sel = document.getElementById('sel-regiao');
+            const bairro = sel.options[sel.selectedIndex].text.split(' (')[0];
+            const rua = document.getElementById('inp-rua').value.trim();
+            const ref = document.getElementById('inp-bairro').value.trim();
+            endereco = `${rua}, ${bairro}${ref ? ' (Ref: ' + ref + ')' : ''}`;
+        }
+        payload.append('endereco', endereco);
+
+        const comp = document.getElementById('inp-comprovante');
+        if(comp && comp.files[0]) payload.append('comprovante', comp.files[0]);
+
+        try {
+            const resp = await fetch('/api/novo-pedido', { method: 'POST', body: payload });
+            const resData = await resp.json();
+            
+            let zapMsg = `*Novo Pedido - Garagem do Galeto*%0A`;
+            zapMsg += `*Cliente:* ${nome}%0A`;
+            zapMsg += `*Itens:* ${carrinho.map(i => i.nome).join(', ')}%0A`;
+            zapMsg += `*Total:* ${(carrinho.reduce((a, b) => a + b.preco, 0) + freteAtual).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}%0A`;
+            zapMsg += `*Pagamento:* ${pagSelecionado}%0A`;
+            zapMsg += `*Entrega:* ${endereco}%0A`;
+            
+            if (resData.comprovante) {
+                const linkComp = `${window.location.origin}${resData.comprovante}`;
+                zapMsg += `%0A%0A*🔗 LINK DO COMPROVANTE:*%0A${linkComp}`;
+            }
+            
+            window.open(`https://wa.me/${NUMERO_DONO}?text=${zapMsg}`, '_blank');
+            
+            document.getElementById('form-view').style.display = 'none';
+            document.getElementById('success-view').style.display = 'block';
+            carrinho = [];
+            atualizarBarra();
+        } catch (e) {
+            alert("Erro ao enviar. Verifique sua conexão.");
+            btn.disabled = false;
+            btn.textContent = "FINALIZAR PEDIDO";
+        }
+    }
+</script>
 </body>
 </html>

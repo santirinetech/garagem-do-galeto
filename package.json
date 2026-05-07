@@ -2,19 +2,11 @@
   "name": "galeto-system",
   "version": "1.0.0",
   "description": "Sistema Garagem do Galeto",
-<<<<<<< HEAD
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "server": "node src/main/server-standalone.js",
-    "dev": "nodemon src/main/server-standalone.js",
-=======
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
     "server": "node server-standalone.js",
     "dev": "nodemon server-standalone.js",
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     "dist": "electron-builder --win --x64"
   },
   "build": {
@@ -22,17 +14,10 @@
     "productName": "Galeto Master",
     "copyright": "Copyright © 2026 Santirine Tech",
     "files": [
-<<<<<<< HEAD
-      "main.js",
-      "src/**/*",
-      "public/**/*",
-      "package.json",
-=======
       "src/**/*",
       "public/**/*",
       "package.json",
       "server-standalone.js",
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
       "loja.db"
     ],
     "win": {

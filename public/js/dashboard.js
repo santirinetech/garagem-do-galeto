@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // ── SSE: ATUALIZAÇÃO EM TEMPO REAL ──────────────────────
 const eventSource = new EventSource('/api/events');
 eventSource.onmessage = (e) => {
@@ -9,7 +7,6 @@ eventSource.onmessage = (e) => {
     }
 };
 
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 // ── AUTENTICAÇÃO E SESSÃO ─────────────────────────────
 async function verificarSessao() {
     try {
@@ -36,7 +33,7 @@ async function logout() {
 verificarSessao();
 
 // ── NAVEGAÇÃO ──────────────────────────────────────
-const titles = { dashboard:'Dashboard', pedidos:'Pedidos', estoque:'Estoque', historico:'Histórico', clientes:'Clientes (Privacidade)' };
+const titles = { dashboard:'Dashboard', pedidos:'Pedidos', estoque:'Estoque', historico:'Histórico', clientes:'Clientes (Privacidade)', config: 'Configurações' };
 function showView(name, el) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -46,8 +43,6 @@ function showView(name, el) {
     carregarTudo();
 }
 
-<<<<<<< HEAD
-=======
 // ── GESTÃO DE REGIÕES ────────────────────────────────
 async function carregarRegioesDash() {
     try {
@@ -68,23 +63,42 @@ async function carregarRegioesDash() {
     } catch (e) { console.error(e); }
 }
 
-async function novaRegiao() {
-    const nome = prompt("Nome da Região/Bairro:");
-    if (!nome) return;
-    const taxa = prompt("Valor da Taxa de Entrega (Ex: 5.50):");
-    if (taxa === null) return;
+async function salvarNovaRegiao() {
+    const nomeInp = document.getElementById('regiao-nome');
+    const taxaInp = document.getElementById('regiao-taxa');
+    
+    const nome = nomeInp.value.trim();
+    const taxa = parseFloat(taxaInp.value);
+
+    if (!nome || isNaN(taxa)) {
+        alert("Preencha o nome do bairro e um valor de taxa válido.");
+        return;
+    }
 
     try {
         const resp = await fetch('/api/regioes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome, taxa: taxa.replace(',', '.') })
+            body: JSON.stringify({ nome, taxa })
         });
         if (resp.ok) {
-            showToast("Região cadastrada com sucesso!");
+            showToast("Região cadastrada!");
+            nomeInp.value = '';
+            taxaInp.value = '';
             carregarRegioesDash();
+        } else {
+            const data = await resp.json();
+            alert("Erro: " + (data.erro || "Erro ao salvar"));
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e);
+        alert("Erro de conexão.");
+    }
+}
+
+// Mantendo para compatibilidade caso algo chame, mas redirecionando
+async function novaRegiao() {
+    document.getElementById('regiao-nome')?.focus();
 }
 
 async function excluirRegiao(id) {
@@ -98,7 +112,6 @@ async function excluirRegiao(id) {
     } catch (e) { console.error(e); }
 }
 
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 // ── STATUS ──────────────────────────────────────────
 const STATUS_OPTS = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
 
@@ -110,13 +123,50 @@ function statusSelectHTML(pedidoId, current) {
 }
 
 async function mudarStatus(id, status) {
-    await fetch(`/pedido/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+    try {
+        const resp = await fetch(`/pedido/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        
+        if (resp.ok) {
+            showToast(`Pedido #${id} → ${status}`);
+            carregarTudo();
+            
+            // Pergunta se quer avisar o cliente
+            if (['Preparando', 'Saiu para Entrega', 'Entregue'].includes(status)) {
+                // Pequeno delay para o carregarTudo atualizar a tela
+                setTimeout(() => {
+                    if (confirm(`Deseja avisar o cliente sobre o status "${status}" via WhatsApp?`)) {
+                        notificarCliente(id, status);
+                    }
+                }, 500);
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function notificarCliente(id, status) {
+    fetch('/api/pedido/' + id).then(r => r.json()).then(p => {
+        const num = (p.cliente_tel || '').replace(/\D/g, '');
+        let msg = "";
+        
+        if (status === 'Preparando') {
+            msg = `Olá ${p.cliente_nome}! Seu pedido #${p.id} já está sendo preparado com muito carinho aqui na Garagem do Galeto! 🔥`;
+        } else if (status === 'Saiu para Entrega') {
+            msg = `Boas notícias, ${p.cliente_nome}! Seu pedido #${p.id} acabou de sair para entrega e logo chegará até você! 🛵💨`;
+        } else if (status === 'Entregue') {
+            msg = `Pedido #${p.id} entregue! Esperamos que aproveite sua refeição. Se puder, nos conte o que achou! Obrigado pela preferência. 🍗✨`;
+        } else {
+            msg = `Olá ${p.cliente_nome}, o status do seu pedido #${p.id} foi atualizado para: ${status}.`;
+        }
+
+        const link = `https://wa.me/55${num}?text=${encodeURIComponent(msg)}`;
+        window.open(link, '_blank');
     });
-    showToast(`Pedido #${id} → ${status}`);
-    carregarTudo();
 }
 
 // ── RENDER HELPERS ──────────────────────────────────
@@ -186,8 +236,6 @@ function tocarCampainha() {
 // ── IMPRESSÃO TÉRMICA ───────────────────────────────
 function imprimirComanda(id) {
     fetch('/api/pedido/' + id).then(r => r.json()).then(p => {
-<<<<<<< HEAD
-=======
         // Se estivermos no Electron, usamos a impressão térmica silenciosa
         if (window.electronAPI) {
             window.electronAPI.solicitarImpressao({
@@ -204,7 +252,6 @@ function imprimirComanda(id) {
         }
 
         // Fallback para navegador comum (abre diálogo de impressão)
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         const pdesc = p.pedido_desc.replace(/,/g, '<br>• ');
         const num = (p.cliente_tel || '').replace(/\D/g, '');
         const html = `
@@ -215,10 +262,7 @@ function imprimirComanda(id) {
             <div><strong>Cliente:</strong> ${p.cliente_nome}</div>
             <div><strong>Tel:</strong> ${num}</div>
             <div><strong>Canal:</strong> ${p.origem}</div>
-<<<<<<< HEAD
-=======
             <div style="margin-top:5px;"><strong>Entrega:</strong> ${p.endereco || 'Retirada'}</div>
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             <div class="print-line"></div>
             <div><strong>ITENS:</strong></div>
             <div style="margin: 5px 0 10px;">• ${pdesc}</div>
@@ -228,14 +272,6 @@ function imprimirComanda(id) {
                 <strong>${fmtReal(p.total)}</strong>
             </div>
             <div style="margin-top:10px; font-size:14px;"><strong>Pgto:</strong> ${p.forma_pagamento}</div>
-<<<<<<< HEAD
-            <div class="print-line"></div>
-            <div style="text-align:center; font-size:12px; margin-top:10px; font-weight:bold;">Obrigado pela prefeência!</div>
-            <div style="text-align:center; font-size:10px; margin-top:5px;">Santirine Tech</div>
-        `;
-        document.getElementById('print-area').innerHTML = html;
-        window.print();
-=======
             <div style="text-align:center; font-size:12px; margin-top:10px; font-weight:bold;">Obrigado pela prefeência!</div>
             <div style="text-align:center; font-size:10px; margin-top:5px;">Santirine Tech</div>
         `;
@@ -246,7 +282,6 @@ function imprimirComanda(id) {
         } else {
             console.error('Erro: print-area não encontrada no HTML');
         }
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     });
 }
 
@@ -258,10 +293,7 @@ async function carregarTudo() {
     if (view === 'estoque')    await carregarEstoque();
     if (view === 'historico')  await carregarHistorico();
     if (view === 'clientes')   await carregarClientes();
-<<<<<<< HEAD
-=======
     if (view === 'config')     await carregarRegioesDash();
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     
     // Sempre atualiza badge de pendentes
     try {
@@ -294,18 +326,12 @@ async function carregarDashboard() {
         const abertos = (pedidos || []).filter(p => p.status !== 'Entregue' && p.status !== 'Cancelado');
         const tbody = document.getElementById('tbody-abertos');
 
-<<<<<<< HEAD
-        // Lógica da Campainha Integrada
-=======
         // Lógica de Campainha e Impressão Automática
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         if (abertos.length > 0) {
             const maiorId = Math.max(...abertos.map(p => p.id));
             if (lastHighestId !== 0 && maiorId > lastHighestId) {
                 tocarCampainha();
                 showToast('🔔 NOVO PEDIDO CHEGOU!');
-<<<<<<< HEAD
-=======
                 
                 // Impressão Automática (Somente se estiver no Electron)
                 if (window.electronAPI) {
@@ -320,13 +346,12 @@ async function carregarDashboard() {
                         endereco: novoPedido.endereco
                     });
                 }
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             }
             if (maiorId > lastHighestId) lastHighestId = maiorId;
         }
 
         if (abertos.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7">
+            tbody.innerHTML = `<tr><td colspan="8">
                 <div class="empty-state">
                     <span class="material-icons-round">check_circle</span>
                     <p>Nenhum pedido em aberto agora.</p>
@@ -356,14 +381,15 @@ async function carregarDashboard() {
                     <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
                     <td>
                         ${p.forma_pagamento || '—'}
-                        ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" class="btn-link-small">Ver Comprovante</a>` : ''}
+                        ${p.comprovante ? `
+                            <br><a href="${p.comprovante}" target="_blank" class="btn-comprovante-link">
+                                <span class="material-icons-round">image</span> VER COMPROVANTE
+                            </a>
+                        ` : ''}
                     </td>
-<<<<<<< HEAD
-=======
                     <td style="max-width:150px; font-size:0.85rem; color:var(--text-muted);">
                         ${p.endereco || '—'}
                     </td>
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                     <td><strong>${fmtReal(p.total)}</strong></td>
                     <td>
                         <div class="flex-col-gap">
@@ -396,7 +422,7 @@ async function carregarTodos() {
         const tbody = document.getElementById('tbody-todos');
 
         if (!pedidos || !pedidos.length) {
-            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="material-icons-round">receipt_long</span><p>Sem pedidos hoje ainda.</p></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="material-icons-round">receipt_long</span><p>Sem pedidos hoje ainda.</p></div></td></tr>`;
             return;
         }
 
@@ -419,10 +445,7 @@ async function carregarTodos() {
                     ${p.forma_pagamento || '—'}
                     ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" style="font-size:0.75rem; color:var(--blue); font-weight:700;">Ver Comprovante</a>` : ''}
                 </td>
-<<<<<<< HEAD
-=======
                 <td style="font-size:0.85rem;">${p.endereco || '—'}</td>
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:6px;">
@@ -471,7 +494,7 @@ async function carregarEstoque() {
                         
                         <button onclick="ajustarEstoque(${it.id}, ${it.quantidade + 1})" class="btn-ajuste-plus">+</button>
                     </div>
-
+ 
                     <div class="estoque-bar">
                         <div class="estoque-fill" style="width:${pct}%; transition: width 0.3s ease;"></div>
                     </div>
@@ -491,67 +514,9 @@ async function ajustarEstoque(id, novaQtd) {
     carregarEstoque();
 }
 
-// ── CAIXA E FINANCEIRO ───────────────────────────────
-async function carregarCaixa() {
-    try {
-        const [resPed, resDesp] = await Promise.all([
-            fetch('/api/resumo'),
-            fetch('/api/despesas/hoje')
-        ]);
-        const resumo = await resPed.json();
-        const despesas = await resDesp.json();
-
-        const entradas = resumo ? resumo.faturamento : 0;
-        const saidas = despesas.reduce((acc, curr) => acc + curr.valor, 0);
-        const saldo = entradas - saidas;
-
-        document.getElementById('caixa-entradas').textContent = fmtReal(entradas);
-        document.getElementById('caixa-saidas').textContent = fmtReal(saidas);
-        document.getElementById('caixa-saldo').textContent = fmtReal(saldo);
-        
-        document.getElementById('caixa-saldo').parentElement.className = `kpi ${saldo >= 0 ? 'green' : 'red'}`;
-
-        const tbody = document.getElementById('tbody-despesas');
-        if (!despesas.length) {
-            tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><span class="material-icons-round">receipt</span><p>Nenhuma despesa ou retirada registrada hoje.</p></div></td></tr>`;
-        } else {
-            tbody.innerHTML = despesas.map(d => `
-                <tr>
-                    <td>${fmtHora(d.data_hora)}</td>
-                    <td><strong>${d.descricao}</strong></td>
-                    <td style="text-align:right; color:var(--red); font-weight:700;">- ${fmtReal(d.valor)}</td>
-                </tr>
-            `).join('');
-        }
-    } catch (e) {}
-}
-
-async function lancarDespesa() {
-    const desc = document.getElementById('inp-despesa-desc').value.trim();
-    const valor = parseFloat(document.getElementById('inp-despesa-valor').value);
-    
-    if (!desc || isNaN(valor) || valor <= 0) {
-        showToast('Informe uma descrição válida e um valor maior que ZERO.');
-        return;
-    }
-
-    try {
-        await fetch('/api/despesas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ descricao: desc, valor })
-        });
-        showToast('Saída registrada com sucesso!');
-        document.getElementById('inp-despesa-desc').value = '';
-        document.getElementById('inp-despesa-valor').value = '';
-        carregarCaixa();
-    } catch (e) {}
-}
-
 // ── HISTÓRICO ────────────────────────────────────────
 async function carregarHistorico() {
     try {
-        // Pega data do filtro se existir
         const dateInput = document.getElementById('filtro-data');
         let url = '/api/historico';
         if (dateInput && dateInput.value) {
@@ -563,7 +528,7 @@ async function carregarHistorico() {
         const tbody = document.getElementById('tbody-hist');
 
         if (!hist || !hist.length) {
-            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="material-icons-round">history</span><p>Nenhum pedido encontrado.</p></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="material-icons-round">history</span><p>Nenhum pedido encontrado.</p></div></td></tr>`;
             return;
         }
 
@@ -577,10 +542,7 @@ async function carregarHistorico() {
                     <div class="cliente-tel">${p.cliente_tel || ''}</div>
                 </td>
                 <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
-<<<<<<< HEAD
-=======
                 <td>${p.endereco || '—'}</td>
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>${statusBadge(p.status)}</td>
             </tr>
@@ -633,15 +595,16 @@ async function excluirCliente(id) {
 let toastTimer;
 function showToast(msg) {
     clearTimeout(toastTimer);
-    document.getElementById('toast-msg').textContent = msg;
-    document.getElementById('toast').classList.add('show');
-    toastTimer = setTimeout(() => document.getElementById('toast').classList.remove('show'), 3000);
+    const toast = document.getElementById('toast');
+    if (toast) {
+        document.getElementById('toast-msg').textContent = msg;
+        toast.classList.add('show');
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
 }
 
 // ── INIT ─────────────────────────────────────────────
 carregarTudo();
-// Polling substitui o IPC para que tudo funcione via Web Puro!
-setInterval(carregarTudo, 5000);
 
 // Bind logout
 document.querySelector('.sidebar-logout')?.addEventListener('click', (e) => {

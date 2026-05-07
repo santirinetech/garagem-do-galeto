@@ -460,3 +460,26 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .btn-comprovante-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--blue-lt);
+            color: var(--blue);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 8px;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            transition: 0.2s;
+        }
+        .btn-comprovante-link:hover {
+            background: var(--blue);
+            color: white;
+        }
+        .btn-comprovante-link .material-icons-round {
+            font-size: 1rem;
+        }

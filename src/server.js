@@ -7,9 +7,6 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
-<<<<<<< HEAD
-const { db, query, queryOne } = require('./database');
-=======
 const { db, query, queryOne, run } = require('./database');
 
 // ── SSE: Atualização em tempo real ──────────────────────────
@@ -19,10 +16,15 @@ function emitUpdate() {
         try { c.res.write('data: update\n\n'); } catch(e) {}
     });
 }
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
+
+const fs = require('fs');
+const uploadDir = path.join(__dirname, '../public/uploads/');
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../public/uploads/')),
+    destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'))
 });
 const upload = multer({ storage });
@@ -70,18 +72,11 @@ function startServer(mainWindow = null) {
     // Rate Limiter: Evitar abusos (Max 15 pedidos por hora por IP)
     const pedidoLimiter = rateLimit({
         windowMs: 60 * 60 * 1000, 
-<<<<<<< HEAD
-        max: 15,
-=======
         max: 30, // Aumentado para suportar testes
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         message: { erro: 'Muitos pedidos enviados deste IP. Tente novamente em uma hora.' }
     });
 
     // Servir arquivos estáticos da pasta public
-<<<<<<< HEAD
-    server.use(express.static(path.join(__dirname, '../public')));
-=======
     // Garantir que /dashboard e /cardapio funcionem mesmo que o arquivo seja cardapio.html
     server.use(express.static(path.join(__dirname, '../public')));
     
@@ -101,7 +96,6 @@ function startServer(mainWindow = null) {
             clients = clients.filter(c => c.id !== clientId);
         });
     });
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 
     // ──────── APIs DE AUTENTICAÇÃO ────────
 
@@ -143,33 +137,20 @@ function startServer(mainWindow = null) {
         }
     });
 
-<<<<<<< HEAD
-    // POST /api/novo-pedido
-    server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), (req, res) => {
-        const { nome, telefone, pedido, total, pagamento, origem } = req.body;
-=======
     server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), (req, res) => {
         const { nome, telefone, pedido, total, pagamento, origem, endereco } = req.body;
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         const comprovante = req.file ? `/uploads/${req.file.filename}` : null;
 
         if (!nome || !pedido || total === undefined) {
             return res.status(400).json({ erro: 'Campos obrigatórios: nome, pedido, total' });
         }
 
-<<<<<<< HEAD
-        const sql = `INSERT INTO pedidos (cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, comprovante) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-        db.run(sql, [nome, telefone, pedido, total, pagamento, origem, comprovante], function (err) {
-            if (err) return res.status(500).json({ erro: err.message });
-
-=======
         const sql = `INSERT INTO pedidos (cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, comprovante, endereco) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
         db.run(sql, [nome, telefone, pedido, total, pagamento, origem, comprovante, endereco], function (err) {
             if (err) return res.status(500).json({ erro: err.message });
 
             const pedidoId = this.lastID;
 
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             // Baixa estoque automaticamente pelo nome do item
             const desc = (pedido || '').toLowerCase();
             if (desc.includes('galeto'))         db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Galetos'");
@@ -178,11 +159,7 @@ function startServer(mainWindow = null) {
             if (desc.includes('refrigerante'))   db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Refrigerante'");
             if (desc.includes('suco'))           db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Suco'");
 
-<<<<<<< HEAD
-            // Banco de Clientes Silencioso (Fase 4)
-=======
             // Banco de Clientes Silencioso
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             const sqlCliente = `
                 INSERT INTO clientes (nome, telefone, compras_qtd, valor_gasto) 
                 VALUES (?, ?, 1, ?)
@@ -194,10 +171,6 @@ function startServer(mainWindow = null) {
             `;
             db.run(sqlCliente, [nome, telefone, total]);
 
-<<<<<<< HEAD
-            if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
-            res.json({ status: 'sucesso', id_pedido: this.lastID });
-=======
             // Disparo de Webhook para Novo Pedido (Automação WhatsApp)
             const N8N_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/galeto-pedido';
             fetch(N8N_URL, {
@@ -208,8 +181,11 @@ function startServer(mainWindow = null) {
 
             emitUpdate(); // Notifica via SSE
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
-            res.json({ status: 'sucesso', id_pedido: pedidoId });
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
+            res.json({ 
+                mensagem: 'Sucesso', 
+                id_pedido: this.lastID,
+                comprovante: comprovante 
+            });
         });
     });
 
@@ -237,10 +213,7 @@ function startServer(mainWindow = null) {
                 }
             });
 
-<<<<<<< HEAD
-=======
             emitUpdate(); // Notifica via SSE
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
             res.json({ status: 'ok' });
         });
@@ -320,10 +293,6 @@ function startServer(mainWindow = null) {
         });
     });
 
-<<<<<<< HEAD
-    // CRM AUTOMÁTICO - Endpoint para o n8n consultar clientes antigos ("Saudades")
-=======
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     server.get('/api/clientes/ausentes', async (req, res) => {
         try {
             const dias = parseInt(req.query.dias) || 15; // Padrão 15 dias sem pedir
@@ -336,8 +305,6 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
-<<<<<<< HEAD
-=======
     // ──────── APIs DE REGIÕES E FRETE ────────
     
     server.get('/api/regioes', async (req, res) => {
@@ -362,7 +329,6 @@ function startServer(mainWindow = null) {
         });
     });
 
->>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     server.get('/api/historico', async (req, res) => {
         try {
             const limite = parseInt(req.query.limite) || 200;
