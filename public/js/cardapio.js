@@ -4,6 +4,12 @@ const API_URL = 'http://localhost:3000/novo-pedido';
     let carrinho = []; // [{ id, nome, preco }]
     let idCounter = 0;
     let pagSelecionado = 'Pix';
+<<<<<<< HEAD
+=======
+    let tipoEntrega = 'Entrega';
+    let regioes = [];
+    let freteAtual = 0;
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 
     function addItem(nome, preco) {
         if (navigator.vibrate) navigator.vibrate(40);
@@ -50,10 +56,44 @@ const API_URL = 'http://localhost:3000/novo-pedido';
         document.getElementById('overlay').classList.add('open');
         document.getElementById('form-view').style.display = 'block';
         document.getElementById('success-view').style.display = 'none';
+<<<<<<< HEAD
+=======
+        carregarRegioes();
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         renderResumo();
         renderPagDetalhe();
     }
 
+<<<<<<< HEAD
+=======
+    async function carregarRegioes() {
+        try {
+            const resp = await fetch('/api/regioes');
+            regioes = await resp.json();
+            const sel = document.getElementById('sel-regiao');
+            if (sel) {
+                const valAnterior = sel.value;
+                sel.innerHTML = '<option value="" disabled selected>Selecione sua região...</option>';
+                regioes.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.textContent = `${r.nome} (${r.taxa.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`;
+                    opt.dataset.taxa = r.taxa;
+                    sel.appendChild(opt);
+                });
+                if (valAnterior) sel.value = valAnterior;
+            }
+        } catch (e) { console.error("Erro ao carregar regiões", e); }
+    }
+
+    function atualizarFrete() {
+        const sel = document.getElementById('sel-regiao');
+        const opt = sel.options[sel.selectedIndex];
+        freteAtual = opt ? parseFloat(opt.dataset.taxa || 0) : 0;
+        renderResumo();
+    }
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     function fecharCheckout() {
         document.getElementById('overlay').classList.remove('open');
     }
@@ -63,12 +103,34 @@ const API_URL = 'http://localhost:3000/novo-pedido';
     }
 
     function selecionarPag(btn) {
+<<<<<<< HEAD
         document.querySelectorAll('.pag-chip').forEach(b => b.classList.remove('selected'));
+=======
+        document.querySelectorAll('.pag-chip').forEach(b => {
+            if (b.parentElement.id !== 'entrega-chips') b.classList.remove('selected');
+        });
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         btn.classList.add('selected');
         pagSelecionado = btn.dataset.pag;
         renderPagDetalhe();
     }
 
+<<<<<<< HEAD
+=======
+    function selecionarEntrega(btn) {
+        document.querySelectorAll('#entrega-chips .pag-chip').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        tipoEntrega = btn.dataset.tipo;
+        document.getElementById('endereco-container').style.display = tipoEntrega === 'Entrega' ? 'block' : 'none';
+        if (tipoEntrega === 'Retirada') {
+            freteAtual = 0;
+        } else {
+            atualizarFrete();
+        }
+        renderResumo();
+    }
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     function renderPagDetalhe() {
         const container = document.getElementById('pag-detalhe-container');
         if (!container) return;
@@ -107,11 +169,32 @@ const API_URL = 'http://localhost:3000/novo-pedido';
             </div>
         `).join('');
 
+<<<<<<< HEAD
         const total = totalCarrinho().toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
         box.innerHTML = linhas + `
             <div class="resumo-row total-row">
                 <span>Total</span>
                 <strong>${total}</strong>
+=======
+        const totalProdutos = totalCarrinho();
+        const totalFinal = totalProdutos + freteAtual;
+
+        let resumoHtml = linhas;
+        
+        if (tipoEntrega === 'Entrega' && freteAtual > 0) {
+            resumoHtml += `
+                <div class="resumo-row" style="color: var(--text-muted); font-size: 0.9rem;">
+                    <span>Taxa de Entrega</span>
+                    <span>${freteAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                </div>
+            `;
+        }
+
+        box.innerHTML = resumoHtml + `
+            <div class="resumo-row total-row">
+                <span>Total</span>
+                <strong>${totalFinal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             </div>
         `;
     }
@@ -130,10 +213,21 @@ const API_URL = 'http://localhost:3000/novo-pedido';
             mensagem += `• ${item.nome} (${item.preco.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})%0A`;
         });
         
+<<<<<<< HEAD
         mensagem += `%0A*Total:* ${dados.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
         mensagem += `%0A*Pagamento:* ${dados.pagamento}%0A%0A`;
         
         mensagem += `_Confira os detalhes no painel: Pedido #${idPedido}_`;
+=======
+        mensagem += `%0A*Subtotal:* ${dados.subtotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+        if (dados.frete > 0) mensagem += `%0A*Frete:* ${dados.frete.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+        mensagem += `%0A*Total:* ${dados.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+        mensagem += `%0A*Pagamento:* ${dados.pagamento}%0A`;
+        mensagem += `%0A*Entrega:* ${dados.entrega}%0A`;
+        if (dados.endereco) mensagem += `*Endereço:* ${dados.endereco}%0A`;
+        
+        mensagem += `%0A_Confira os detalhes no painel: Pedido #${idPedido}_`;
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         
         const link = `https://wa.me/${numeroDono}?text=${encodeURIComponent(decodeURIComponent(mensagem))}`;
         window.open(link, '_blank');
@@ -149,9 +243,37 @@ const API_URL = 'http://localhost:3000/novo-pedido';
 
         if (!nome) { errBox.textContent = 'Por favor, informe seu nome.'; errBox.style.display = 'block'; return; }
         if (tel.length < 10) { errBox.textContent = 'Informe um WhatsApp válido com DDD.'; errBox.style.display = 'block'; return; }
+<<<<<<< HEAD
         if (!document.getElementById('chk-lgpd').checked) { errBox.textContent = 'Você precisa aceitar os termos de privacidade.'; errBox.style.display = 'block'; return; }
         if (!carrinho.length) { errBox.textContent = 'Seu carrinho está vazio.'; errBox.style.display = 'block'; return; }
 
+=======
+        
+        let enderecoCompleto = 'Retirada no Local';
+        if (tipoEntrega === 'Entrega') {
+            const sel = document.getElementById('sel-regiao');
+            const regiaoNome = sel.options[sel.selectedIndex]?.text.split(' (')[0];
+            if (!sel.value) {
+                errBox.textContent = 'Por favor, selecione sua região.';
+                errBox.style.display = 'block';
+                return;
+            }
+            const rua = document.getElementById('inp-rua').value.trim();
+            const ponto = document.getElementById('inp-bairro').value.trim();
+            if (!rua) {
+                errBox.textContent = 'Por favor, informe seu endereço.';
+                errBox.style.display = 'block';
+                return;
+            }
+            enderecoCompleto = `${rua} - ${regiaoNome}${ponto ? ' (Ref: ' + ponto + ')' : ''}`;
+        }
+
+        if (!document.getElementById('chk-lgpd').checked) { errBox.textContent = 'Você precisa aceitar os termos de privacidade.'; errBox.style.display = 'block'; return; }
+        if (!carrinho.length) { errBox.textContent = 'Seu carrinho está vazio.'; errBox.style.display = 'block'; return; }
+
+        const totalFinal = totalCarrinho() + freteAtual;
+        
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         let pagamentoStr = pagSelecionado;
         if (pagSelecionado === 'Dinheiro') {
             const troco = document.getElementById('inp-troco')?.value.trim();
@@ -165,9 +287,16 @@ const API_URL = 'http://localhost:3000/novo-pedido';
         payload.append('nome', nome);
         payload.append('telefone', tel);
         payload.append('pedido', carrinho.map(i => i.nome).join(', '));
+<<<<<<< HEAD
         payload.append('total', totalCarrinho());
         payload.append('pagamento', pagamentoStr);
         payload.append('origem', 'Site');
+=======
+        payload.append('total', totalFinal);
+        payload.append('pagamento', pagamentoStr);
+        payload.append('origem', 'Site');
+        payload.append('endereco', enderecoCompleto);
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 
         const btn = document.getElementById('btn-confirmar');
         // Validação de Comprovante PIX
@@ -196,8 +325,17 @@ const API_URL = 'http://localhost:3000/novo-pedido';
             const dadosZap = {
                 nome,
                 telefone: tel,
+<<<<<<< HEAD
                 total: totalCarrinho(),
                 pagamento: pagamentoStr,
+=======
+                subtotal: totalCarrinho(),
+                frete: freteAtual,
+                total: totalCarrinho() + freteAtual,
+                pagamento: pagamentoStr,
+                entrega: tipoEntrega,
+                endereco: tipoEntrega === 'Entrega' ? enderecoCompleto : null,
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                 itens: [...carrinho]
             };
 

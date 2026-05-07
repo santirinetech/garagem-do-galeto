@@ -1,3 +1,15 @@
+<<<<<<< HEAD
+=======
+// ── SSE: ATUALIZAÇÃO EM TEMPO REAL ──────────────────────
+const eventSource = new EventSource('/api/events');
+eventSource.onmessage = (e) => {
+    if (e.data === 'update') {
+        console.log('⚡ Atualização recebida via SSE');
+        carregarTudo();
+    }
+};
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 // ── AUTENTICAÇÃO E SESSÃO ─────────────────────────────
 async function verificarSessao() {
     try {
@@ -34,6 +46,59 @@ function showView(name, el) {
     carregarTudo();
 }
 
+<<<<<<< HEAD
+=======
+// ── GESTÃO DE REGIÕES ────────────────────────────────
+async function carregarRegioesDash() {
+    try {
+        const resp = await fetch('/api/regioes');
+        const regioes = await resp.json();
+        const tbody = document.getElementById('tbody-regioes');
+        tbody.innerHTML = regioes.map(r => `
+            <tr>
+                <td><strong>${r.nome}</strong></td>
+                <td>${fmtReal(r.taxa)}</td>
+                <td>
+                    <button class="btn btn-ghost btn-small" style="color:var(--red);" onclick="excluirRegiao(${r.id})">
+                        <span class="material-icons-round icon-small">delete</span> Excluir
+                    </button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-muted);">Nenhuma região cadastrada.</td></tr>';
+    } catch (e) { console.error(e); }
+}
+
+async function novaRegiao() {
+    const nome = prompt("Nome da Região/Bairro:");
+    if (!nome) return;
+    const taxa = prompt("Valor da Taxa de Entrega (Ex: 5.50):");
+    if (taxa === null) return;
+
+    try {
+        const resp = await fetch('/api/regioes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, taxa: taxa.replace(',', '.') })
+        });
+        if (resp.ok) {
+            showToast("Região cadastrada com sucesso!");
+            carregarRegioesDash();
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function excluirRegiao(id) {
+    if (!confirm("Tem certeza que deseja excluir esta região?")) return;
+    try {
+        const resp = await fetch('/api/regioes/' + id, { method: 'DELETE' });
+        if (resp.ok) {
+            showToast("Região removida.");
+            carregarRegioesDash();
+        }
+    } catch (e) { console.error(e); }
+}
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 // ── STATUS ──────────────────────────────────────────
 const STATUS_OPTS = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
 
@@ -121,6 +186,25 @@ function tocarCampainha() {
 // ── IMPRESSÃO TÉRMICA ───────────────────────────────
 function imprimirComanda(id) {
     fetch('/api/pedido/' + id).then(r => r.json()).then(p => {
+<<<<<<< HEAD
+=======
+        // Se estivermos no Electron, usamos a impressão térmica silenciosa
+        if (window.electronAPI) {
+            window.electronAPI.solicitarImpressao({
+                id: p.id,
+                nome: p.cliente_nome,
+                telefone: p.cliente_tel,
+                pedido: p.pedido_desc,
+                total: p.total,
+                pagamento: p.forma_pagamento,
+                endereco: p.endereco
+            });
+            showToast(`Impressão enviada: Pedido #${id}`);
+            return;
+        }
+
+        // Fallback para navegador comum (abre diálogo de impressão)
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         const pdesc = p.pedido_desc.replace(/,/g, '<br>• ');
         const num = (p.cliente_tel || '').replace(/\D/g, '');
         const html = `
@@ -131,6 +215,10 @@ function imprimirComanda(id) {
             <div><strong>Cliente:</strong> ${p.cliente_nome}</div>
             <div><strong>Tel:</strong> ${num}</div>
             <div><strong>Canal:</strong> ${p.origem}</div>
+<<<<<<< HEAD
+=======
+            <div style="margin-top:5px;"><strong>Entrega:</strong> ${p.endereco || 'Retirada'}</div>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             <div class="print-line"></div>
             <div><strong>ITENS:</strong></div>
             <div style="margin: 5px 0 10px;">• ${pdesc}</div>
@@ -140,12 +228,25 @@ function imprimirComanda(id) {
                 <strong>${fmtReal(p.total)}</strong>
             </div>
             <div style="margin-top:10px; font-size:14px;"><strong>Pgto:</strong> ${p.forma_pagamento}</div>
+<<<<<<< HEAD
             <div class="print-line"></div>
             <div style="text-align:center; font-size:12px; margin-top:10px; font-weight:bold;">Obrigado pela prefeência!</div>
             <div style="text-align:center; font-size:10px; margin-top:5px;">Santirine Tech</div>
         `;
         document.getElementById('print-area').innerHTML = html;
         window.print();
+=======
+            <div style="text-align:center; font-size:12px; margin-top:10px; font-weight:bold;">Obrigado pela prefeência!</div>
+            <div style="text-align:center; font-size:10px; margin-top:5px;">Santirine Tech</div>
+        `;
+        const printArea = document.getElementById('print-area');
+        if (printArea) {
+            printArea.innerHTML = html;
+            window.print();
+        } else {
+            console.error('Erro: print-area não encontrada no HTML');
+        }
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     });
 }
 
@@ -157,6 +258,10 @@ async function carregarTudo() {
     if (view === 'estoque')    await carregarEstoque();
     if (view === 'historico')  await carregarHistorico();
     if (view === 'clientes')   await carregarClientes();
+<<<<<<< HEAD
+=======
+    if (view === 'config')     await carregarRegioesDash();
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     
     // Sempre atualiza badge de pendentes
     try {
@@ -189,12 +294,33 @@ async function carregarDashboard() {
         const abertos = (pedidos || []).filter(p => p.status !== 'Entregue' && p.status !== 'Cancelado');
         const tbody = document.getElementById('tbody-abertos');
 
+<<<<<<< HEAD
         // Lógica da Campainha Integrada
+=======
+        // Lógica de Campainha e Impressão Automática
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         if (abertos.length > 0) {
             const maiorId = Math.max(...abertos.map(p => p.id));
             if (lastHighestId !== 0 && maiorId > lastHighestId) {
                 tocarCampainha();
                 showToast('🔔 NOVO PEDIDO CHEGOU!');
+<<<<<<< HEAD
+=======
+                
+                // Impressão Automática (Somente se estiver no Electron)
+                if (window.electronAPI) {
+                    const novoPedido = abertos.find(p => p.id === maiorId);
+                    window.electronAPI.solicitarImpressao({
+                        id: novoPedido.id,
+                        nome: novoPedido.cliente_nome,
+                        telefone: novoPedido.cliente_tel,
+                        pedido: novoPedido.pedido_desc,
+                        total: novoPedido.total,
+                        pagamento: novoPedido.forma_pagamento,
+                        endereco: novoPedido.endereco
+                    });
+                }
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             }
             if (maiorId > lastHighestId) lastHighestId = maiorId;
         }
@@ -232,6 +358,12 @@ async function carregarDashboard() {
                         ${p.forma_pagamento || '—'}
                         ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" class="btn-link-small">Ver Comprovante</a>` : ''}
                     </td>
+<<<<<<< HEAD
+=======
+                    <td style="max-width:150px; font-size:0.85rem; color:var(--text-muted);">
+                        ${p.endereco || '—'}
+                    </td>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                     <td><strong>${fmtReal(p.total)}</strong></td>
                     <td>
                         <div class="flex-col-gap">
@@ -287,6 +419,10 @@ async function carregarTodos() {
                     ${p.forma_pagamento || '—'}
                     ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" style="font-size:0.75rem; color:var(--blue); font-weight:700;">Ver Comprovante</a>` : ''}
                 </td>
+<<<<<<< HEAD
+=======
+                <td style="font-size:0.85rem;">${p.endereco || '—'}</td>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:6px;">
@@ -441,6 +577,10 @@ async function carregarHistorico() {
                     <div class="cliente-tel">${p.cliente_tel || ''}</div>
                 </td>
                 <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
+<<<<<<< HEAD
+=======
+                <td>${p.endereco || '—'}</td>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>${statusBadge(p.status)}</td>
             </tr>

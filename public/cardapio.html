@@ -203,6 +203,40 @@
                 <input type="tel" id="inp-tel" class="form-input" placeholder="Ex: 27 99999-9999" autocomplete="tel">
             </div>
 
+<<<<<<< HEAD
+=======
+            <!-- Entrega ou Retirada -->
+            <div class="form-group">
+                <label class="form-label">Como deseja receber? *</label>
+                <div class="pag-chips" id="entrega-chips">
+                    <button class="pag-chip selected" data-tipo="Entrega" onclick="selecionarEntrega(this)">
+                        <span>🛵</span> Entrega
+                    </button>
+                    <button class="pag-chip" data-tipo="Retirada" onclick="selecionarEntrega(this)">
+                        <span>🏬</span> Retirada
+                    </button>
+                </div>
+            </div>
+
+            <!-- Campos de Endereço (Ocultos se for Retirada) -->
+            <div id="endereco-container">
+                <div class="form-group">
+                    <label class="form-label">Região / Bairro *</label>
+                    <select id="sel-regiao" class="form-input" onchange="atualizarFrete()">
+                        <option value="" disabled selected>Selecione sua região...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Endereço de Entrega *</label>
+                    <input type="text" id="inp-rua" class="form-input" placeholder="Rua e Número">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ponto de Referência</label>
+                    <input type="text" id="inp-bairro" class="form-input" placeholder="Ex: Próximo ao banco">
+                </div>
+            </div>
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
             <!-- Pagamento -->
             <div class="form-group">
                 <label class="form-label">Forma de pagamento *</label>

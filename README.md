@@ -16,7 +16,12 @@ Sistema enxuto e escalável projetado para a gestão de uma galeteria, integrand
 
 ### Infraestrutura
 - **PM2**: Gerenciador de processos para manter o sistema online 24/7 na VPS.
+<<<<<<< HEAD
 - **WhatsApp Integration**: Fluxo de transição Web para WhatsApp utilizando Deep Links (sem custo de API).
+=======
+- **WhatsApp Automation**: Integração via Webhooks (n8n/Evolution API) para notificações automáticas de status.
+- **Thermal Printing**: Impressão automática de pedidos via Electron.
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 
 ---
 
@@ -39,15 +44,33 @@ Para testar o fluxo de pedidos e o Dashboard no navegador:
    npm run server
    ```
 2. Acesse no navegador:
+<<<<<<< HEAD
    - **Cardápio/Pedido**: `http://localhost:3000/cardapio.html`
    - **Dashboard/Gestão**: `http://localhost:3000/index.html`
 
 ### Execução Desktop (Modo Electron)
 Para usar o sistema como um aplicativo dedicado:
+=======
+   - **Dashboard/Gestão**: `http://localhost:3000` (Redireciona para o Painel)
+   - **Cardápio/Pedido**: `http://localhost:3000/cardapio.html`
+
+### Execução Desktop (Modo Electron)
+Para usar o sistema como um aplicativo dedicado com **impressão automática**:
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 ```bash
 npm start
 ```
 
+<<<<<<< HEAD
+=======
+### Gerar Instalador (.exe)
+Para criar o arquivo instalador para Windows:
+```bash
+npm run dist
+```
+O arquivo será gerado na pasta `/dist`.
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 ---
 
 ## 📋 Levantamento de Requisitos

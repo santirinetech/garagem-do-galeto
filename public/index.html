@@ -38,6 +38,12 @@
         <div class="nav-item" onclick="showView('clientes', this)">
             <span class="material-icons-round">people</span> Clientes (LGPD)
         </div>
+<<<<<<< HEAD
+=======
+        <div class="nav-item" onclick="showView('config', this)">
+            <span class="material-icons-round">settings</span> Configurações
+        </div>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
     </nav>
 
     <div class="sidebar-footer">
@@ -59,7 +65,11 @@
             <button class="btn btn-ghost" onclick="carregarTudo()">
                 <span class="material-icons-round icon-small">refresh</span> Atualizar
             </button>
+<<<<<<< HEAD
             <button class="btn btn-primary" onclick="window.open('http://168.75.84.230:3000/cardapio.html','_blank')">
+=======
+            <button class="btn btn-primary" onclick="window.open('http://localhost:3000/cardapio.html','_blank')">
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                 <span class="material-icons-round icon-small">open_in_new</span> Cardápio
             </button>
         </div>
@@ -104,6 +114,10 @@
                         <th>Cliente</th>
                         <th>Pedido</th>
                         <th>Pagamento</th>
+<<<<<<< HEAD
+=======
+                        <th>Endereço</th>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                         <th>Total</th>
                         <th>Status</th>
                     </tr>
@@ -129,6 +143,10 @@
                         <th>Cliente</th>
                         <th>Pedido</th>
                         <th>Pagamento</th>
+<<<<<<< HEAD
+=======
+                        <th>Endereço</th>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                         <th>Total</th>
                         <th>Status</th>
                     </tr>
@@ -185,6 +203,10 @@
                         <th>Origem</th>
                         <th>Cliente</th>
                         <th>Pedido</th>
+<<<<<<< HEAD
+=======
+                        <th>Endereço</th>
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
                         <th>Total</th>
                         <th>Status</th>
                     </tr>
@@ -194,6 +216,31 @@
         </div>
     </div>
 
+<<<<<<< HEAD
+=======
+    <!-- ═══ VIEW: CONFIGURAÇÕES ═══ -->
+    <div class="view" id="view-config">
+        <div class="card card-spaced">
+            <div class="card-header">
+                <span class="card-title">Taxas de Entrega por Região</span>
+                <button class="btn btn-primary" onclick="novaRegiao()">
+                    <span class="material-icons-round icon-small">add</span> Nova Região
+                </button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Região</th>
+                        <th>Taxa de Entrega</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-regioes"></tbody>
+            </table>
+        </div>
+    </div>
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 </div><!-- .main -->
 
 <!-- TOAST -->
@@ -202,6 +249,11 @@
     <span id="toast-msg">Novo pedido recebido!</span>
 </div>
 
+<<<<<<< HEAD
+=======
+<div id="print-area"></div>
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
 <script src="js/dashboard.js"></script>
 </body>
 </html>

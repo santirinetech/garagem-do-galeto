@@ -16,9 +16,19 @@ function initDb() {
             origem TEXT,
             status TEXT DEFAULT 'Pendente',
             data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+<<<<<<< HEAD
             comprovante TEXT
         )`, (err) => {
             if (!err) db.run("ALTER TABLE pedidos ADD COLUMN comprovante TEXT", () => {});
+=======
+            comprovante TEXT,
+            endereco TEXT
+        )`, (err) => {
+            if (!err) {
+                db.run("ALTER TABLE pedidos ADD COLUMN comprovante TEXT", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN endereco TEXT", () => {});
+            }
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         });
 
         db.run(`CREATE TABLE IF NOT EXISTS estoque (
@@ -43,6 +53,25 @@ function initDb() {
             ultimo_pedido DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
+<<<<<<< HEAD
+=======
+        db.run(`CREATE TABLE IF NOT EXISTS regioes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT UNIQUE,
+            taxa REAL DEFAULT 0
+        )`, () => {
+            // Inserir regiões iniciais se vazio
+            db.get("SELECT count(*) as qtd FROM regioes", (err, row) => {
+                if (row && row.qtd === 0) {
+                    const stmt = db.prepare("INSERT INTO regioes (nome, taxa) VALUES (?, ?)");
+                    const initial = [['Centro', 5], ['Bairro Norte', 8], ['Bairro Sul', 10]];
+                    initial.forEach(r => stmt.run(r));
+                    stmt.finalize();
+                }
+            });
+        });
+
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
         db.run(`CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario TEXT UNIQUE,
@@ -90,4 +119,17 @@ function queryOne(sql, params = []) {
     });
 }
 
+<<<<<<< HEAD
 module.exports = { db, query, queryOne };
+=======
+function run(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function(err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
+}
+
+module.exports = { db, query, queryOne, run };
+>>>>>>> f353b28 (Atualizações no no sistema da galeteria: página de login, integração para impressões, status, politica de privacidade)
