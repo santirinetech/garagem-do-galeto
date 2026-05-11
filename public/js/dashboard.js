@@ -4,8 +4,50 @@ eventSource.onmessage = (e) => {
     if (e.data === 'update') {
         console.log('⚡ Atualização recebida via SSE');
         carregarTudo();
+        return;
     }
+    
+    try {
+        const evt = JSON.parse(e.data);
+        if (evt.type === 'qr') {
+            document.getElementById('wpp-qr-container').innerHTML = `<img src="${evt.data}" style="width: 200px; height: 200px; border-radius: 10px;">`;
+            document.getElementById('wpp-status-pill').textContent = 'Aguardando Leitura do QR...';
+            document.getElementById('wpp-status-pill').style.background = 'var(--amber)';
+        } else if (evt.type === 'whatsapp-ready') {
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round" style="color: var(--green); font-size: 80px;">check_circle</span>`;
+            document.getElementById('wpp-status-pill').textContent = 'Conectado (Online)';
+            document.getElementById('wpp-status-pill').style.background = 'var(--green)';
+            showToast("WhatsApp Bot Conectado!");
+        } else if (evt.type === 'whatsapp-disconnected') {
+            document.getElementById('wpp-qr-container').innerHTML = `<span style="color: var(--red); font-size: 0.8rem; text-align: center; padding: 10px;">Desconectado.<br>Aguarde novo QR Code...</span>`;
+            document.getElementById('wpp-status-pill').textContent = 'Desconectado';
+            document.getElementById('wpp-status-pill').style.background = 'var(--red)';
+        }
+    } catch(err) {}
 };
+
+async function checkWppStatus() {
+    try {
+        const res = await fetch('/api/whatsapp/status');
+        const status = await res.json();
+        
+        if (status.isReady) {
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round" style="color: var(--green); font-size: 80px;">check_circle</span>`;
+            document.getElementById('wpp-status-pill').textContent = 'Conectado (Online)';
+            document.getElementById('wpp-status-pill').style.background = 'var(--green)';
+        } else if (status.qrCodeDataUrl) {
+            document.getElementById('wpp-qr-container').innerHTML = `<img src="${status.qrCodeDataUrl}" style="width: 200px; height: 200px; border-radius: 10px;">`;
+            document.getElementById('wpp-status-pill').textContent = 'Aguardando Leitura do QR...';
+            document.getElementById('wpp-status-pill').style.background = 'var(--amber)';
+        } else {
+            document.getElementById('wpp-qr-container').innerHTML = `<span style="color: black; font-size: 0.8rem; text-align: center; padding: 10px;">Aguarde, gerando...</span>`;
+        }
+    } catch(e) {}
+}
+
+// Call on startup
+setTimeout(checkWppStatus, 2000);
+
 
 // ── AUTENTICAÇÃO E SESSÃO ─────────────────────────────
 async function verificarSessao() {
@@ -113,7 +155,7 @@ async function excluirRegiao(id) {
 }
 
 // ── STATUS ──────────────────────────────────────────
-const STATUS_OPTS = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
+const STATUS_OPTS = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Pronto para Retirada', 'Entregue', 'Retirado', 'Cancelado'];
 
 function statusSelectHTML(pedidoId, current) {
     const opts = STATUS_OPTS.map(s =>
@@ -133,40 +175,10 @@ async function mudarStatus(id, status) {
         if (resp.ok) {
             showToast(`Pedido #${id} → ${status}`);
             carregarTudo();
-            
-            // Pergunta se quer avisar o cliente
-            if (['Preparando', 'Saiu para Entrega', 'Entregue'].includes(status)) {
-                // Pequeno delay para o carregarTudo atualizar a tela
-                setTimeout(() => {
-                    if (confirm(`Deseja avisar o cliente sobre o status "${status}" via WhatsApp?`)) {
-                        notificarCliente(id, status);
-                    }
-                }, 500);
-            }
         }
     } catch (e) {
         console.error(e);
     }
-}
-
-function notificarCliente(id, status) {
-    fetch('/api/pedido/' + id).then(r => r.json()).then(p => {
-        const num = (p.cliente_tel || '').replace(/\D/g, '');
-        let msg = "";
-        
-        if (status === 'Preparando') {
-            msg = `Olá ${p.cliente_nome}! Seu pedido #${p.id} já está sendo preparado com muito carinho aqui na Garagem do Galeto! 🔥`;
-        } else if (status === 'Saiu para Entrega') {
-            msg = `Boas notícias, ${p.cliente_nome}! Seu pedido #${p.id} acabou de sair para entrega e logo chegará até você! 🛵💨`;
-        } else if (status === 'Entregue') {
-            msg = `Pedido #${p.id} entregue! Esperamos que aproveite sua refeição. Se puder, nos conte o que achou! Obrigado pela preferência. 🍗✨`;
-        } else {
-            msg = `Olá ${p.cliente_nome}, o status do seu pedido #${p.id} foi atualizado para: ${status}.`;
-        }
-
-        const link = `https://wa.me/55${num}?text=${encodeURIComponent(msg)}`;
-        window.open(link, '_blank');
-    });
 }
 
 // ── RENDER HELPERS ──────────────────────────────────
@@ -178,7 +190,7 @@ function origemBadge(origem) {
 
 function statusBadge(status) {
     const cls = 's-' + status.replace(/ /g, '-');
-    const dots = { Pendente:'●', Visto:'👁', Preparando:'◐', 'Saiu para Entrega':'🛵', Entregue:'✔', Cancelado:'✖' };
+    const dots = { Pendente:'●', Visto:'👁', Preparando:'◐', 'Saiu para Entrega':'🛵', 'Pronto para Retirada':'🛍️', Entregue:'✔', Retirado:'🤝', Cancelado:'✖' };
     return `<span class="status-pill ${cls}">${dots[status] || '●'} ${status}</span>`;
 }
 
@@ -611,3 +623,57 @@ document.querySelector('.sidebar-logout')?.addEventListener('click', (e) => {
     e.preventDefault();
     logout();
 });
+
+// ── PEDIDO MANUAL ─────────────────────────────────────
+function abrirModalPedidoManual() {
+    document.getElementById('modal-pedido-manual').style.display = 'flex';
+}
+
+function fecharModalPedidoManual(e) {
+    if (e.target.id === 'modal-pedido-manual') {
+        document.getElementById('modal-pedido-manual').style.display = 'none';
+    }
+}
+
+async function salvarPedidoManual() {
+    const nome = document.getElementById('manual-nome').value.trim();
+    const tel = document.getElementById('manual-tel').value.trim();
+    const pedido = document.getElementById('manual-pedido').value.trim();
+    const total = parseFloat(document.getElementById('manual-total').value);
+    const pagamento = document.getElementById('manual-pagamento').value;
+    const endereco = document.getElementById('manual-endereco').value.trim() || 'Retirada no Local';
+
+    if (!nome || !pedido || isNaN(total)) {
+        alert("Preencha Nome, Pedido e Valor Total.");
+        return;
+    }
+
+    const payload = new FormData();
+    payload.append('nome', nome);
+    payload.append('telefone', tel);
+    payload.append('pedido', pedido);
+    payload.append('total', total);
+    payload.append('pagamento', pagamento);
+    payload.append('origem', 'WhatsApp'); // Sempre WhatsApp para os manuais
+    payload.append('endereco', endereco);
+
+    try {
+        const resp = await fetch('/api/novo-pedido', { method: 'POST', body: payload });
+        if (resp.ok) {
+            showToast("Pedido Manual Lançado!");
+            document.getElementById('modal-pedido-manual').style.display = 'none';
+            // Limpa os campos
+            document.getElementById('manual-nome').value = '';
+            document.getElementById('manual-tel').value = '';
+            document.getElementById('manual-pedido').value = '';
+            document.getElementById('manual-total').value = '';
+            document.getElementById('manual-endereco').value = '';
+            carregarTudo();
+        } else {
+            alert("Erro ao lançar pedido.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Erro de conexão.");
+    }
+}

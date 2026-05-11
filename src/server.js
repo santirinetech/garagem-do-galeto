@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const { db, query, queryOne, run } = require('./database');
+const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('./whatsapp-bot');
 
 // ── SSE: Atualização em tempo real ──────────────────────────
 let clients = [];
@@ -95,6 +96,18 @@ function startServer(mainWindow = null) {
         req.on('close', () => {
             clients = clients.filter(c => c.id !== clientId);
         });
+    });
+
+    // ──────── INICIALIZAÇÃO DO WHATSAPP BOT ────────
+    const broadcastWppEvent = (evt) => {
+        clients.forEach(c => {
+            try { c.res.write(`data: ${JSON.stringify(evt)}\n\n`); } catch(e) {}
+        });
+    };
+    initWhatsApp(db, emitUpdate, broadcastWppEvent);
+
+    server.get('/api/whatsapp/status', (req, res) => {
+        res.json(getBotStatus());
     });
 
     // ──────── APIs DE AUTENTICAÇÃO ────────
@@ -193,23 +206,38 @@ function startServer(mainWindow = null) {
     server.patch('/pedido/:id/status', (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
-        const validos = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Entregue', 'Cancelado'];
+        const validos = ['Pendente', 'Visto', 'Preparando', 'Saiu para Entrega', 'Pronto para Retirada', 'Entregue', 'Retirado', 'Cancelado'];
         if (!validos.includes(status)) return res.status(400).json({ erro: 'Status inválido' });
 
         db.run("UPDATE pedidos SET status = ? WHERE id = ?", [status, id], function (err) {
             if (err) return res.status(500).json({ erro: err.message });
             
-            // Disparo de Webhook para o n8n
-            // A porta padrão do n8n local é 5678. Ajuste se o n8n estiver na nuvem.
-            const N8N_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/galeto-status'; 
-            
             queryOne("SELECT * FROM pedidos WHERE id = ?", [id]).then(pedido => {
                 if (pedido) {
+                    // Notificação por WhatsApp Bot (Automática)
+                    if (['Preparando', 'Saiu para Entrega', 'Entregue', 'Pronto para Retirada', 'Retirado'].includes(status) && pedido.cliente_tel) {
+                        let msg = "";
+                        if (status === 'Preparando') {
+                            msg = `Olá ${pedido.cliente_nome}! Seu pedido #${pedido.id} já está sendo preparado com muito carinho aqui na Garagem do Galeto! 🔥`;
+                        } else if (status === 'Saiu para Entrega') {
+                            msg = `Boas notícias, ${pedido.cliente_nome}! Seu pedido #${pedido.id} acabou de sair para entrega e logo chegará até você! 🛵💨`;
+                        } else if (status === 'Entregue') {
+                            msg = `Pedido #${pedido.id} entregue! Esperamos que aproveite sua refeição. Se puder, nos conte o que achou! Obrigado pela preferência. 🍗✨`;
+                        } else if (status === 'Pronto para Retirada') {
+                            msg = `Olá ${pedido.cliente_nome}! Seu pedido #${pedido.id} já está PRONTO para retirada! Pode vir buscar o seu Galeto quentinho! 🏃‍♂️💨`;
+                        } else if (status === 'Retirado') {
+                            msg = `Pedido #${pedido.id} retirado com sucesso! Bom apetite e muito obrigado pela preferência! 🍗✨`;
+                        }
+                        enviarMensagemPainel(pedido.cliente_tel, msg);
+                    }
+
+                    // Disparo n8n antigo (mantido por compatibilidade)
+                    const N8N_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/galeto-status'; 
                     fetch(N8N_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pedido)
-                    }).catch(e => console.error('Aviso: n8n offline ou url incorreta', e.message));
+                    }).catch(e => {});
                 }
             });
 
@@ -223,7 +251,7 @@ function startServer(mainWindow = null) {
 
     server.get('/api/pedidos/hoje', async (req, res) => {
         try {
-            const rows = await query("SELECT * FROM pedidos WHERE date(data_hora) = date('now','localtime') ORDER BY id DESC");
+            const rows = await query("SELECT * FROM pedidos WHERE date(data_hora, 'localtime') = date('now','localtime') ORDER BY id DESC");
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
@@ -235,13 +263,13 @@ function startServer(mainWindow = null) {
                     count(*)                                              AS total_pedidos,
                     COALESCE(sum(total), 0)                              AS faturamento,
                     sum(CASE WHEN origem  = 'Site'      THEN 1 ELSE 0 END) AS pedidos_site,
-                    sum(CASE WHEN origem  = 'WhatsApp'  THEN 1 ELSE 0 END) AS pedidos_zap,
+                    sum(CASE WHEN origem LIKE 'WhatsApp%' THEN 1 ELSE 0 END) AS pedidos_zap,
                     sum(CASE WHEN status  = 'Pendente'  THEN 1 ELSE 0 END) AS pendentes,
                     sum(CASE WHEN status  = 'Preparando'THEN 1 ELSE 0 END) AS em_preparo,
                     sum(CASE WHEN status  = 'Saiu para Entrega'    THEN 1 ELSE 0 END) AS prontos,
                     sum(CASE WHEN status  = 'Entregue'  THEN 1 ELSE 0 END) AS entregues
                 FROM pedidos
-                WHERE date(data_hora) = date('now','localtime')
+                WHERE date(data_hora, 'localtime') = date('now','localtime')
             `);
             res.json(row);
         } catch (e) { res.status(500).json({erro: e.message}); }
@@ -272,7 +300,7 @@ function startServer(mainWindow = null) {
 
     server.get('/api/despesas/hoje', async (req, res) => {
         try {
-            const rows = await query("SELECT * FROM despesas WHERE date(data_hora) = date('now','localtime') ORDER BY id DESC");
+            const rows = await query("SELECT * FROM despesas WHERE date(data_hora, 'localtime') = date('now','localtime') ORDER BY id DESC");
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
     });

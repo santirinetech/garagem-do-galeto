@@ -8,3 +8,6 @@ build/
 *.zip
 node_modules/
 .env
+# WhatsApp Web.js
+.wwebjs_auth/
+.wwebjs_cache/public/uploads/*

@@ -155,6 +155,59 @@
     let regioes = [];
     let freteAtual = 0;
 
+    // ── ESTOQUE ──
+    async function carregarEstoqueCardapio() {
+        try {
+            const res = await fetch('/api/estoque');
+            const itens = await res.json();
+            if (!itens) return;
+            
+            const estoqueMap = {};
+            itens.forEach(it => {
+                estoqueMap[it.item] = it.quantidade;
+            });
+            
+            document.querySelectorAll('.produto').forEach(el => {
+                const nome = el.querySelector('.prod-nome').textContent;
+                let qtd = null;
+                
+                if (nome.includes('Galeto')) qtd = estoqueMap['Galetos'];
+                if (nome.includes('Salpicão')) qtd = estoqueMap['Salpicão'];
+                if (nome.includes('Feijão Tropeiro')) qtd = estoqueMap['Feijão Tropeiro'];
+                if (nome.includes('Suco')) qtd = estoqueMap['Suco'];
+                if (nome.includes('Refrigerante')) qtd = estoqueMap['Refrigerante'];
+                
+                if (qtd !== null && qtd !== undefined) {
+                    const btn = el.querySelector('.btn-add');
+                    const imgWrap = el.querySelector('.prod-img-wrap');
+                    
+                    const oldBadge = imgWrap.querySelector('.stock-badge');
+                    if(oldBadge) oldBadge.remove();
+                    
+                    if (qtd === 0) {
+                        const b = document.createElement('div');
+                        b.className = 'stock-badge esgotado';
+                        b.textContent = '🚫 ESGOTADO';
+                        imgWrap.appendChild(b);
+                        
+                        btn.classList.add('disabled');
+                        // Override onclick
+                        btn.setAttribute('onclick', "alert('Item esgotado no momento!');");
+                    } else if (qtd <= 5) {
+                        const b = document.createElement('div');
+                        b.className = 'stock-badge';
+                        b.textContent = '🔥 ÚLTIMAS UNIDADES';
+                        imgWrap.appendChild(b);
+                    }
+                }
+            });
+        } catch(e) {
+            console.error('Erro ao carregar estoque', e);
+        }
+    }
+    
+    window.addEventListener('DOMContentLoaded', carregarEstoqueCardapio);
+
     // ── CORE ──
     function addItem(nome, preco) {
         carrinho.push({ id: Date.now() + Math.random(), nome, preco });

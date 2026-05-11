@@ -290,3 +290,42 @@ header {
     .produto { gap: 12px; }
     .prod-img-wrap { width: 80px; height: 80px; }
 }
+
+/* ── STOCK ALERTS ── */
+.stock-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--brand-red);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 4px 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px var(--brand-glow);
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: pulse 2s infinite;
+}
+
+.stock-badge.esgotado {
+    background: #555;
+    color: #ccc;
+    box-shadow: none;
+    border-color: #333;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.produto { position: relative; }
+
+.btn-add.disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}

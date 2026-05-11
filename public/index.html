@@ -59,6 +59,9 @@
         <div class="topbar-right">
             <div class="live-dot"></div>
             <span class="live-label">Ao vivo</span>
+            <button class="btn btn-primary" style="background-color: var(--green); border-color: var(--green);" onclick="abrirModalPedidoManual()">
+                <span class="material-icons-round icon-small">add_circle</span> Lançar Pedido
+            </button>
             <button class="btn btn-ghost" onclick="carregarTudo()">
                 <span class="material-icons-round icon-small">refresh</span> Atualizar
             </button>
@@ -202,6 +205,30 @@
 
     <!-- ═══ VIEW: CONFIGURAÇÕES ═══ -->
     <div class="view" id="view-config">
+        <div class="card card-spaced" style="background: var(--bg-1); border-color: var(--green);">
+            <div class="card-header" style="justify-content: space-between;">
+                <span class="card-title" style="color: var(--green);">🤖 Robô do WhatsApp (Atendimento Automático)</span>
+                <span class="status-pill" id="wpp-status-pill" style="background: var(--ink-2); color: white;">Desconectado</span>
+            </div>
+            <div class="card-padded" style="display: flex; gap: 20px; align-items: center;">
+                <div id="wpp-qr-container" style="min-width: 200px; min-height: 200px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <span style="color: black; font-size: 0.8rem; text-align: center; padding: 10px;">Carregando QR Code...<br>Aguarde ou atualize.</span>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 10px;">Instruções:</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                        1. Abra o WhatsApp no seu celular da loja.<br>
+                        2. Vá em <strong>Aparelhos Conectados</strong> > <strong>Conectar um aparelho</strong>.<br>
+                        3. Aponte a câmera para o QR Code ao lado.<br>
+                        4. O sistema ficará online e responderá seus clientes automaticamente!
+                    </p>
+                    <button class="btn btn-primary" style="background-color: var(--green); border-color: var(--green);" onclick="checkWppStatus()">
+                        <span class="material-icons-round icon-small">refresh</span> Atualizar Status
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="card card-spaced">
             <div class="card-header">
                 <span class="card-title">Adicionar Nova Região</span>
@@ -249,6 +276,44 @@
 </div>
 
 <div id="print-area"></div>
+
+<!-- MODAL PEDIDO MANUAL -->
+<div class="overlay" id="modal-pedido-manual" onclick="fecharModalPedidoManual(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:100%; max-width:500px; padding:20px; background:var(--bg-1); max-height: 90vh; overflow-y: auto;">
+        <div class="card-header" style="justify-content:space-between; margin-bottom:15px;">
+            <span class="card-title">Lançar Pedido Manual (WhatsApp)</span>
+            <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-pedido-manual').style.display='none'">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">NOME DO CLIENTE</label>
+        <input type="text" id="manual-nome" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: João Silva">
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">TELEFONE / WHATSAPP</label>
+        <input type="tel" id="manual-tel" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="(00) 00000-0000">
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">DESCRIÇÃO DO PEDIDO (ITENS)</label>
+        <input type="text" id="manual-pedido" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: 1 Galeto, 1 Salpicão">
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">VALOR TOTAL (R$)</label>
+        <input type="number" id="manual-total" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="0.00" step="0.01">
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">FORMA DE PAGAMENTO</label>
+        <select id="manual-pagamento" class="status-select" style="width:100%; height:40px; margin-bottom:15px;">
+            <option value="Pix">Pix</option>
+            <option value="Cartão">Cartão</option>
+            <option value="Dinheiro">Dinheiro</option>
+        </select>
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">ENDEREÇO (DEIXE EM BRANCO SE RETIRADA)</label>
+        <input type="text" id="manual-endereco" class="status-select" style="width:100%; height:40px; margin-bottom:20px;" placeholder="Ex: Rua A, 123 - Centro">
+        
+        <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarPedidoManual()">
+            <span class="material-icons-round icon-small">check_circle</span> CONFIRMAR PEDIDO
+        </button>
+    </div>
+</div>
 
 <script src="js/dashboard.js?v=2"></script>
 </body>
