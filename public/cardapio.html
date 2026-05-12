@@ -312,6 +312,7 @@
         payload.append('nome', nome);
         payload.append('telefone', tel);
         payload.append('pedido', carrinho.map(i => i.nome).join(', '));
+        payload.append('itens', JSON.stringify(carrinho));
         payload.append('total', carrinho.reduce((a, b) => a + b.preco, 0) + freteAtual);
         payload.append('pagamento', pagSelecionado);
         payload.append('origem', 'Site');

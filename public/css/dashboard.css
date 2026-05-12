@@ -483,3 +483,27 @@
         .btn-comprovante-link .material-icons-round {
             font-size: 1rem;
         }
+
+        /* ── PRINT AREA (IMPRESSÃO TÉRMICA) ── */
+        #print-area { display: none; }
+        
+        @media print {
+            body > * { display: none !important; }
+            #print-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                font-family: monospace;
+                font-size: 13px;
+                color: black;
+                background: white;
+            }
+            #print-area * {
+                visibility: visible;
+            }
+            .print-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+            .print-line { border-bottom: 2px dashed black; margin: 10px 0; }
+            .print-row { display: flex; justify-content: space-between; }
+        }

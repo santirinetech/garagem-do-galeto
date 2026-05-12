@@ -24,6 +24,9 @@
       "target": "nsis",
       "artifactName": "GaletoMaster-Setup-${version}.${ext}"
     },
+    "extraResources": [
+      "loja.db"
+    ],
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

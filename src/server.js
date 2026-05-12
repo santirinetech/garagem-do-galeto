@@ -19,7 +19,16 @@ function emitUpdate() {
 }
 
 const fs = require('fs');
-const uploadDir = path.join(__dirname, '../public/uploads/');
+
+const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1 || process.argv.some(arg => arg.includes('app.asar')) || (process.resourcesPath && __dirname.includes('app.asar'));
+let uploadDir;
+if (isPackaged) {
+    const appData = process.env.APPDATA || process.env.HOME;
+    uploadDir = path.join(appData, 'GaletoMaster', 'uploads');
+} else {
+    uploadDir = path.join(__dirname, '../public/uploads/');
+}
+
 if (!fs.existsSync(uploadDir)){
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -78,8 +87,10 @@ function startServer(mainWindow = null) {
     });
 
     // Servir arquivos estáticos da pasta public
-    // Garantir que /dashboard e /cardapio funcionem mesmo que o arquivo seja cardapio.html
     server.use(express.static(path.join(__dirname, '../public')));
+    
+    // Servir os comprovantes salvos no AppData (ou public/uploads localmente)
+    server.use('/uploads', express.static(uploadDir));
     
     // Rota raiz redireciona para o dashboard (index.html)
     server.get('/', (req, res) => res.redirect('/index.html'));
@@ -150,30 +161,17 @@ function startServer(mainWindow = null) {
         }
     });
 
-    server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), (req, res) => {
-        const { nome, telefone, pedido, total, pagamento, origem, endereco } = req.body;
+    server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), async (req, res) => {
+        const { nome, telefone, pedido, total, pagamento, origem, endereco, itens } = req.body;
         const comprovante = req.file ? `/uploads/${req.file.filename}` : null;
 
-        if (!nome || !pedido || total === undefined) {
-            return res.status(400).json({ erro: 'Campos obrigatórios: nome, pedido, total' });
+        if (!nome || (!pedido && !itens) || total === undefined) {
+            return res.status(400).json({ erro: 'Campos obrigatórios: nome, pedido/itens, total' });
         }
 
-        const sql = `INSERT INTO pedidos (cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, comprovante, endereco) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        db.run(sql, [nome, telefone, pedido, total, pagamento, origem, comprovante, endereco], function (err) {
-            if (err) return res.status(500).json({ erro: err.message });
-
-            const pedidoId = this.lastID;
-
-            // Baixa estoque automaticamente pelo nome do item
-            const desc = (pedido || '').toLowerCase();
-            if (desc.includes('galeto'))         db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Galetos'");
-            if (desc.includes('salpicão') || desc.includes('salpicao')) db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Salpicão'");
-            if (desc.includes('feijão') || desc.includes('feijao'))     db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Feijão Tropeiro'");
-            if (desc.includes('refrigerante'))   db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Refrigerante'");
-            if (desc.includes('suco'))           db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Suco'");
-
-            // Banco de Clientes Silencioso
-            const sqlCliente = `
+        try {
+            // 1. Cliente (UPSERT)
+            await run(`
                 INSERT INTO clientes (nome, telefone, compras_qtd, valor_gasto) 
                 VALUES (?, ?, 1, ?)
                 ON CONFLICT(telefone) DO UPDATE SET 
@@ -181,25 +179,62 @@ function startServer(mainWindow = null) {
                 compras_qtd = compras_qtd + 1,
                 valor_gasto = valor_gasto + excluded.valor_gasto,
                 ultimo_pedido = CURRENT_TIMESTAMP
-            `;
-            db.run(sqlCliente, [nome, telefone, total]);
+            `, [nome, telefone, total]);
+            
+            const cliente = await queryOne("SELECT id FROM clientes WHERE telefone = ?", [telefone]);
+            const cliente_id = cliente.id;
+
+            // 2. Pedido (Fallback legacy)
+            let pedidoDescStr = pedido || '';
+            const sqlPedido = `INSERT INTO pedidos (cliente_id, cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, comprovante, endereco, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendente')`;
+            const resultPedido = await run(sqlPedido, [cliente_id, nome, telefone, pedidoDescStr, total, pagamento, origem, comprovante, endereco]);
+            const pedido_id = resultPedido.lastID;
+
+            // 3. Processamento Dinâmico de Estoque e Normalização
+            if (itens) {
+                // Vem do Frontend Novo: Inserção Relacional
+                const parsedItens = JSON.parse(itens);
+                pedidoDescStr = '';
+                for (let item of parsedItens) {
+                    const prod = await queryOne("SELECT id FROM produtos WHERE nome = ?", [item.nome]);
+                    if (prod) {
+                        await run("INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco_unitario) VALUES (?, ?, 1, ?)", [pedido_id, prod.id, item.preco]);
+                        await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE id = ?", [prod.id]);
+                        await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = ?", [item.nome]); // Duplo Baixa para retrocompatibilidade
+                    }
+                    pedidoDescStr += item.nome + ', ';
+                }
+                pedidoDescStr = pedidoDescStr.slice(0, -2);
+                await run("UPDATE pedidos SET pedido_desc = ? WHERE id = ?", [pedidoDescStr, pedido_id]);
+            } else if (pedido) {
+                // Vem do Chatbot Antigo: Regex Dedução
+                const desc = pedido.toLowerCase();
+                if (desc.includes('galeto'))         await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Galetos'");
+                if (desc.includes('salpicão') || desc.includes('salpicao')) await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Salpicão'");
+                if (desc.includes('feijão') || desc.includes('feijao'))     await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Feijão Tropeiro'");
+                if (desc.includes('refrigerante'))   await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Refrigerante'");
+                if (desc.includes('suco'))           await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Suco'");
+            }
 
             // Disparo de Webhook para Novo Pedido (Automação WhatsApp)
             const N8N_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/galeto-pedido';
             fetch(N8N_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: pedidoId, nome, telefone, pedido, total, pagamento, origem, status: 'Pendente', endereco })
+                body: JSON.stringify({ id: pedido_id, nome, telefone, pedido: pedidoDescStr, total, pagamento, origem, status: 'Pendente', endereco })
             }).catch(() => {});
 
             emitUpdate(); // Notifica via SSE
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
             res.json({ 
                 mensagem: 'Sucesso', 
-                id_pedido: this.lastID,
+                id_pedido: pedido_id,
                 comprovante: comprovante 
             });
-        });
+        } catch (e) {
+            console.error("Erro ao registrar pedido:", e);
+            res.status(500).json({ erro: e.message });
+        }
     });
 
     // PATCH /pedido/:id/status

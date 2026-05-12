@@ -28,8 +28,10 @@ async function finalizarPedido(client, from, session, db, emitUpdateFunc) {
         pagamentoDesc = `Dinheiro (Troco para R$ ${changeFor})`;
     }
 
-    db.run(`INSERT INTO pedidos (cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, endereco, status, comprovante, tipo_entrega, taxa_entrega) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, phone, itemsDesc, total, pagamentoDesc, 'WhatsApp (Robô)', address, 'Pendente', comprovanteUrl || null, deliveryType || 'Retirada', freight || 0],
+    let enderecoFormatado = deliveryType === 'Entrega' ? `${address} (Taxa: R$ ${freight})` : 'Retirada no Local';
+
+    db.run(`INSERT INTO pedidos (cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, endereco, status, comprovante) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, phone, itemsDesc, total, pagamentoDesc, 'WhatsApp (Robô)', enderecoFormatado, 'Pendente', comprovanteUrl || null],
         function(err) {
             if (err) {
                 client.sendMessage(from, "Ops, ocorreu um erro ao registrar seu pedido. Por favor, tente novamente ou fale com um atendente.");
@@ -116,14 +118,14 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
 
         // Inicializa sessão se não existir
         if (!userSessions[from]) {
-            userSessions[from] = { state: 'IDLE', order: { items: [], total: 0, payment: '', address: '', name: msg._data.notifyName || 'Cliente' } };
+            userSessions[from] = { state: 'IDLE', order: { items: [], total: 0, payment: '', address: '', name: msg._data.notifyName || 'Cliente', deliveryType: '', freight: 0, changeFor: '' } };
         }
 
         const session = userSessions[from];
 
         if (['cancelar', 'sair', 'menu', 'robo', 'robô'].includes(text.toLowerCase())) {
             session.state = 'IDLE';
-            session.order = { items: [], total: 0, payment: '', address: '', name: msg._data.notifyName || 'Cliente' };
+            session.order = { items: [], total: 0, payment: '', address: '', name: msg._data.notifyName || 'Cliente', deliveryType: '', freight: 0, changeFor: '' };
             await client.sendMessage(from, "🤖 Atendimento automático reiniciado. Se precisar de algo, é só mandar um 'Oi'.");
             return;
         }
@@ -287,9 +289,17 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                         const fs = require('fs');
                         const path = require('path');
                         const crypto = require('crypto');
+                        const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1 || process.argv.some(arg => arg.includes('app.asar')) || (process.resourcesPath && __dirname.includes('app.asar'));
+                        let uploadDir = path.join(__dirname, '../public/uploads/');
+                        if (isPackaged) {
+                            const appData = process.env.APPDATA || process.env.HOME;
+                            uploadDir = path.join(appData, 'GaletoMaster', 'uploads');
+                        }
+                        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+                        
                         const ext = media.mimetype.split('/')[1] || 'png';
                         const filename = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
-                        const filepath = path.join(__dirname, '../public/uploads/', filename);
+                        const filepath = path.join(uploadDir, filename);
                         
                         fs.writeFileSync(filepath, media.data, 'base64');
                         session.order.comprovanteUrl = `/uploads/${filename}`;

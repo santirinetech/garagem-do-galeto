@@ -1,88 +1,56 @@
-# 🍗 Garagem do Galeto — Sistema de Gestão e Delivery
+# 🍗 Galeto Master (SaaS) — Plataforma Completa de Gestão & Delivery
 
-Sistema enxuto e escalável projetado para a gestão de uma galeteria, integrando pedidos web, controle de estoque, financeiro e notificações via WhatsApp.
-
-## 🚀 Tecnologias Utilizadas
-
-### Frontend
-- **HTML5 & Vanilla CSS**: Interface premium com design moderno, glassmorphism e foco em UX mobile.
-- **Vanilla JavaScript**: Lógica de cliente reativa sem dependências pesadas.
-- **Google Fonts & Material Icons**: Tipografia refinada (Outfit/Inter) e iconografia consistente.
-
-### Backend
-- **Node.js & Express**: API RESTful robusta para processamento de pedidos e gestão.
-- **SQLite3**: Banco de dados relacional leve e confiável para persistência local e em nuvem.
-- **Multer**: Gestão de uploads de comprovantes de pagamento (PIX).
-
-### Infraestrutura
-- **PM2**: Gerenciador de processos para manter o sistema online 24/7 na VPS.
-- **WhatsApp Automation**: Integração via Webhooks (n8n/Evolution API) para notificações automáticas de status.
-- **Thermal Printing**: Impressão automática de pedidos via Electron.
+Bem-vindo ao repositório oficial do **Galeto Master**, um sistema de ponta a ponta projetado com foco em **Alta Performance, Escalabilidade e Automação**. Este projeto evoluiu de um simples protótipo local para uma solução comercial robusta (Software as a Service) ideal para galeterias, restaurantes e *dark kitchens*.
 
 ---
 
-## 🛠 Como Rodar o Projeto
-
-### Pré-requisitos
-- Node.js instalado (versão 16+)
-
-### Instalação
-1. Clone o repositório ou baixe os arquivos.
-2. No diretório raiz, instale as dependências:
-   ```bash
-   npm install
-   ```
-
-### Execução Local (Modo Servidor)
-Para testar o fluxo de pedidos e o Dashboard no navegador:
-1. Inicie o servidor:
-   ```bash
-   npm run server
-   ```
-2. Acesse no navegador:
-   - **Dashboard/Gestão**: `http://localhost:3000` (Redireciona para o Painel)
-   - **Cardápio/Pedido**: `http://localhost:3000/cardapio.html`
-
-### Execução Desktop (Modo Electron)
-Para usar o sistema como um aplicativo dedicado com **impressão automática**:
-```bash
-npm start
-```
-
-### Gerar Instalador (.exe)
-Para criar o arquivo instalador para Windows:
-```bash
-npm run dist
-```
-O arquivo será gerado na pasta `/dist`.
+## 🌟 Vantagens Comerciais (O Valor do Produto)
+- **Operação Híbrida:** Integração nativa de 3 frentes de vendas em um único painel (Pedidos via Site, Pedidos Manuais e **Atendimento 100% Autônomo via Robô de WhatsApp**).
+- **Sem Custos de Hospedagem (Desktop Mode):** Empacotado em um executável autossuficiente (`.exe`), o Lojista roda a infraestrutura (Servidor Node, Banco de Dados Relacional) no próprio PC, sem depender de nuvem cara.
+- **Blindagem Financeira (Pix Seguro):** O sistema automatizado *exige* a recepção da foto/arquivo do comprovante PIX via WhatsApp ou Site antes de liberar o envio do pedido para a cozinha.
+- **Design "UAU" (Premium UX):** O cardápio digital possui design em *Glassmorphism*, paleta noturna (Dark Mode) moderna e interações suaves (Vanilla CSS/JS) que elevam a percepção de marca do restaurante.
 
 ---
 
-## 📋 Levantamento de Requisitos
+## 🛠 Arquitetura e o que foi Implementado
+O sistema está **100% refatorado e normalizado**, pronto para rodar em produção.
 
-### Requisitos Funcionais (Já Implementados)
-- [x] **Cardápio Interativo**: Seleção de produtos com categorias e resumo de sacola.
-- [x] **Checkout Ágil**: Captura de dados do cliente e forma de pagamento.
-- [x] **Entrega e Retirada**: Seleção de modalidade e campos de endereço.
-- [x] **Taxas por Região**: Gerenciamento de taxas de entrega personalizáveis.
-- [x] **Integração WhatsApp**: Envio automático de dados do pedido para o dono.
-- [x] **Dashboard em Tempo Real**: Monitoramento de pedidos com SSE e Polling.
-- [x] **Impressão Térmica**: Suporte a impressão silenciosa via Electron.
-- [x] **Gestão de Estoque**: Baixa automática e ajuste manual de itens.
-- [x] **Financeiro**: Registro de despesas e cálculo de faturamento diário.
-- [x] **Segurança**: Sistema de login para o Dashboard.
+1. **Banco de Dados Relacional (3NF) - SQLite Dinâmico:**
+   - Criação inteligente de tabelas (`clientes`, `produtos`, `pedido_itens`, `pedidos`, `estoque`).
+   - Persistência segura em ambiente produtivo (`%APPDATA%/GaletoMaster`), evitando perdas de dados nas atualizações do sistema.
+   - *Seeding* automático de produtos caso a loja instale o software pela primeira vez.
 
-### Requisitos de Segurança e LGPD
-- [x] **Consentimento LGPD**: Checkbox de aceite para coleta de dados.
-- [x] **Política de Privacidade**: Página transparente sobre o uso dos dados.
-- [x] **Gestão de Dados**: Ferramenta para exclusão de dados de clientes no Dashboard.
+2. **Robô de WhatsApp Integrado (`whatsapp-web.js`):**
+   - Escaneamento de QR Code nativo na dashboard.
+   - Navegação em árvore de decisão (Menu > Carrinho > Entrega/Retirada > Pagamento > Troco/Comprovante).
+   - Cálculo automático de frete por bairro injetado diretamente no fluxo da conversa.
+
+3. **Backend & Segurança (Node.js/Express):**
+   - Sistema seguro de Uploads (`Multer`) isolado em pastas do Windows para permissão de leitura/gravação.
+   - Limite de taxa (Rate Limiter) de acesso às rotas da API para evitar abusos no servidor Web.
+   - Comunicação em tempo real com a Dashboard usando **SSE (Server-Sent Events)** para piscar novos pedidos na tela.
+
+---
+
+## 📦 Como Baixar e Instalar (Guia do Usuário Final)
+A entrega para o cliente final foi reduzida a zero atritos. Sem necessidade de terminais, NPM ou configurações de firewall:
+
+1. **Baixar o Sistema:** Receba o instalador `GaletoMaster-Setup-1.0.0.exe`.
+2. **Dois Cliques:** Execute o instalador e avance.
+3. **Pronto para Uso:** Um atalho será criado na Área de Trabalho.
+   - Ao clicar no atalho, o sistema em segundo plano "acorda" o servidor e abre a página de Login e o Dashboard.
+   - **Primeiro Passo da Loja:** Na aba "Robô", escaneie o QR Code com o WhatsApp Business da Loja.
+   - A operação já pode começar. O banco de dados e as fotos de comprovantes ficam salvas no PC, não necessitando de internet rápida.
 
 ---
 
-## 📂 Estrutura do Projeto
-- `/public`: Arquivos estáticos (HTML, CSS, JS do frontend).
-- `/src`: Lógica do servidor, banco de dados e integração IPC.
-- `loja.db`: Banco de dados SQLite principal.
+## 🔮 Updates Futuros (Roadmap de Escalabilidade SaaS)
+O sistema tem uma fundação madura pronta para os próximos passos da empresa:
+
+- [ ] **Migração Total para Nuvem (Multi-Tenant AWS):** Permitir que vários restaurantes paguem assinatura mensal usando a mesma infraestrutura web.
+- [ ] **Módulo de Fidelidade com IA:** O bot do WhatsApp analisará o histórico do cliente no banco de dados e enviará cupons personalizados nos dias em que as vendas são fracas.
+- [ ] **Integração Externa (iFood API):** Receber pedidos do iFood diretamente na mesma Dashboard, acabando com a "guerra de tablets" no balcão.
+- [ ] **Relatórios Fiscais Avançados:** Gráficos interativos (Chart.js) exportáveis em PDF detalhando horário de pico de pedidos.
 
 ---
-Desenvolvido por **Santirine Tech**
+**Santirine Tech — Engenharia de Software focada no Resultado.**
