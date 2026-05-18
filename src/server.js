@@ -372,33 +372,44 @@ function startServer(mainWindow = null) {
     });
 
     server.post('/api/produtos', async (req, res) => {
-        const { nome, categoria_id, preco, quantidade_estoque } = req.body;
+        const { nome, categoria_id, preco_unitario, preco, quantidade_estoque } = req.body;
+        const preco_val = parseFloat(preco_unitario ?? preco ?? 0);
         try {
-            await run("INSERT INTO produtos (nome, categoria_id, preco, quantidade_estoque) VALUES (?, ?, ?, ?)", 
-                [nome, categoria_id || null, parseFloat(preco) || 0, parseInt(quantidade_estoque) || 0]);
-            res.json({ status: 'ok' });
+            const r = await run("INSERT INTO produtos (nome, categoria_id, preco_unitario, quantidade_estoque) VALUES (?, ?, ?, ?)", 
+                [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0]);
+            res.json({ status: 'ok', id: r.lastID });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.put('/api/produtos/:id', async (req, res) => {
-        const { nome, categoria_id, preco, quantidade_estoque } = req.body;
+        const { nome, categoria_id, preco_unitario, preco, quantidade_estoque } = req.body;
+        const preco_val = parseFloat(preco_unitario ?? preco ?? 0);
         try {
-            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco = ?, quantidade_estoque = ? WHERE id = ?", 
-                [nome, categoria_id || null, parseFloat(preco) || 0, parseInt(quantidade_estoque) || 0, req.params.id]);
+            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco_unitario = ?, quantidade_estoque = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", 
+                [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0, req.params.id]);
             res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.patch('/api/produtos/:id/estoque', async (req, res) => {
         try {
-            await run("UPDATE produtos SET quantidade_estoque = ? WHERE id = ?", [parseInt(req.body.quantidade) || 0, req.params.id]);
+            await run("UPDATE produtos SET quantidade_estoque = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [parseInt(req.body.quantidade) || 0, req.params.id]);
             res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
+    server.patch('/api/produtos/:id/status', async (req, res) => {
+        try {
+            await run("UPDATE produtos SET status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [parseInt(req.body.status), req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    // Alias legado
     server.patch('/api/produtos/:id/ativo', async (req, res) => {
         try {
-            await run("UPDATE produtos SET ativo = ? WHERE id = ?", [parseInt(req.body.ativo), req.params.id]);
+            const s = parseInt(req.body.ativo);
+            await run("UPDATE produtos SET status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [s, req.params.id]);
             res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
@@ -425,18 +436,70 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
-    server.post('/api/despesas', (req, res) => {
-        const { descricao, valor } = req.body;
-        db.run("INSERT INTO despesas (descricao, valor) VALUES (?, ?)", [descricao, parseFloat(valor)], function (err) {
-            if (err) return res.status(500).json({erro: err.message});
-            res.json({ status: 'ok', id: this.lastID });
-        });
+    // ──────── APIs DE DESPESAS ────────
+
+    server.get('/api/despesas', async (req, res) => {
+        try {
+            const { de, ate } = req.query;
+            let sql = `
+                SELECT d.*, cd.nome as categoria_nome
+                FROM despesas d
+                LEFT JOIN categoria_despesas cd ON d.categoria_id = cd.id
+            `;
+            const params = [];
+            if (de && ate) {
+                sql += ` WHERE date(d.data_hora, 'localtime') BETWEEN ? AND ?`;
+                params.push(de, ate);
+            } else {
+                sql += ` WHERE date(d.data_hora, 'localtime') = date('now','localtime')`;
+            }
+            sql += ` ORDER BY d.id DESC`;
+            res.json(await query(sql, params));
+        } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
-    server.get('/api/despesas/hoje', async (req, res) => {
+    server.post('/api/despesas', async (req, res) => {
+        const { descricao, categoria_id, valor } = req.body;
+        if (!descricao || !valor) return res.status(400).json({ erro: 'Preencha descrição e valor.' });
         try {
-            const rows = await query("SELECT * FROM despesas WHERE date(data_hora, 'localtime') = date('now','localtime') ORDER BY id DESC");
-            res.json(rows);
+            const r = await run(
+                "INSERT INTO despesas (usuario_id, descricao, categoria_id, valor) VALUES (?, ?, ?, ?)",
+                [req.session?.userId || null, descricao, categoria_id || null, parseFloat(valor)]
+            );
+            res.json({ status: 'ok', id: r.lastID });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.put('/api/despesas/:id', async (req, res) => {
+        const { descricao, categoria_id, valor } = req.body;
+        try {
+            await run(
+                "UPDATE despesas SET descricao = ?, categoria_id = ?, valor = ? WHERE id = ?",
+                [descricao, categoria_id || null, parseFloat(valor), req.params.id]
+            );
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.delete('/api/despesas/:id', async (req, res) => {
+        try {
+            await run("DELETE FROM despesas WHERE id = ?", [req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    // ──────── APIs DE CATEGORIAS DE DESPESAS ────────
+
+    server.get('/api/categoria-despesas', async (req, res) => {
+        try {
+            res.json(await query("SELECT * FROM categoria_despesas WHERE status = 1 ORDER BY nome"));
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.post('/api/categoria-despesas', async (req, res) => {
+        try {
+            await run("INSERT INTO categoria_despesas (nome) VALUES (?)", [req.body.nome]);
+            res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
@@ -477,12 +540,13 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
-    server.post('/api/regioes', (req, res) => {
-        const { nome, taxa } = req.body;
-        db.run("INSERT INTO regioes (nome, taxa) VALUES (?, ?)", [nome, parseFloat(taxa)], function (err) {
-            if (err) return res.status(500).json({erro: err.message});
-            res.json({ status: 'ok', id: this.lastID });
-        });
+    server.post('/api/regioes', async (req, res) => {
+        const { nome, taxa, taxa_entrega } = req.body;
+        const valor = parseFloat(taxa_entrega ?? taxa ?? 0);
+        try {
+            const r = await run("INSERT INTO regioes (nome, taxa_entrega) VALUES (?, ?)", [nome, valor]);
+            res.json({ status: 'ok', id: r.lastID });
+        } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.delete('/api/regioes/:id', (req, res) => {
@@ -490,6 +554,70 @@ function startServer(mainWindow = null) {
             if (err) return res.status(500).json({erro: err.message});
             res.json({ status: 'ok' });
         });
+    });
+
+    // ──────── API DE RELATÓRIOS FINANCEIROS ────────
+
+    server.get('/api/relatorios', async (req, res) => {
+        try {
+            const { de, ate } = req.query;
+            if (!de || !ate) return res.status(400).json({ erro: 'Informe de e ate (YYYY-MM-DD).' });
+
+            const statusConcluidos = ['Entregue', 'Retirado', 'entregue', 'retirado'];
+            const placeholders = statusConcluidos.map(() => '?').join(',');
+
+            const [resumo, rankCategorias, rankProdutos, despesas] = await Promise.all([
+                queryOne(`
+                    SELECT
+                        COALESCE(SUM(CASE WHEN status IN (${placeholders}) THEN total ELSE 0 END), 0) AS total_entradas,
+                        COUNT(CASE WHEN status IN (${placeholders}) THEN 1 END) AS pedidos_concluidos,
+                        COUNT(*) AS total_pedidos
+                    FROM pedidos
+                    WHERE date(data_hora, 'localtime') BETWEEN ? AND ?
+                `, [...statusConcluidos, ...statusConcluidos, de, ate]),
+
+                query(`
+                    SELECT cp.nome AS categoria, SUM(ip.quantidade) AS total_vendido
+                    FROM itens_pedido ip
+                    JOIN produtos pr ON ip.produto_id = pr.id
+                    JOIN categoria_produtos cp ON pr.categoria_id = cp.id
+                    JOIN pedidos p ON ip.pedido_id = p.id
+                    WHERE date(p.data_hora, 'localtime') BETWEEN ? AND ?
+                    AND p.status IN (${placeholders})
+                    GROUP BY cp.id ORDER BY total_vendido DESC
+                `, [de, ate, ...statusConcluidos]),
+
+                query(`
+                    SELECT pr.nome AS produto, SUM(ip.quantidade) AS total_vendido, SUM(ip.quantidade * ip.preco_unitario) AS receita
+                    FROM itens_pedido ip
+                    JOIN produtos pr ON ip.produto_id = pr.id
+                    JOIN pedidos p ON ip.pedido_id = p.id
+                    WHERE date(p.data_hora, 'localtime') BETWEEN ? AND ?
+                    AND p.status IN (${placeholders})
+                    GROUP BY pr.id ORDER BY total_vendido DESC LIMIT 10
+                `, [de, ate, ...statusConcluidos]),
+
+                queryOne(`
+                    SELECT COALESCE(SUM(valor), 0) AS total_despesas
+                    FROM despesas
+                    WHERE date(data_hora, 'localtime') BETWEEN ? AND ?
+                `, [de, ate])
+            ]);
+
+            const total_entradas = resumo?.total_entradas || 0;
+            const total_saidas   = despesas?.total_despesas || 0;
+
+            res.json({
+                periodo: { de, ate },
+                total_entradas,
+                total_saidas,
+                lucro_liquido: total_entradas - total_saidas,
+                pedidos_concluidos: resumo?.pedidos_concluidos || 0,
+                total_pedidos: resumo?.total_pedidos || 0,
+                rank_categorias: rankCategorias,
+                rank_produtos: rankProdutos
+            });
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.get('/api/historico', async (req, res) => {

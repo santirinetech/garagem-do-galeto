@@ -42,7 +42,7 @@ async function carregarCardapio() {
                         <h3 class="prod-nome">${p.nome}</h3>
                         <p class="prod-desc">${p.descricao || ''}</p>
                         <div class="prod-footer">
-                            <span class="prod-preco">${p.preco_unitario.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                            <span class="prod-preco">${(p.preco_unitario || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
                             <button class="btn-add ${esgotado ? 'disabled' : ''}" onclick="${esgotado ? "alert('Esgotado!')" : `addItem(${p.id}, '${p.nome}', ${p.preco_unitario})`}">${esgotado ? '🚫' : '+'}</button>
                         </div>
                     </div>
@@ -88,8 +88,11 @@ function filtrarCat(cat, btn) {
     document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('ativo'));
     btn.classList.add('ativo');
     document.querySelectorAll('.produto, .section-title').forEach(el => {
-        if (cat === 'todos') el.style.display = 'flex';
-        else el.style.display = el.dataset.cat === cat ? 'flex' : 'none';
+        if (cat === 'todos') {
+            el.style.display = '';
+        } else {
+            el.style.display = el.dataset.cat === cat ? '' : 'none';
+        }
     });
 }
 

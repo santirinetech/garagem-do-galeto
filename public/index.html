@@ -32,6 +32,12 @@
         <div class="nav-item" onclick="showView('produtos', this)">
             <span class="material-icons-round">inventory_2</span> Produtos
         </div>
+        <div class="nav-item" onclick="showView('despesas', this)">
+            <span class="material-icons-round">receipt</span> Despesas
+        </div>
+        <div class="nav-item" onclick="showView('relatorios', this)">
+            <span class="material-icons-round">bar_chart</span> Relatórios
+        </div>
         <div class="nav-item" onclick="showView('historico', this)">
             <span class="material-icons-round">history</span> Histórico
         </div>
@@ -316,6 +322,96 @@
         </div>
     </div>
 
+    <!-- ═══ VIEW: DESPESAS ═══ -->
+    <div class="view" id="view-despesas">
+        <div class="card">
+            <div class="card-header" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                <span class="card-title">💸 Despesas Operacionais</span>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <input type="date" id="desp-filtro-de" class="status-select" style="width:auto;">
+                    <span style="color:var(--text-muted)">até</span>
+                    <input type="date" id="desp-filtro-ate" class="status-select" style="width:auto;">
+                    <button class="btn btn-ghost" onclick="carregarDespesas()"><span class="material-icons-round icon-small">search</span></button>
+                    <button class="btn btn-primary" onclick="abrirModalDespesa()">
+                        <span class="material-icons-round icon-small">add</span> Nova Despesa
+                    </button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th style="text-align:right;">Valor</th>
+                        <th style="width:80px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-despesas"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="text-align:right; font-weight:700; padding:10px;">Total:</td>
+                        <td style="text-align:right; font-weight:700; padding:10px; color:var(--red);" id="desp-total">R$ 0,00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ VIEW: RELATÓRIOS ═══ -->
+    <div class="view" id="view-relatorios">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+            <!-- Filtro de período -->
+            <div class="card">
+                <div class="card-header" style="flex-wrap:wrap; gap:10px;">
+                    <span class="card-title">📊 Relatórios Financeiros</span>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1;">
+                        <input type="date" id="rel-de" class="status-select" style="width:auto;">
+                        <span style="color:var(--text-muted)">até</span>
+                        <input type="date" id="rel-ate" class="status-select" style="width:auto;">
+                        <button class="btn btn-primary" onclick="carregarRelatorios()">
+                            <span class="material-icons-round icon-small">search</span> Gerar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards KPI -->
+            <div class="kpi-grid" id="rel-kpis" style="display:none;">
+                <div class="kpi green">
+                    <div class="kpi-label">Total de Entradas</div>
+                    <div class="kpi-value" id="rel-entradas">R$ 0</div>
+                    <div class="kpi-sub" id="rel-pedidos-sub">0 pedidos concluídos</div>
+                </div>
+                <div class="kpi red">
+                    <div class="kpi-label">Total de Saídas</div>
+                    <div class="kpi-value" id="rel-saidas">R$ 0</div>
+                    <div class="kpi-sub">despesas no período</div>
+                </div>
+                <div class="kpi blue">
+                    <div class="kpi-label">Lucro Líquido</div>
+                    <div class="kpi-value" id="rel-lucro">R$ 0</div>
+                    <div class="kpi-sub">entradas − saídas</div>
+                </div>
+            </div>
+
+            <!-- Rankings -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;" id="rel-rankings" style="display:none;">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Por Categoria</span></div>
+                    <table><thead><tr><th>Categoria</th><th style="text-align:right;">Qtd Vendida</th></tr></thead>
+                    <tbody id="rel-rank-cat"></tbody></table>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Produtos Mais Vendidos</span></div>
+                    <table><thead><tr><th>Produto</th><th style="text-align:right;">Qtd</th><th style="text-align:right;">Receita</th></tr></thead>
+                    <tbody id="rel-rank-prod"></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div><!-- .main -->
 
 <!-- TOAST -->
@@ -427,6 +523,31 @@
         
         <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarPedidoManual()">
             <span class="material-icons-round icon-small">check_circle</span> CONFIRMAR PEDIDO
+        </button>
+    </div>
+</div>
+
+<!-- MODAL DESPESA -->
+<div class="overlay" id="modal-despesa" onclick="fecharModalDespesa(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:100%; max-width:450px; padding:20px; background:var(--bg-1);">
+        <div class="card-header" style="justify-content:space-between; margin-bottom:15px;">
+            <span class="card-title" id="modal-despesa-titulo">Nova Despesa</span>
+            <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-despesa').style.display='none'">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <input type="hidden" id="desp-id">
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">DESCRIÇÃO</label>
+        <input type="text" id="desp-descricao" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: Compra de gás">
+
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">CATEGORIA</label>
+        <select id="desp-categoria" class="status-select" style="width:100%; height:40px; margin-bottom:15px;"></select>
+
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">VALOR (R$)</label>
+        <input type="number" id="desp-valor" class="status-select" style="width:100%; height:40px; margin-bottom:20px;" step="0.01" placeholder="0.00">
+
+        <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarDespesa()">
+            <span class="material-icons-round icon-small">save</span> SALVAR
         </button>
     </div>
 </div>

@@ -75,7 +75,7 @@ async function logout() {
 verificarSessao();
 
 // ── NAVEGAÇÃO ──────────────────────────────────────
-const titles = { dashboard:'Dashboard', pedidos:'Pedidos', estoque:'Estoque', historico:'Histórico', clientes:'Clientes (Privacidade)', config: 'Configurações' };
+const titles = { dashboard:'Dashboard', pedidos:'Pedidos', produtos:'Produtos', despesas:'Despesas', relatorios:'Relatórios', historico:'Histórico', clientes:'Clientes (Privacidade)', config: 'Configurações' };
 function showView(name, el) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -94,7 +94,7 @@ async function carregarRegioesDash() {
         tbody.innerHTML = regioes.map(r => `
             <tr>
                 <td><strong>${r.nome}</strong></td>
-                <td>${fmtReal(r.taxa)}</td>
+                <td>${fmtReal(r.taxa_entrega ?? r.taxa ?? 0)}</td>
                 <td>
                     <button class="btn btn-ghost btn-small" style="color:var(--red);" onclick="excluirRegiao(${r.id})">
                         <span class="material-icons-round icon-small">delete</span> Excluir
@@ -254,18 +254,20 @@ function imprimirComanda(id) {
                 id: p.id,
                 nome: p.cliente_nome,
                 telefone: p.cliente_tel,
-                pedido: p.pedido_desc,
+                pedido: p.pedido_descricao || p.pedido_desc,
                 total: p.total,
                 pagamento: p.forma_pagamento,
-                endereco: p.endereco
+                endereco: p.endereco_entrega || p.endereco
             });
             showToast(`Impressão enviada: Pedido #${id}`);
             return;
         }
 
         // Fallback para navegador comum (abre diálogo de impressão)
-        const pdesc = p.pedido_desc.replace(/,/g, '<br>• ');
+        const descRaw = p.pedido_descricao || p.pedido_desc || '';
+        const pdesc = descRaw.replace(/,/g, '<br>• ');
         const num = (p.cliente_tel || '').replace(/\D/g, '');
+        const endStr = p.endereco_entrega || p.endereco || 'Retirada';
         const html = `
             <div class="print-title">GARAGEM DO GALETO</div>
             <div style="text-align:center; font-size:12px;">Pedido #<strong>${p.id}</strong></div>
@@ -274,7 +276,7 @@ function imprimirComanda(id) {
             <div><strong>Cliente:</strong> ${p.cliente_nome}</div>
             <div><strong>Tel:</strong> ${num}</div>
             <div><strong>Canal:</strong> ${p.origem}</div>
-            <div style="margin-top:5px;"><strong>Entrega:</strong> ${p.endereco || 'Retirada'}</div>
+            <div style="margin-top:5px;"><strong>Entrega:</strong> ${endStr}</div>
             <div class="print-line"></div>
             <div><strong>ITENS:</strong></div>
             <div style="margin: 5px 0 10px;">• ${pdesc}</div>
@@ -303,6 +305,8 @@ async function carregarTudo() {
     if (view === 'dashboard' || !view) await carregarDashboard();
     if (view === 'pedidos')    await carregarTodos();
     if (view === 'produtos')   await carregarProdutos();
+    if (view === 'despesas')   await carregarDespesas();
+    if (view === 'relatorios') { /* Gerado sob demanda */ }
     if (view === 'historico')  await carregarHistorico();
     if (view === 'clientes')   await carregarClientes();
     if (view === 'config')     await carregarRegioesDash();
@@ -336,16 +340,19 @@ async function carregarDashboard() {
             if (document.getElementById('kpi-fat-galeto')) document.getElementById('kpi-fat-galeto').textContent = fmtReal(resumo.fat_galeto || 0);
         }
 
-        // Tabela de abertos (Pendente, Preparando, Saiu para Entrega)
-        let abertos = (pedidos || []).filter(p => p.status !== 'Entregue' && p.status !== 'Cancelado');
+        // Tabela de abertos — compatível com status legado (Capitalized) e novo (snake_case)
+        const statusFechados = ['Entregue', 'Cancelado', 'entregue', 'cancelado'];
+        let abertos = (pedidos || []).filter(p => !statusFechados.includes(p.status));
         
         const fTipo = document.getElementById('filtro-tipo')?.value;
         const fStatus = document.getElementById('filtro-status')?.value;
         
+        const enderecoStr = p => (p.endereco_entrega || p.endereco || '').toLowerCase();
+        
         if (fTipo === 'Entrega') {
-            abertos = abertos.filter(p => p.endereco_entrega && p.endereco_entrega.toLowerCase() !== 'retirada no local' && p.endereco_entrega.toLowerCase() !== 'retirada');
+            abertos = abertos.filter(p => enderecoStr(p) && enderecoStr(p) !== 'retirada no local' && enderecoStr(p) !== 'retirada');
         } else if (fTipo === 'Retirada') {
-            abertos = abertos.filter(p => !p.endereco_entrega || p.endereco_entrega.toLowerCase() === 'retirada no local' || p.endereco_entrega.toLowerCase() === 'retirada');
+            abertos = abertos.filter(p => !enderecoStr(p) || enderecoStr(p) === 'retirada no local' || enderecoStr(p) === 'retirada');
         }
         
         if (fStatus) {
@@ -368,10 +375,10 @@ async function carregarDashboard() {
                         id: novoPedido.id,
                         nome: novoPedido.cliente_nome,
                         telefone: novoPedido.cliente_tel,
-                        pedido: novoPedido.pedido_desc,
+                        pedido: novoPedido.pedido_descricao || novoPedido.pedido_desc,
                         total: novoPedido.total,
                         pagamento: novoPedido.forma_pagamento,
-                        endereco: novoPedido.endereco
+                        endereco: novoPedido.endereco_entrega || novoPedido.endereco
                     });
                 }
             }
@@ -517,10 +524,10 @@ async function carregarProdutos() {
 
         if (tbodyProd) {
             tbodyProd.innerHTML = produtos.map(p => `
-                <tr style="opacity: ${p.ativo ? '1' : '0.5'}">
-                    <td><strong>${p.nome}</strong> ${!p.ativo ? '(Inativo)' : ''}</td>
+                <tr style="opacity: ${p.status ? '1' : '0.5'}">
+                    <td><strong>${p.nome}</strong> ${!p.status ? '<span style="color:var(--text-muted); font-size:0.75rem;">(Inativo)</span>' : ''}</td>
                     <td>${p.categoria_nome || '—'}</td>
-                    <td>${fmtReal(p.preco)}</td>
+                    <td>${fmtReal(p.preco_unitario)}</td>
                     <td>
                         <div class="flex-col-gap" style="flex-direction: row; align-items: center; justify-content: center;">
                             <button onclick="ajustarEstoque(${p.id}, ${p.quantidade_estoque - 1})" class="btn-ajuste-minus">-</button>
@@ -530,8 +537,8 @@ async function carregarProdutos() {
                     </td>
                     <td>
                         <button class="btn btn-ghost btn-small" onclick="editarProduto(${p.id})"><span class="material-icons-round">edit</span></button>
-                        <button class="btn btn-ghost btn-small" style="color: ${p.ativo ? 'var(--red)' : 'var(--green)'}" onclick="toggleProdutoAtivo(${p.id}, ${p.ativo})">
-                            <span class="material-icons-round">${p.ativo ? 'block' : 'check_circle'}</span>
+                        <button class="btn btn-ghost btn-small" style="color: ${p.status ? 'var(--red)' : 'var(--green)'}" onclick="toggleProdutoAtivo(${p.id}, ${p.status})">
+                            <span class="material-icons-round">${p.status ? 'block' : 'check_circle'}</span>
                         </button>
                     </td>
                 </tr>
@@ -572,19 +579,20 @@ async function editarProduto(id) {
         const p = await fetch('/api/produtos/' + id).then(r => r.json());
         document.getElementById('prod-id').value = p.id;
         document.getElementById('prod-nome').value = p.nome;
-        document.getElementById('prod-preco').value = p.preco;
+        document.getElementById('prod-preco').value = p.preco_unitario;
         document.getElementById('prod-qtd').value = p.quantidade_estoque;
-        document.getElementById('prod-categoria').value = p.categoria_id;
+        document.getElementById('prod-categoria').value = p.categoria_id || '';
         document.getElementById('modal-produto-titulo').textContent = 'Editar Produto';
         document.getElementById('modal-produto').style.display = 'flex';
     } catch(e) {}
 }
 
-async function toggleProdutoAtivo(id, ativoAtual) {
-    await fetch('/api/produtos/' + id + '/ativo', {
+async function toggleProdutoAtivo(id, statusAtual) {
+    const novoStatus = statusAtual ? 0 : 1;
+    await fetch('/api/produtos/' + id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ativo: ativoAtual ? 0 : 1 })
+        body: JSON.stringify({ status: novoStatus })
     });
     carregarProdutos();
 }
@@ -611,12 +619,14 @@ async function salvarProduto() {
     
     if (!nome || isNaN(preco)) return alert('Preencha nome e preço válidos.');
     
-    const payload = { nome, categoria_id, preco, quantidade_estoque };
+    const payload = { nome, categoria_id, preco_unitario: preco, quantidade_estoque };
     const url = id ? '/api/produtos/' + id : '/api/produtos';
     const method = id ? 'PUT' : 'POST';
     
     try {
-        await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        const r = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        const data = await r.json();
+        if (!r.ok) return alert(data.erro || 'Erro ao salvar produto');
         document.getElementById('modal-produto').style.display = 'none';
         carregarProdutos();
     } catch (e) { alert('Erro ao salvar produto'); }
@@ -815,9 +825,10 @@ async function abrirModalPedidoManual() {
         const res = await fetch('/api/produtos');
         allProdutosDisponiveis = await res.json();
         const sel = document.getElementById('manual-produto-select');
-        sel.innerHTML = allProdutosDisponiveis.filter(p => p.ativo).map(p => 
-            `<option value="${p.id}" data-preco="${p.preco}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`
-        ).join('');
+        sel.innerHTML = allProdutosDisponiveis
+            .filter(p => p.status)
+            .map(p => `<option value="${p.id}" data-preco="${p.preco_unitario}">${p.nome} - R$ ${(p.preco_unitario||0).toFixed(2)}</option>`)
+            .join('');
     } catch(e) {}
     
     document.getElementById('modal-pedido-manual').style.display = 'flex';
@@ -886,21 +897,27 @@ async function salvarPedidoManual() {
         return;
     }
 
+    // Agrupar itens por produto
+    const itensMap = {};
+    itensManual.forEach(it => {
+        if (!itensMap[it.id]) itensMap[it.id] = { id: it.id, nome: it.nome, preco: it.preco, quantidade: 0 };
+        itensMap[it.id].quantidade++;
+    });
+
     const payload = new FormData();
     payload.append('nome', nome);
-    payload.append('telefone', tel);
+    payload.append('telefone', tel || '00000000000');
     payload.append('total', total);
     payload.append('pagamento', pagamento);
     payload.append('origem', 'WhatsApp/Balcão');
     payload.append('endereco', endereco);
-    payload.append('itens', JSON.stringify(itensManual));
+    payload.append('itens', JSON.stringify(Object.values(itensMap)));
 
     try {
         const resp = await fetch('/api/novo-pedido', { method: 'POST', body: payload });
         if (resp.ok) {
             showToast("Pedido Manual Lançado!");
             document.getElementById('modal-pedido-manual').style.display = 'none';
-            // Limpa os campos
             document.getElementById('manual-nome').value = '';
             document.getElementById('manual-tel').value = '';
             document.getElementById('manual-total').value = '';
@@ -908,10 +925,145 @@ async function salvarPedidoManual() {
             itensManual = [];
             carregarTudo();
         } else {
-            alert("Erro ao lançar pedido.");
+            const data = await resp.json();
+            alert("Erro ao lançar pedido: " + (data.erro || ''));
         }
     } catch (e) {
         console.error(e);
         alert("Erro de conexão.");
     }
 }
+
+// ── DESPESAS ─────────────────────────────────────────
+let catDespesasCache = [];
+
+async function carregarDespesas() {
+    try {
+        const de = document.getElementById('desp-filtro-de')?.value;
+        const ate = document.getElementById('desp-filtro-ate')?.value;
+        let url = '/api/despesas';
+        if (de && ate) url += `?de=${de}&ate=${ate}`;
+
+        const res = await fetch(url);
+        const despesas = await res.json();
+        const tbody = document.getElementById('tbody-despesas');
+
+        if (!despesas || !despesas.length) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="material-icons-round">receipt</span><p>Nenhuma despesa registrada.</p></div></td></tr>`;
+            document.getElementById('desp-total').textContent = fmtReal(0);
+            return;
+        }
+
+        let total = 0;
+        tbody.innerHTML = despesas.map(d => {
+            total += d.valor || 0;
+            return `<tr>
+                <td style="white-space:nowrap;">${fmtData(d.data_hora)}</td>
+                <td>${d.descricao}</td>
+                <td>${d.categoria_nome || '—'}</td>
+                <td style="text-align:right; color:var(--red); font-weight:700;">${fmtReal(d.valor)}</td>
+                <td>
+                    <button class="btn btn-ghost btn-small" onclick="editarDespesa(${d.id})"><span class="material-icons-round">edit</span></button>
+                    <button class="btn btn-ghost btn-small" style="color:var(--red);" onclick="excluirDespesa(${d.id})"><span class="material-icons-round">delete</span></button>
+                </td>
+            </tr>`;
+        }).join('');
+        document.getElementById('desp-total').textContent = fmtReal(total);
+    } catch(e) { console.error('Erro despesas:', e); }
+}
+
+async function abrirModalDespesa(dados = null) {
+    document.getElementById('desp-id').value = dados?.id || '';
+    document.getElementById('desp-descricao').value = dados?.descricao || '';
+    document.getElementById('desp-valor').value = dados?.valor || '';
+    document.getElementById('modal-despesa-titulo').textContent = dados ? 'Editar Despesa' : 'Nova Despesa';
+
+    // Carregar categorias
+    if (!catDespesasCache.length) {
+        try {
+            const r = await fetch('/api/categoria-despesas');
+            catDespesasCache = await r.json();
+        } catch(e) {}
+    }
+    const sel = document.getElementById('desp-categoria');
+    sel.innerHTML = '<option value="">Sem categoria</option>' +
+        catDespesasCache.map(c => `<option value="${c.id}" ${dados?.categoria_id == c.id ? 'selected' : ''}>${c.nome}</option>`).join('');
+
+    document.getElementById('modal-despesa').style.display = 'flex';
+}
+
+async function editarDespesa(id) {
+    try {
+        const res = await fetch(`/api/despesas?de=2000-01-01&ate=2099-12-31`);
+        const lista = await res.json();
+        const d = lista.find(x => x.id === id);
+        if (d) abrirModalDespesa(d);
+    } catch(e) {}
+}
+
+async function excluirDespesa(id) {
+    if (!confirm('Excluir esta despesa?')) return;
+    try {
+        await fetch('/api/despesas/' + id, { method: 'DELETE' });
+        carregarDespesas();
+    } catch(e) {}
+}
+
+async function salvarDespesa() {
+    const id = document.getElementById('desp-id').value;
+    const descricao = document.getElementById('desp-descricao').value.trim();
+    const categoria_id = document.getElementById('desp-categoria').value || null;
+    const valor = parseFloat(document.getElementById('desp-valor').value);
+
+    if (!descricao || isNaN(valor) || valor <= 0) {
+        alert('Preencha descrição e valor válido.');
+        return;
+    }
+
+    const payload = { descricao, categoria_id, valor };
+    const url = id ? '/api/despesas/' + id : '/api/despesas';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const r = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        if (!r.ok) { const d = await r.json(); return alert(d.erro || 'Erro ao salvar'); }
+        document.getElementById('modal-despesa').style.display = 'none';
+        showToast('Despesa salva!');
+        carregarDespesas();
+    } catch(e) { alert('Erro de conexão'); }
+}
+
+function fecharModalDespesa(e) {
+    if (e.target.id === 'modal-despesa') document.getElementById('modal-despesa').style.display = 'none';
+}
+
+// ── RELATÓRIOS FINANCEIROS ────────────────────────────
+async function carregarRelatorios() {
+    const de = document.getElementById('rel-de').value;
+    const ate = document.getElementById('rel-ate').value;
+
+    if (!de || !ate) { alert('Selecione o período (de e até).'); return; }
+
+    try {
+        const res = await fetch(`/api/relatorios?de=${de}&ate=${ate}`);
+        if (!res.ok) { const d = await res.json(); return alert(d.erro || 'Erro'); }
+        const r = await res.json();
+
+        document.getElementById('rel-entradas').textContent = fmtReal(r.total_entradas);
+        document.getElementById('rel-saidas').textContent   = fmtReal(r.total_saidas);
+        document.getElementById('rel-lucro').textContent    = fmtReal(r.lucro_liquido);
+        document.getElementById('rel-lucro').style.color    = r.lucro_liquido >= 0 ? 'var(--green)' : 'var(--red)';
+        document.getElementById('rel-pedidos-sub').textContent = `${r.pedidos_concluidos} pedidos concluídos`;
+
+        document.getElementById('rel-rank-cat').innerHTML = r.rank_categorias.length
+            ? r.rank_categorias.map(c => `<tr><td>${c.categoria}</td><td style="text-align:right; font-weight:700;">${c.total_vendido}</td></tr>`).join('')
+            : '<tr><td colspan="2" style="text-align:center; padding:15px; color:var(--text-muted);">Sem dados</td></tr>';
+
+        document.getElementById('rel-rank-prod').innerHTML = r.rank_produtos.length
+            ? r.rank_produtos.map(p => `<tr><td>${p.produto}</td><td style="text-align:right;">${p.total_vendido}</td><td style="text-align:right; font-weight:700;">${fmtReal(p.receita)}</td></tr>`).join('')
+            : '<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-muted);">Sem dados</td></tr>';
+
+        document.getElementById('rel-kpis').style.display = '';
+        document.getElementById('rel-rankings').style.display = 'grid';
+    } catch(e) { console.error('Erro relatórios:', e); alert('Erro ao gerar relatório.'); }
+}
