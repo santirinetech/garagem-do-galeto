@@ -1,24 +1,38 @@
 :root {
-            --red:     #E63946;
-            --red-dk:  #D32F2F;
-            --red-lt:  #fdecea;
-            --amber:   #f59e0b;
-            --amber-lt:#fffbeb;
-            --green:   #10B981;
-            --green-lt:#ECFDF5;
-            --blue:    #2563eb;
-            --blue-lt: #eff6ff;
-            --ink:     #0F172A;
-            --ink-2:   #334155;
-            --ink-3:   #64748B;
-            --bg:      #F8FAFC;
-            --white:   #ffffff;
-            --border:  #E2E8F0;
-            --sidebar: 240px;
-            --radius:  16px;
-            --shadow:  0 4px 12px rgba(15,23,42,.05), 0 8px 24px rgba(15,23,42,.04);
-            --shadow-brand: 0 8px 24px rgba(230,57,70,0.25);
-        }
+    /* ── PALETA OFICIAL GARAGEM DO GALETO ─────────────────────────────────── */
+    --color-primary:      #E3262A;  /* Vermelho Assados — Ação principal            */
+    --color-primary-dk:   #C11F23;  /* Vermelho escuro — hover                      */
+    --color-primary-lt:   #fdecea;  /* Vermelho claro — backgrounds sutis           */
+    --color-accent:       #F39200;  /* Laranja Brasa — destaque de preço / ativo    */
+    --color-accent-dk:    #D97E00;  /* Laranja escuro — hover                        */
+    --color-accent-lt:    #FFF3E0;  /* Laranja pálido — badges                       */
+    --color-dark:         #111111;  /* Preto Escudo — sidebar / fundo catálogo       */
+    --color-surface-dark: #1E1E1E;  /* Cinza Escuro — cards cliente                  */
+    --color-light:        #FFF9F2;  /* Bege/Creme — fundo painel ADM                 */
+    --color-surface-light:#FFFFFF;  /* Branco — cards painel ADM                     */
+
+    /* ── ALIASES INTERNOS (mantidos para não quebrar classes já existentes) ── */
+    --red:     var(--color-primary);
+    --red-dk:  var(--color-primary-dk);
+    --red-lt:  var(--color-primary-lt);
+    --amber:   var(--color-accent);
+    --amber-lt:var(--color-accent-lt);
+    --green:   #10B981;
+    --green-lt:#ECFDF5;
+    --blue:    #2563eb;
+    --blue-lt: #eff6ff;
+    --ink:     var(--color-dark);
+    --ink-2:   #334155;
+    --ink-3:   #64748B;
+    --bg:      var(--color-light);
+    --white:   var(--color-surface-light);
+    --border:  #E2E8F0;
+    --sidebar: 240px;
+    --radius:  16px;
+    --shadow:       0 4px 12px rgba(17,17,17,.06), 0 8px 24px rgba(17,17,17,.04);
+    --shadow-brand: 0 8px 24px rgba(227,38,42,0.22);
+    --shadow-accent:0 8px 24px rgba(243,146,0,0.22);
+}
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,7 +48,7 @@
         /* ── SIDEBAR ── */
         .sidebar {
             width: var(--sidebar);
-            background: var(--ink);
+            background: var(--color-dark);
             display: flex;
             flex-direction: column;
             padding: 0;
@@ -91,12 +105,18 @@
             margin-bottom: 2px;
         }
         .nav-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.9); }
-        .nav-item.active { background: var(--red); color: white; }
+        /* Item ativo usa o Laranja Brasa como destaque — identidade da marca */
+        .nav-item.active {
+            background: var(--color-accent);
+            color: var(--color-dark);
+            font-weight: 700;
+        }
+        .nav-item.active .material-icons-round { color: var(--color-dark); }
         .nav-item .material-icons-round { font-size: 1.15rem; }
 
         .nav-item .badge-count {
             margin-left: auto;
-            background: var(--red);
+            background: var(--color-primary);
             color: white;
             font-size: .65rem;
             font-weight: 700;
@@ -105,7 +125,8 @@
             min-width: 20px;
             text-align: center;
         }
-        .nav-item.active .badge-count { background: rgba(255,255,255,.25); }
+        /* Quando ativo (fundo laranja), badge fica semi-transparente */
+        .nav-item.active .badge-count { background: rgba(17,17,17,.25); color: var(--color-dark); }
 
         .sidebar-footer {
             padding: 14px 10px;
@@ -154,8 +175,16 @@
             cursor: pointer;
             transition: all .2s;
         }
-        .btn-primary { background: var(--red); color: white; }
-        .btn-primary:hover { background: var(--red-dk); }
+        /* Botões principais — sempre Vermelho Assados */
+        .btn-primary {
+            background: var(--color-primary);
+            color: #fff;
+            box-shadow: var(--shadow-brand);
+        }
+        .btn-primary:hover {
+            background: var(--color-primary-dk);
+            box-shadow: none;
+        }
         .btn-ghost { background: var(--bg); color: var(--ink-2); }
         .btn-ghost:hover { background: var(--border); }
 
@@ -203,10 +232,12 @@
             background: var(--accent, var(--ink-3));
             border-radius: var(--radius) var(--radius) 0 0;
         }
-        .kpi.red   { --accent: var(--red); }
+        /* KPI: vermelho usa a cor primária da marca */
+        .kpi.red   { --accent: var(--color-primary); }
         .kpi.green { --accent: var(--green); }
         .kpi.blue  { --accent: var(--blue); }
-        .kpi.amber { --accent: var(--amber); }
+        /* KPI amber usa o Laranja Brasa — destaque de pedidos aguardando */
+        .kpi.amber { --accent: var(--color-accent); }
 
         .kpi-label { font-size: .75rem; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
         .kpi-value { font-family: 'Outfit', sans-serif; font-size: 1.9rem; font-weight: 800; color: var(--ink); line-height: 1; }
@@ -283,12 +314,14 @@
             font-weight: 700;
             white-space: nowrap;
         }
-        .s-Pendente          { color: var(--amber); background: var(--amber-lt); border-color: #fcd34d; }
+        /* Status badges — Pendente usa Laranja Brasa (urgente mas não erro) */
+        .s-Pendente          { color: var(--color-accent-dk); background: var(--color-accent-lt); border-color: #f39200; }
         .s-Visto             { color: #6366f1; background: #eef2ff; border-color: #a5b4fc; }
         .s-Preparando        { color: var(--blue); background: var(--blue-lt); border-color: #93c5fd; }
         .s-Saiu-para-Entrega { color: var(--green); background: var(--green-lt); border-color: #86efac; }
         .s-Entregue          { color: var(--ink-3); background: var(--bg); border-color: #cbd5e1; }
-        .s-Cancelado         { color: var(--red); background: var(--red-lt); border-color: #fca5a5; }
+        /* Cancelado usa Vermelho Primário */
+        .s-Cancelado         { color: var(--color-primary); background: var(--color-primary-lt); border-color: #fca5a5; }
 
         .origem-pill {
             display: inline-flex;

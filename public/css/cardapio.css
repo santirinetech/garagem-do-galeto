@@ -4,12 +4,22 @@
    DESIGN TOKENS
 ───────────────────────────────────────────────────────────────*/
 :root {
-    --bg-dark:      #080808;
-    --surface:      #141414;
-    --surface-2:    #1c1c1c;
-    --brand-red:    #FF3131;
-    --brand-orange: #FF6B00;
-    --brand-glow:   rgba(255, 49, 49, 0.28);
+    /* ── PALETA OFICIAL GARAGEM DO GALETO (Catálogo Cliente - Tema Escuro) ─ */
+    --color-primary:      #E3262A;  /* Vermelho Assados — botões de ação         */
+    --color-primary-dk:   #C11F23;  /* Vermelho escuro — hover                    */
+    --color-accent:       #F39200;  /* Laranja Brasa — preços / destaques         */
+    --color-accent-dk:    #D97E00;  /* Laranja escuro — hover de preço            */
+    --color-dark:         #111111;  /* Preto Escudo — fundo principal              */
+    --color-surface-dark: #1E1E1E;  /* Cinza Escuro — cards de produto            */
+
+    /* ── ALIASES DE COMPATIBILIDADE ───────────────────────────────────── */
+    --bg-dark:      var(--color-dark);
+    --surface:      var(--color-surface-dark);
+    --surface-2:    #262626;
+    --brand-red:    var(--color-primary);
+    --brand-orange: var(--color-accent);
+    --brand-glow:   rgba(227, 38, 42, 0.25);
+    --brand-glow-accent: rgba(243, 146, 0, 0.30);
     --border:       rgba(255, 255, 255, 0.07);
     --text-main:    #FFFFFF;
     --text-dim:     #A1A1AA;
@@ -69,14 +79,14 @@ header {
 }
 
 .status-badge {
-    background: rgba(255, 49, 49, 0.1);
-    color: var(--brand-red);
+    background: rgba(227, 38, 42, 0.1);
+    color: var(--color-primary);
     padding: 6px 14px;
     border-radius: 99px;
     font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 1px;
-    border: 1px solid rgba(255, 49, 49, 0.25);
+    border: 1px solid rgba(227, 38, 42, 0.28);
     animation: statusPulse 3s ease-in-out infinite;
 }
 @keyframes statusPulse {
@@ -112,13 +122,13 @@ header {
     white-space: nowrap;
 }
 .cat-chip:hover {
-    border-color: rgba(255,49,49,0.4);
+    border-color: rgba(227, 38, 42, 0.4);
     color: white;
 }
 .cat-chip.ativo {
-    background: var(--brand-red);
+    background: var(--color-primary);
     color: white;
-    border-color: var(--brand-red);
+    border-color: var(--color-primary);
     box-shadow: 0 4px 16px var(--brand-glow);
 }
 
@@ -184,7 +194,8 @@ header {
     transition: var(--transition);
 }
 .produto:hover {
-    border-color: rgba(255, 49, 49, 0.35);
+    /* Borda Laranja Brasa no hover — mais quente e diferenciado */
+    border-color: rgba(243, 146, 0, 0.45);
     transform: translateY(-4px);
     box-shadow: 0 12px 32px rgba(0,0,0,0.4);
 }
@@ -272,17 +283,19 @@ header {
     padding-top: 8px;
 }
 
+/* Preço: Laranja Brasa — mais apetitoso e associado a desconto/promoção */
 .prod-preco {
     font-family: var(--font-heading);
     font-weight: 900;
     font-size: 1.1rem;
-    color: var(--brand-red);
+    color: var(--color-accent);
     letter-spacing: -0.5px;
+    text-shadow: 0 0 20px rgba(243,146,0,0.2);
 }
 
-/* ── Botão adicionar (+) flutuante no canto */
+/* Botão (+): Vermelho Assados — ação primária de conversão */
 .btn-add {
-    background: var(--brand-red);
+    background: var(--color-primary);
     color: white;
     border: none;
     width: 38px;
@@ -300,24 +313,24 @@ header {
     flex-shrink: 0;
 }
 .btn-add:hover {
-    background: #e00000;
+    background: var(--color-primary-dk);
     transform: scale(1.12);
     box-shadow: 0 6px 20px var(--brand-glow);
 }
 .btn-add:active { transform: scale(0.94); }
 
-/* ── Badge de estoque baixo */
+/* Badge de úiltimas unidades: usa Laranja Brasa (urgente + apetitoso) */
 .stock-badge {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: var(--brand-red);
-    color: white;
+    background: var(--color-accent);
+    color: var(--color-dark);
     font-size: 0.6rem;
     font-weight: 900;
     padding: 4px 8px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px var(--brand-glow);
+    box-shadow: 0 2px 10px var(--brand-glow-accent);
     z-index: 10;
     border: 1px solid rgba(255, 255, 255, 0.2);
     animation: pulse 2s infinite;
@@ -363,8 +376,9 @@ header {
 .cart-total { font-weight: 800; font-size: 1.3rem; }
 .cart-count { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
 
+/* Botão da sacola: Vermelho Assados */
 .btn-finalizar {
-    background: var(--brand-red);
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 11px 22px;
@@ -376,7 +390,7 @@ header {
     box-shadow: 0 4px 14px var(--brand-glow);
 }
 .btn-finalizar:hover {
-    background: #e00000;
+    background: var(--color-primary-dk);
     transform: scale(1.03);
 }
 
@@ -445,10 +459,11 @@ header {
     border-bottom: 1px solid var(--border);
 }
 .resumo-row:last-child { border-bottom: none; }
+/* Total: cor de destaque — Laranja Brasa (associado a valor/destaque) */
 .total-row {
     margin-top: 10px;
     padding-top: 14px;
-    color: var(--brand-red);
+    color: var(--color-accent);
     font-size: 1.25rem;
     font-weight: 800;
 }
@@ -466,7 +481,7 @@ header {
     transition: border-color 0.2s;
     outline: none;
 }
-.form-input:focus { border-color: var(--brand-red); }
+.form-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(227,38,42,0.15); }
 .form-label {
     font-size: 0.68rem;
     font-weight: 800;
@@ -477,9 +492,10 @@ header {
     display: block;
 }
 
+/* Botão Finalizar Pedido: Vermelho Assados com sombra da marca */
 .btn-confirmar {
     width: 100%;
-    background: var(--brand-red);
+    background: var(--color-primary);
     color: white;
     border: none;
     padding: 18px;
@@ -489,8 +505,9 @@ header {
     cursor: pointer;
     box-shadow: 0 4px 20px var(--brand-glow);
     transition: var(--transition);
+    letter-spacing: 0.3px;
 }
-.btn-confirmar:hover { background: #e00000; transform: translateY(-1px); }
+.btn-confirmar:hover { background: var(--color-primary-dk); transform: translateY(-1px); }
 
 .pag-chips { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
 .pag-chip {
@@ -507,11 +524,11 @@ header {
     font-size: 0.8rem;
     transition: var(--transition);
 }
-.pag-chip:hover { border-color: rgba(255,49,49,0.4); color: white; }
+.pag-chip:hover { border-color: rgba(227,38,42,0.4); color: white; }
 .pag-chip.selected {
-    border-color: var(--brand-red);
+    border-color: var(--color-primary);
     color: white;
-    background: rgba(255, 49, 49, 0.12);
+    background: rgba(227, 38, 42, 0.14);
 }
 
 /* ─────────────────────────────────────────────────────────────
