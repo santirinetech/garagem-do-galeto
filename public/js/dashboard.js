@@ -302,7 +302,7 @@ async function carregarTudo() {
     const view = document.querySelector('.view.active')?.id?.replace('view-', '');
     if (view === 'dashboard' || !view) await carregarDashboard();
     if (view === 'pedidos')    await carregarTodos();
-    if (view === 'estoque')    await carregarEstoque();
+    if (view === 'produtos')   await carregarProdutos();
     if (view === 'historico')  await carregarHistorico();
     if (view === 'clientes')   await carregarClientes();
     if (view === 'config')     await carregarRegioesDash();
@@ -332,10 +332,26 @@ async function carregarDashboard() {
             document.getElementById('kpi-pend').textContent = resumo.pendentes || 0;
             document.getElementById('kpi-zap').textContent  = resumo.pedidos_zap || 0;
             document.getElementById('kpi-site').textContent = resumo.pedidos_site || 0;
+            if (document.getElementById('kpi-fat-churrasco')) document.getElementById('kpi-fat-churrasco').textContent = fmtReal(resumo.fat_churrasco || 0);
+            if (document.getElementById('kpi-fat-galeto')) document.getElementById('kpi-fat-galeto').textContent = fmtReal(resumo.fat_galeto || 0);
         }
 
         // Tabela de abertos (Pendente, Preparando, Saiu para Entrega)
-        const abertos = (pedidos || []).filter(p => p.status !== 'Entregue' && p.status !== 'Cancelado');
+        let abertos = (pedidos || []).filter(p => p.status !== 'Entregue' && p.status !== 'Cancelado');
+        
+        const fTipo = document.getElementById('filtro-tipo')?.value;
+        const fStatus = document.getElementById('filtro-status')?.value;
+        
+        if (fTipo === 'Entrega') {
+            abertos = abertos.filter(p => p.endereco_entrega && p.endereco_entrega.toLowerCase() !== 'retirada no local' && p.endereco_entrega.toLowerCase() !== 'retirada');
+        } else if (fTipo === 'Retirada') {
+            abertos = abertos.filter(p => !p.endereco_entrega || p.endereco_entrega.toLowerCase() === 'retirada no local' || p.endereco_entrega.toLowerCase() === 'retirada');
+        }
+        
+        if (fStatus) {
+            abertos = abertos.filter(p => p.status === fStatus);
+        }
+
         const tbody = document.getElementById('tbody-abertos');
 
         // Lógica de Campainha e Impressão Automática
@@ -385,34 +401,41 @@ async function carregarDashboard() {
                     <td>${origemBadge(p.origem)}</td>
                     <td>
                         <div class="cliente-name">${p.cliente_nome || '—'}</div>
-                        <div class="cliente-tel">
+                        <div class="cliente-tel" style="display:flex; align-items:center; gap:5px;">
                             ${p.cliente_tel || ''}
-                            <a href="${urlWpp}" target="_blank" class="btn-zap">WhatsApp</a>
+                            <a href="${urlWpp}" target="_blank" style="color:var(--green);" title="WhatsApp">
+                                <span class="material-icons-round" style="font-size:16px;">whatsapp</span>
+                            </a>
                         </div>
                     </td>
-                    <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
+                    <td class="pedido-desc" title="${p.pedido_descricao || ''}">${p.pedido_descricao || '—'}</td>
                     <td>
                         ${p.forma_pagamento || '—'}
-                        ${p.comprovante ? `
-                            <br><a href="${p.comprovante}" target="_blank" class="btn-comprovante-link">
-                                <span class="material-icons-round">image</span> VER COMPROVANTE
+                        ${p.comprovante_url ? `
+                            <br><a href="${p.comprovante_url}" target="_blank" class="btn-comprovante-link">
+                                <span class="material-icons-round">image</span> COMPROVANTE
                             </a>
                         ` : ''}
                     </td>
                     <td style="max-width:150px; font-size:0.85rem; color:var(--text-muted);">
-                        ${p.endereco || '—'}
+                        ${p.endereco_entrega || '—'}
                     </td>
                     <td><strong>${fmtReal(p.total)}</strong></td>
                     <td>
+                        ${statusSelectHTML(p.id, p.status)}
+                    </td>
+                    <td>
                         <div class="flex-col-gap">
-                            ${statusSelectHTML(p.id, p.status)}
+                            <button class="btn btn-primary btn-small" onclick="abrirModalDetalhes(${p.id})">
+                                <span class="material-icons-round icon-small">info</span>
+                            </button>
                             ${p.status === 'Pendente' ? `
                                 <button class="btn-visto" onclick="mudarStatus(${p.id}, 'Visto')">
-                                    <span class="material-icons-round">visibility</span> Visto
+                                    <span class="material-icons-round">visibility</span>
                                 </button>
                             ` : ''}
                             <button class="btn-imprimir" onclick="imprimirComanda(${p.id})">
-                                <span class="material-icons-round icon-small">print</span> Imprimir
+                                <span class="material-icons-round icon-small">print</span>
                             </button>
                         </div>
                     </td>
@@ -478,52 +501,207 @@ async function carregarTodos() {
     } catch(e) {}
 }
 
-// ── ESTOQUE E GESTÃO ─────────────────────────────────
-async function carregarEstoque() {
+// ── PRODUTOS E GESTÃO ─────────────────────────────────
+async function carregarProdutos() {
     try {
-        const res = await fetch('/api/estoque');
-        const itens = await res.json();
-        const grid  = document.getElementById('grid-estoque');
+        const [resProd, resCat] = await Promise.all([
+            fetch('/api/produtos'),
+            fetch('/api/categorias')
+        ]);
+        const produtos = await resProd.json();
+        const categorias = await resCat.json();
+        
+        const tbodyProd = document.getElementById('tbody-produtos');
+        const tbodyCat = document.getElementById('tbody-categorias');
+        const selCat = document.getElementById('prod-categoria');
 
-        const maxRef = { 'Galetos': 50, 'Salpicão': 30, 'Feijão Tropeiro': 30, 'Refrigerante': 50, 'Suco': 40 };
-
-        if (!itens) return;
-        grid.innerHTML = itens.map(it => {
-            const max  = maxRef[it.item] || 50;
-            const pct  = Math.max(0, Math.min(100, (it.quantidade / max) * 100));
-            const low  = it.quantidade <= 5;
-            return `
-                <div class="estoque-item ${low ? 'estoque-low' : ''}">
-                    <div class="estoque-nome">${it.item}</div>
-                    
-                    <div class="flex-between-spaced">
-                        <button onclick="ajustarEstoque(${it.id}, ${it.quantidade - 1})" class="btn-ajuste-minus">-</button>
-                        
-                        <div class="text-center">
-                            <span class="estoque-qtd text-large">${it.quantidade}</span>
-                            <span class="estoque-un">un</span>
+        if (tbodyProd) {
+            tbodyProd.innerHTML = produtos.map(p => `
+                <tr style="opacity: ${p.ativo ? '1' : '0.5'}">
+                    <td><strong>${p.nome}</strong> ${!p.ativo ? '(Inativo)' : ''}</td>
+                    <td>${p.categoria_nome || '—'}</td>
+                    <td>${fmtReal(p.preco)}</td>
+                    <td>
+                        <div class="flex-col-gap" style="flex-direction: row; align-items: center; justify-content: center;">
+                            <button onclick="ajustarEstoque(${p.id}, ${p.quantidade_estoque - 1})" class="btn-ajuste-minus">-</button>
+                            <span style="min-width: 30px; text-align: center; font-weight: bold;">${p.quantidade_estoque}</span>
+                            <button onclick="ajustarEstoque(${p.id}, ${p.quantidade_estoque + 1})" class="btn-ajuste-plus">+</button>
                         </div>
-                        
-                        <button onclick="ajustarEstoque(${it.id}, ${it.quantidade + 1})" class="btn-ajuste-plus">+</button>
-                    </div>
- 
-                    <div class="estoque-bar">
-                        <div class="estoque-fill" style="width:${pct}%; transition: width 0.3s ease;"></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch(e) {}
+                    </td>
+                    <td>
+                        <button class="btn btn-ghost btn-small" onclick="editarProduto(${p.id})"><span class="material-icons-round">edit</span></button>
+                        <button class="btn btn-ghost btn-small" style="color: ${p.ativo ? 'var(--red)' : 'var(--green)'}" onclick="toggleProdutoAtivo(${p.id}, ${p.ativo})">
+                            <span class="material-icons-round">${p.ativo ? 'block' : 'check_circle'}</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        if (tbodyCat) {
+            tbodyCat.innerHTML = categorias.map(c => `
+                <tr>
+                    <td><strong>${c.nome}</strong></td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-ghost btn-small" style="color:var(--red);" onclick="excluirCategoria(${c.id})"><span class="material-icons-round">delete</span></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        if (selCat) {
+            selCat.innerHTML = categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        }
+        
+    } catch(e) { console.error('Erro ao carregar produtos:', e); }
 }
 
 async function ajustarEstoque(id, novaQtd) {
     if (novaQtd < 0) novaQtd = 0;
-    await fetch('/api/estoque/' + id, {
+    await fetch('/api/produtos/' + id + '/estoque', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantidade: novaQtd })
     });
-    carregarEstoque();
+    carregarProdutos();
+}
+
+let produtosAtuais = []; // Para a edição
+async function editarProduto(id) {
+    try {
+        const p = await fetch('/api/produtos/' + id).then(r => r.json());
+        document.getElementById('prod-id').value = p.id;
+        document.getElementById('prod-nome').value = p.nome;
+        document.getElementById('prod-preco').value = p.preco;
+        document.getElementById('prod-qtd').value = p.quantidade_estoque;
+        document.getElementById('prod-categoria').value = p.categoria_id;
+        document.getElementById('modal-produto-titulo').textContent = 'Editar Produto';
+        document.getElementById('modal-produto').style.display = 'flex';
+    } catch(e) {}
+}
+
+async function toggleProdutoAtivo(id, ativoAtual) {
+    await fetch('/api/produtos/' + id + '/ativo', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ativo: ativoAtual ? 0 : 1 })
+    });
+    carregarProdutos();
+}
+
+function abrirModalProduto() {
+    document.getElementById('prod-id').value = '';
+    document.getElementById('prod-nome').value = '';
+    document.getElementById('prod-preco').value = '';
+    document.getElementById('prod-qtd').value = '0';
+    document.getElementById('modal-produto-titulo').textContent = 'Novo Produto';
+    document.getElementById('modal-produto').style.display = 'flex';
+}
+
+function fecharModalProduto(e) {
+    if (e.target.id === 'modal-produto') document.getElementById('modal-produto').style.display = 'none';
+}
+
+async function salvarProduto() {
+    const id = document.getElementById('prod-id').value;
+    const nome = document.getElementById('prod-nome').value.trim();
+    const categoria_id = document.getElementById('prod-categoria').value;
+    const preco = parseFloat(document.getElementById('prod-preco').value);
+    const quantidade_estoque = parseInt(document.getElementById('prod-qtd').value);
+    
+    if (!nome || isNaN(preco)) return alert('Preencha nome e preço válidos.');
+    
+    const payload = { nome, categoria_id, preco, quantidade_estoque };
+    const url = id ? '/api/produtos/' + id : '/api/produtos';
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        document.getElementById('modal-produto').style.display = 'none';
+        carregarProdutos();
+    } catch (e) { alert('Erro ao salvar produto'); }
+}
+
+async function abrirModalCategoria() {
+    const nome = prompt('Nome da nova categoria:');
+    if (!nome) return;
+    try {
+        await fetch('/api/categorias', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome }) });
+        carregarProdutos();
+    } catch(e) { alert('Erro ao salvar'); }
+}
+
+async function excluirCategoria(id) {
+    if (!confirm('Excluir esta categoria? Isso pode afetar os produtos vinculados.')) return;
+    try {
+        await fetch('/api/categorias/' + id, { method: 'DELETE' });
+        carregarProdutos();
+    } catch(e) {}
+}
+
+async function abrirModalDetalhes(id) {
+    try {
+        const res = await fetch('/api/pedido/' + id);
+        const p = await res.json();
+        
+        document.getElementById('detalhes-titulo').textContent = `Pedido #${p.id}`;
+        
+        const c = document.getElementById('detalhes-conteudo');
+        const urlWpp = `https://wa.me/55${(p.cliente_tel||'').replace(/\D/g,'')}?text=Olá ${p.cliente_nome}, aqui é da Garagem do Galeto!`;
+        
+        c.innerHTML = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><strong>Cliente:</strong> ${p.cliente_nome}</div>
+                <div><strong>Telefone:</strong> ${p.cliente_tel} <a href="${urlWpp}" target="_blank" style="color:var(--green);"><span class="material-icons-round icon-small">whatsapp</span></a></div>
+                <div><strong>Data:</strong> ${fmtData(p.data_hora)}</div>
+                <div><strong>Origem:</strong> ${p.origem}</div>
+                <div><strong>Endereço:</strong> ${p.endereco_entrega || 'Retirada no Local'}</div>
+                <div><strong>Pagamento:</strong> ${p.forma_pagamento} ${p.comprovante_url ? `<a href="${p.comprovante_url}" target="_blank">[Ver]</a>` : ''}</div>
+            </div>
+            <div style="background:var(--bg-2); padding:10px; border-radius:5px; margin-top:10px;">
+                <strong>Itens do Pedido:</strong>
+                ${p.itens && p.itens.length > 0 ? 
+                    `<table class="data-table" style="margin-top:10px;">
+                        <thead>
+                            <tr>
+                                <th>Qtd</th>
+                                <th>Produto</th>
+                                <th>Preço Unit.</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${p.itens.map(i => `
+                                <tr>
+                                    <td>${i.quantidade}x</td>
+                                    <td>${i.produto_nome || 'Produto Removido'}</td>
+                                    <td>${fmtReal(i.preco_unitario)}</td>
+                                    <td>${fmtReal(i.quantidade * i.preco_unitario)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>` 
+                : `<p style="margin-top:5px; font-family: monospace; white-space: pre-wrap;">${p.pedido_descricao ? p.pedido_descricao.replace(/,/g, '\n') : 'Sem descrição'}</p>`}
+            </div>
+            <div style="text-align: right; font-size: 1.2rem; color: var(--green); margin-top: 15px;">
+                <strong>Total: ${fmtReal(p.total)}</strong>
+            </div>
+        `;
+        
+        const a = document.getElementById('detalhes-acoes');
+        a.innerHTML = `
+            ${statusSelectHTML(p.id, p.status)}
+            <button class="btn btn-primary" onclick="imprimirComanda(${p.id})">
+                <span class="material-icons-round">print</span> Imprimir
+            </button>
+        `;
+        
+        document.getElementById('modal-detalhes').style.display = 'flex';
+    } catch(e) {}
+}
+
+function fecharModalDetalhes(e) {
+    if (e.target.id === 'modal-detalhes') document.getElementById('modal-detalhes').style.display = 'none';
 }
 
 // ── HISTÓRICO ────────────────────────────────────────
@@ -625,8 +803,69 @@ document.querySelector('.sidebar-logout')?.addEventListener('click', (e) => {
 });
 
 // ── PEDIDO MANUAL ─────────────────────────────────────
-function abrirModalPedidoManual() {
+let itensManual = [];
+let allProdutosDisponiveis = [];
+
+async function abrirModalPedidoManual() {
+    itensManual = [];
+    document.getElementById('manual-itens-lista').innerHTML = '<span style="color:var(--text-muted);">Nenhum produto adicionado.</span>';
+    document.getElementById('manual-total').value = '0.00';
+    
+    try {
+        const res = await fetch('/api/produtos');
+        allProdutosDisponiveis = await res.json();
+        const sel = document.getElementById('manual-produto-select');
+        sel.innerHTML = allProdutosDisponiveis.filter(p => p.ativo).map(p => 
+            `<option value="${p.id}" data-preco="${p.preco}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`
+        ).join('');
+    } catch(e) {}
+    
     document.getElementById('modal-pedido-manual').style.display = 'flex';
+}
+
+function adicionarProdutoManual() {
+    const sel = document.getElementById('manual-produto-select');
+    const qtdInput = document.getElementById('manual-produto-qtd');
+    
+    if (sel.selectedIndex === -1) return;
+    
+    const id = parseInt(sel.value);
+    const nome = sel.options[sel.selectedIndex].text.split(' - ')[0];
+    const preco = parseFloat(sel.options[sel.selectedIndex].dataset.preco);
+    const qtd = parseInt(qtdInput.value) || 1;
+    
+    for (let i = 0; i < qtd; i++) {
+        itensManual.push({ id, nome, preco });
+    }
+    
+    renderItensManual();
+}
+
+function removerItemManual(index) {
+    itensManual.splice(index, 1);
+    renderItensManual();
+}
+
+function renderItensManual() {
+    const lista = document.getElementById('manual-itens-lista');
+    
+    if (itensManual.length === 0) {
+        lista.innerHTML = '<span style="color:var(--text-muted);">Nenhum produto adicionado.</span>';
+        document.getElementById('manual-total').value = '0.00';
+        return;
+    }
+    
+    let html = '';
+    let total = 0;
+    itensManual.forEach((it, index) => {
+        html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; align-items:center;">
+            <span>${it.nome}</span>
+            <span>R$ ${it.preco.toFixed(2)} <button onclick="removerItemManual(${index})" class="btn-ghost" style="padding:0; color:var(--red);"><span class="material-icons-round" style="font-size:16px;">close</span></button></span>
+        </div>`;
+        total += it.preco;
+    });
+    lista.innerHTML = html;
+    document.getElementById('manual-total').value = total.toFixed(2);
 }
 
 function fecharModalPedidoManual(e) {
@@ -638,24 +877,23 @@ function fecharModalPedidoManual(e) {
 async function salvarPedidoManual() {
     const nome = document.getElementById('manual-nome').value.trim();
     const tel = document.getElementById('manual-tel').value.trim();
-    const pedido = document.getElementById('manual-pedido').value.trim();
     const total = parseFloat(document.getElementById('manual-total').value);
     const pagamento = document.getElementById('manual-pagamento').value;
     const endereco = document.getElementById('manual-endereco').value.trim() || 'Retirada no Local';
 
-    if (!nome || !pedido || isNaN(total)) {
-        alert("Preencha Nome, Pedido e Valor Total.");
+    if (!nome || itensManual.length === 0 || isNaN(total)) {
+        alert("Preencha o nome do cliente, adicione produtos e verifique o valor total.");
         return;
     }
 
     const payload = new FormData();
     payload.append('nome', nome);
     payload.append('telefone', tel);
-    payload.append('pedido', pedido);
     payload.append('total', total);
     payload.append('pagamento', pagamento);
-    payload.append('origem', 'WhatsApp'); // Sempre WhatsApp para os manuais
+    payload.append('origem', 'WhatsApp/Balcão');
     payload.append('endereco', endereco);
+    payload.append('itens', JSON.stringify(itensManual));
 
     try {
         const resp = await fetch('/api/novo-pedido', { method: 'POST', body: payload });
@@ -665,9 +903,9 @@ async function salvarPedidoManual() {
             // Limpa os campos
             document.getElementById('manual-nome').value = '';
             document.getElementById('manual-tel').value = '';
-            document.getElementById('manual-pedido').value = '';
             document.getElementById('manual-total').value = '';
             document.getElementById('manual-endereco').value = '';
+            itensManual = [];
             carregarTudo();
         } else {
             alert("Erro ao lançar pedido.");

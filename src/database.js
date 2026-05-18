@@ -31,43 +31,84 @@ const db = new sqlite3.Database(dbPath);
 
 function initDb() {
     db.serialize(() => {
+        // Tabela Pedidos
         db.run(`CREATE TABLE IF NOT EXISTS pedidos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER,
-            cliente_nome TEXT,
-            cliente_tel TEXT,
-            pedido_desc TEXT,
-            total REAL,
+            endereco_entrega TEXT,
+            pedido_descricao TEXT,
+            origem TEXT DEFAULT 'balcao',
+            status TEXT DEFAULT 'pendente',
+            taxa_aplicada REAL DEFAULT 0.0,
+            total REAL DEFAULT 0.0,
             forma_pagamento TEXT,
-            origem TEXT,
-            status TEXT DEFAULT 'Pendente',
             data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
-            comprovante TEXT,
-            endereco TEXT
+            comprovante_url TEXT,
+            atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => {
             if (!err) {
-                db.run("ALTER TABLE pedidos ADD COLUMN comprovante TEXT", () => {});
-                db.run("ALTER TABLE pedidos ADD COLUMN endereco TEXT", () => {});
+                // Tenta adicionar colunas legadas caso a tabela já existisse no formato antigo
                 db.run("ALTER TABLE pedidos ADD COLUMN cliente_id INTEGER", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN endereco_entrega TEXT", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN pedido_descricao TEXT", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN origem TEXT DEFAULT 'balcao'", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN status TEXT DEFAULT 'pendente'", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN taxa_aplicada REAL DEFAULT 0.0", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN forma_pagamento TEXT", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN comprovante_url TEXT", () => {});
+                db.run("ALTER TABLE pedidos ADD COLUMN atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP", () => {});
             }
         });
 
-        db.run(`CREATE TABLE IF NOT EXISTS produtos (
+        // Tabela Categoria Produtos
+        db.run(`CREATE TABLE IF NOT EXISTS categoria_produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT UNIQUE,
-            preco REAL DEFAULT 0,
-            quantidade_estoque INTEGER DEFAULT 0
+            nome_listagem TEXT UNIQUE,
+            descricao TEXT,
+            status INTEGER DEFAULT 1,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, () => {
+            db.get("SELECT count(*) as qtd FROM categoria_produtos", (err, row) => {
+                if (row && row.qtd === 0) {
+                    const stmt = db.prepare("INSERT INTO categoria_produtos (nome, nome_listagem) VALUES (?, ?)");
+                    [['Assados', 'Nossos Assados'], ['Acompanhamentos', 'Acompanhamentos'], ['Bebidas', 'Bebidas Geladas']].forEach(n => stmt.run(n));
+                    stmt.finalize();
+                }
+            });
+        });
+
+        // Tabela Produtos
+        db.run(`CREATE TABLE IF NOT EXISTS produtos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            categoria_id INTEGER,
+            nome TEXT UNIQUE,
+            descricao TEXT,
+            quantidade_estoque INTEGER DEFAULT 0,
+            preco_unitario REAL DEFAULT 0.0,
+            status INTEGER DEFAULT 1,
+            imagem_url TEXT,
+            atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(categoria_id) REFERENCES categoria_produtos(id)
+        )`, (err) => {
+            if (!err) {
+                db.run("ALTER TABLE produtos ADD COLUMN categoria_id INTEGER", () => {});
+                db.run("ALTER TABLE produtos ADD COLUMN descricao TEXT", () => {});
+                db.run("ALTER TABLE produtos ADD COLUMN status INTEGER DEFAULT 1", () => {});
+                db.run("ALTER TABLE produtos ADD COLUMN imagem_url TEXT", () => {});
+                db.run("ALTER TABLE produtos ADD COLUMN atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP", () => {});
+            }
             db.get("SELECT count(*) as qtd FROM produtos", (err, row) => {
                 if (row && row.qtd === 0) {
-                    const stmt = db.prepare("INSERT INTO produtos (nome, preco, quantidade_estoque) VALUES (?, ?, ?)");
+                    const stmt = db.prepare("INSERT INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id) VALUES (?, ?, ?, ?)");
                     const initial = [
-                        ['Galeto Completo Familia', 50, 50],
-                        ['Galeto Individual', 28, 50],
-                        ['Feijão Tropeiro', 25, 30],
-                        ['Salpicão', 25, 30],
-                        ['Refrigerante 2L', 12, 50],
-                        ['Suco Natural', 9, 40]
+                        ['Galeto Completo Familia', 50, 50, 1],
+                        ['Galeto Individual', 28, 50, 1],
+                        ['Feijão Tropeiro', 25, 30, 2],
+                        ['Salpicão', 25, 30, 2],
+                        ['Refrigerante 2L', 12, 50, 3],
+                        ['Suco Natural', 9, 40, 3]
                     ];
                     initial.forEach(r => stmt.run(r));
                     stmt.finalize();
@@ -75,7 +116,8 @@ function initDb() {
             });
         });
 
-        db.run(`CREATE TABLE IF NOT EXISTS pedido_itens (
+        // Tabela Itens Pedido
+        db.run(`CREATE TABLE IF NOT EXISTS itens_pedido (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             pedido_id INTEGER,
             produto_id INTEGER,
@@ -85,37 +127,62 @@ function initDb() {
             FOREIGN KEY(produto_id) REFERENCES produtos(id)
         )`);
 
-        db.run(`CREATE TABLE IF NOT EXISTS estoque (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            item       TEXT,
-            quantidade INTEGER
+        // Tabela Categoria Despesas
+        db.run(`CREATE TABLE IF NOT EXISTS categoria_despesas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT UNIQUE,
+            descricao TEXT,
+            status INTEGER DEFAULT 1,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // Tabela Despesas
         db.run(`CREATE TABLE IF NOT EXISTS despesas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER,
             descricao TEXT,
+            categoria_id INTEGER,
             valor REAL,
-            data_hora DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+            data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(usuario_id) REFERENCES usuarios(id),
+            FOREIGN KEY(categoria_id) REFERENCES categoria_despesas(id)
+        )`, (err) => {
+            if (!err) {
+                db.run("ALTER TABLE despesas ADD COLUMN usuario_id INTEGER", () => {});
+                db.run("ALTER TABLE despesas ADD COLUMN categoria_id INTEGER", () => {});
+            }
+        });
 
+        // Tabela Clientes
         db.run(`CREATE TABLE IF NOT EXISTS clientes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT,
             telefone TEXT UNIQUE,
             compras_qtd INTEGER DEFAULT 0,
-            valor_gasto REAL DEFAULT 0,
-            ultimo_pedido DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+            valor_gasto REAL DEFAULT 0.0,
+            ultimo_pedido DATETIME,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (!err) {
+                db.run("ALTER TABLE clientes ADD COLUMN criado_em DATETIME DEFAULT CURRENT_TIMESTAMP", () => {});
+            }
+        });
 
+        // Tabela Regiões
         db.run(`CREATE TABLE IF NOT EXISTS regioes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT UNIQUE,
-            taxa REAL DEFAULT 0
-        )`, () => {
-            // Inserir regiões iniciais se vazio
+            taxa_entrega REAL DEFAULT 0.0
+        )`, (err) => {
+            if (!err) {
+                db.run("ALTER TABLE regioes ADD COLUMN taxa_entrega REAL DEFAULT 0.0", () => {
+                    db.run("UPDATE regioes SET taxa_entrega = taxa WHERE taxa_entrega = 0.0 AND taxa IS NOT NULL", () => {});
+                });
+            }
             db.get("SELECT count(*) as qtd FROM regioes", (err, row) => {
                 if (row && row.qtd === 0) {
-                    const stmt = db.prepare("INSERT INTO regioes (nome, taxa) VALUES (?, ?)");
+                    const stmt = db.prepare("INSERT INTO regioes (nome, taxa_entrega) VALUES (?, ?)");
                     const initial = [['Centro', 5], ['Bairro Norte', 8], ['Bairro Sul', 10]];
                     initial.forEach(r => stmt.run(r));
                     stmt.finalize();
@@ -123,37 +190,41 @@ function initDb() {
             });
         });
 
+        // Tabela Endereços
+        db.run(`CREATE TABLE IF NOT EXISTS enderecos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER,
+            regiao_id INTEGER,
+            logradouro TEXT,
+            complemento TEXT,
+            referencia TEXT,
+            FOREIGN KEY(cliente_id) REFERENCES clientes(id),
+            FOREIGN KEY(regiao_id) REFERENCES regioes(id)
+        )`);
+
+        // Tabela Usuarios
         db.run(`CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario TEXT UNIQUE,
-            senha TEXT
-        )`, () => {
-            // Criar admin padrão se não existirem usuários
+            senha_hash TEXT,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (!err) {
+                db.run("ALTER TABLE usuarios ADD COLUMN senha_hash TEXT", () => {
+                    db.run("UPDATE usuarios SET senha_hash = senha WHERE senha IS NOT NULL");
+                });
+                db.run("ALTER TABLE usuarios ADD COLUMN criado_em DATETIME DEFAULT CURRENT_TIMESTAMP", () => {});
+            }
             db.get("SELECT count(*) as qtd FROM usuarios", (err, row) => {
                 if (row && row.qtd === 0) {
                     const bcrypt = require('bcryptjs');
                     const salt = bcrypt.genSaltSync(10);
                     const hash = bcrypt.hashSync('admin123', salt);
-                    db.run("INSERT INTO usuarios (usuario, senha) VALUES (?, ?)", ['admin', hash]);
+                    db.run("INSERT INTO usuarios (usuario, senha_hash) VALUES (?, ?)", ['admin', hash]);
                 }
             });
         });
 
-        // Estoque inicial somente se vazio
-        db.get("SELECT count(*) as qtd FROM estoque", (err, row) => {
-            if (row && row.qtd === 0) {
-                const items = [
-                    ['Galetos',          50],
-                    ['Salpicão',         30],
-                    ['Feijão Tropeiro',  30],
-                    ['Refrigerante',     50],
-                    ['Suco',             40],
-                ];
-                const stmt = db.prepare("INSERT INTO estoque (item, quantidade) VALUES (?, ?)");
-                items.forEach(([item, qtd]) => stmt.run(item, qtd));
-                stmt.finalize();
-            }
-        });
     });
 }
 initDb();

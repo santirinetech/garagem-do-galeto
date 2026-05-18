@@ -29,8 +29,8 @@
             <span class="badge-count" id="badge-pendentes">0</span>
         </div>
         <div class="nav-label">Operação</div>
-        <div class="nav-item" onclick="showView('estoque', this)">
-            <span class="material-icons-round">inventory_2</span> Estoque
+        <div class="nav-item" onclick="showView('produtos', this)">
+            <span class="material-icons-round">inventory_2</span> Produtos
         </div>
         <div class="nav-item" onclick="showView('historico', this)">
             <span class="material-icons-round">history</span> Histórico
@@ -95,25 +95,48 @@
                 <div class="kpi-value" id="kpi-site">0</div>
                 <div class="kpi-sub">pedidos hoje</div>
             </div>
+            <div class="kpi" style="border-left: 4px solid #f97316;">
+                <div class="kpi-label">Fat. Galeto</div>
+                <div class="kpi-value" id="kpi-fat-galeto">R$ 0</div>
+                <div class="kpi-sub">Domingo</div>
+            </div>
+            <div class="kpi" style="border-left: 4px solid #8b5cf6;">
+                <div class="kpi-label">Fat. Churrasquinho</div>
+                <div class="kpi-value" id="kpi-fat-churrasco">R$ 0</div>
+                <div class="kpi-sub">Quarta a Sábado</div>
+            </div>
         </div>
 
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <span class="card-title">⚡ Pedidos em Aberto</span>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1;">
+                    <select id="filtro-tipo" class="status-select" onchange="carregarDashboard()" style="width: auto;">
+                        <option value="">Todos os Tipos</option>
+                        <option value="Entrega">Entrega</option>
+                        <option value="Retirada">Retirada</option>
+                    </select>
+                    <select id="filtro-status" class="status-select" onchange="carregarDashboard()" style="width: auto;">
+                        <option value="">Todos os Status</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Preparando">Preparando</option>
+                        <option value="Pronto para Retirada">Pronto para Retirada</option>
+                        <option value="Saiu para Entrega">Saiu para Entrega</option>
+                    </select>
+                </div>
                 <span class="card-header-date" id="atualizado-em"></span>
             </div>
             <table>
                 <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Origem</th>
-                        <th>Cliente</th>
-                        <th>Pedido</th>
-                        <th>Pagamento</th>
-                        <th>Endereço</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                    </tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 10%;">Origem</th>
+                        <th style="width: 15%;">Cliente</th>
+                        <th style="width: 20%;">Pedido</th>
+                        <th style="width: 10%;">Pagamento</th>
+                        <th style="width: 15%;">Endereço</th>
+                        <th style="width: 10%;">Total</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 5%;">Ações</th>
                 </thead>
                 <tbody id="tbody-abertos"></tbody>
             </table>
@@ -146,14 +169,40 @@
         </div>
     </div>
 
-    <!-- ═══ VIEW: ESTOQUE ═══ -->
-    <div class="view" id="view-estoque">
-        <div class="card card-spaced">
-            <div class="card-header">
-                <span class="card-title">Estoque em Tempo Real</span>
+    <!-- ═══ VIEW: PRODUTOS ═══ -->
+    <div class="view" id="view-produtos">
+        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+            <div class="card" style="flex: 3; min-width: 300px;">
+                <div class="card-header" style="justify-content: space-between;">
+                    <span class="card-title">Produtos / Estoque</span>
+                    <button class="btn btn-primary" onclick="abrirModalProduto()">
+                        <span class="material-icons-round icon-small">add</span> Novo Produto
+                    </button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Preço</th>
+                            <th>Estoque</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-produtos"></tbody>
+                </table>
             </div>
-            <div class="card-padded">
-                <div class="estoque-grid" id="grid-estoque"></div>
+            
+            <div class="card" style="flex: 1; min-width: 250px;">
+                <div class="card-header" style="justify-content: space-between;">
+                    <span class="card-title">Categorias</span>
+                    <button class="btn btn-ghost btn-small" onclick="abrirModalCategoria()">
+                        <span class="material-icons-round icon-small">add</span>
+                    </button>
+                </div>
+                <table>
+                    <tbody id="tbody-categorias"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -277,34 +326,101 @@
 
 <div id="print-area"></div>
 
+<!-- MODAL DETALHES DO PEDIDO -->
+<div class="overlay" id="modal-detalhes" onclick="fecharModalDetalhes(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:100%; max-width:600px; padding:20px; background:var(--bg-1); max-height: 90vh; overflow-y: auto;">
+        <div class="card-header" style="justify-content:space-between; margin-bottom:15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <span class="card-title" id="detalhes-titulo">Detalhes do Pedido</span>
+            <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-detalhes').style.display='none'">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        
+        <div id="detalhes-conteudo" style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Preenchido via JS -->
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 15px;" id="detalhes-acoes">
+            <!-- Botões rápidos via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PRODUTO -->
+<div class="overlay" id="modal-produto" onclick="fecharModalProduto(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:100%; max-width:400px; padding:20px; background:var(--bg-1);">
+        <div class="card-header" style="justify-content:space-between; margin-bottom:15px;">
+            <span class="card-title" id="modal-produto-titulo">Novo Produto</span>
+            <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-produto').style.display='none'">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        
+        <input type="hidden" id="prod-id">
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">NOME DO PRODUTO</label>
+        <input type="text" id="prod-nome" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: Galeto">
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">CATEGORIA</label>
+        <select id="prod-categoria" class="status-select" style="width:100%; height:40px; margin-bottom:15px;"></select>
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">PREÇO (R$)</label>
+        <input type="number" id="prod-preco" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" step="0.01">
+        
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">QUANTIDADE INICIAL</label>
+        <input type="number" id="prod-qtd" class="status-select" style="width:100%; height:40px; margin-bottom:20px;" value="0">
+        
+        <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarProduto()">
+            <span class="material-icons-round icon-small">save</span> SALVAR PRODUTO
+        </button>
+    </div>
+</div>
+
 <!-- MODAL PEDIDO MANUAL -->
 <div class="overlay" id="modal-pedido-manual" onclick="fecharModalPedidoManual(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-    <div class="card" style="width:100%; max-width:500px; padding:20px; background:var(--bg-1); max-height: 90vh; overflow-y: auto;">
+    <div class="card" style="width:100%; max-width:600px; padding:20px; background:var(--bg-1); max-height: 90vh; overflow-y: auto;">
         <div class="card-header" style="justify-content:space-between; margin-bottom:15px;">
-            <span class="card-title">Lançar Pedido Manual (WhatsApp)</span>
+            <span class="card-title">Lançar Pedido Manual (WhatsApp/Balcão)</span>
             <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-pedido-manual').style.display='none'">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         
-        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">NOME DO CLIENTE</label>
-        <input type="text" id="manual-nome" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: João Silva">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <label class="nav-label" style="color:var(--ink-2); padding-left:0;">NOME DO CLIENTE</label>
+                <input type="text" id="manual-nome" class="status-select" style="width:100%; height:40px;" placeholder="Ex: João Silva">
+            </div>
+            <div>
+                <label class="nav-label" style="color:var(--ink-2); padding-left:0;">TELEFONE / WHATSAPP</label>
+                <input type="tel" id="manual-tel" class="status-select" style="width:100%; height:40px;" placeholder="(00) 00000-0000">
+            </div>
+        </div>
         
-        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">TELEFONE / WHATSAPP</label>
-        <input type="tel" id="manual-tel" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="(00) 00000-0000">
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">ADICIONAR PRODUTOS</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <select id="manual-produto-select" class="status-select" style="flex: 1; height: 40px;"></select>
+            <input type="number" id="manual-produto-qtd" class="status-select" style="width: 70px; height: 40px;" value="1" min="1">
+            <button class="btn btn-primary" style="height: 40px;" onclick="adicionarProdutoManual()">Adicionar</button>
+        </div>
         
-        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">DESCRIÇÃO DO PEDIDO (ITENS)</label>
-        <input type="text" id="manual-pedido" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: 1 Galeto, 1 Salpicão">
+        <div id="manual-itens-lista" style="background: var(--bg-2); padding: 10px; border-radius: 5px; min-height: 50px; margin-bottom: 15px; font-size: 0.9rem;">
+            <!-- Itens adicionados aparecerão aqui -->
+        </div>
         
-        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">VALOR TOTAL (R$)</label>
-        <input type="number" id="manual-total" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="0.00" step="0.01">
-        
-        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">FORMA DE PAGAMENTO</label>
-        <select id="manual-pagamento" class="status-select" style="width:100%; height:40px; margin-bottom:15px;">
-            <option value="Pix">Pix</option>
-            <option value="Cartão">Cartão</option>
-            <option value="Dinheiro">Dinheiro</option>
-        </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <label class="nav-label" style="color:var(--ink-2); padding-left:0;">VALOR TOTAL (R$)</label>
+                <input type="number" id="manual-total" class="status-select" style="width:100%; height:40px;" placeholder="0.00" step="0.01">
+            </div>
+            <div>
+                <label class="nav-label" style="color:var(--ink-2); padding-left:0;">FORMA DE PAGAMENTO</label>
+                <select id="manual-pagamento" class="status-select" style="width:100%; height:40px;">
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+        </div>
         
         <label class="nav-label" style="color:var(--ink-2); padding-left:0;">ENDEREÇO (DEIXE EM BRANCO SE RETIRADA)</label>
         <input type="text" id="manual-endereco" class="status-select" style="width:100%; height:40px; margin-bottom:20px;" placeholder="Ex: Rua A, 123 - Centro">

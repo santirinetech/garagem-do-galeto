@@ -65,7 +65,7 @@ function startServer(mainWindow = null) {
     // Middleware de Proteção de Rotas
     const authMiddleware = (req, res, next) => {
         // Rotas que NÃO precisam de autenticação
-        const publicPaths = ['/api/login', '/api/novo-pedido'];
+        const publicPaths = ['/api/login', '/api/novo-pedido', '/api/cardapio-itens'];
         const isPublicApi = publicPaths.includes(req.path);
         const isStaticFile = !req.path.startsWith('/api');
 
@@ -132,7 +132,7 @@ function startServer(mainWindow = null) {
                 return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
             }
 
-            const match = await bcrypt.compare(senha, user.senha);
+            const match = await bcrypt.compare(senha, user.senha_hash || user.senha);
             if (!match) {
                 return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
             }
@@ -162,8 +162,9 @@ function startServer(mainWindow = null) {
     });
 
     server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), async (req, res) => {
-        const { nome, telefone, pedido, total, pagamento, origem, endereco, itens } = req.body;
+        const { nome, telefone, pedido, total, pagamento, origem, endereco, itens, taxa } = req.body;
         const comprovante = req.file ? `/uploads/${req.file.filename}` : null;
+        const taxa_aplicada = parseFloat(taxa) || 0.0;
 
         if (!nome || (!pedido && !itens) || total === undefined) {
             return res.status(400).json({ erro: 'Campos obrigatórios: nome, pedido/itens, total' });
@@ -184,36 +185,32 @@ function startServer(mainWindow = null) {
             const cliente = await queryOne("SELECT id FROM clientes WHERE telefone = ?", [telefone]);
             const cliente_id = cliente.id;
 
-            // 2. Pedido (Fallback legacy)
+            // 2. Pedido
             let pedidoDescStr = pedido || '';
-            const sqlPedido = `INSERT INTO pedidos (cliente_id, cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, comprovante, endereco, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendente')`;
-            const resultPedido = await run(sqlPedido, [cliente_id, nome, telefone, pedidoDescStr, total, pagamento, origem, comprovante, endereco]);
+            const sqlPedido = `INSERT INTO pedidos (cliente_id, endereco_entrega, pedido_descricao, origem, taxa_aplicada, total, forma_pagamento, comprovante_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
+            const resultPedido = await run(sqlPedido, [cliente_id, endereco, pedidoDescStr, origem || 'balcao', taxa_aplicada, total, pagamento, comprovante]);
             const pedido_id = resultPedido.lastID;
 
-            // 3. Processamento Dinâmico de Estoque e Normalização
+            // 3. Processamento Dinâmico de Estoque
             if (itens) {
-                // Vem do Frontend Novo: Inserção Relacional
                 const parsedItens = JSON.parse(itens);
                 pedidoDescStr = '';
                 for (let item of parsedItens) {
-                    const prod = await queryOne("SELECT id FROM produtos WHERE nome = ?", [item.nome]);
+                    const prod = await queryOne("SELECT id, preco_unitario FROM produtos WHERE nome = ? OR id = ?", [item.nome, item.id]);
                     if (prod) {
-                        await run("INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco_unitario) VALUES (?, ?, 1, ?)", [pedido_id, prod.id, item.preco]);
-                        await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE id = ?", [prod.id]);
-                        await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = ?", [item.nome]); // Duplo Baixa para retrocompatibilidade
+                        await run("INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unitario) VALUES (?, ?, ?, ?)", [pedido_id, prod.id, item.quantidade || 1, prod.preco_unitario || item.preco]);
+                        await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - ?) WHERE id = ?", [item.quantidade || 1, prod.id]);
                     }
-                    pedidoDescStr += item.nome + ', ';
+                    pedidoDescStr += `${item.quantidade || 1}x ${item.nome}, `;
                 }
                 pedidoDescStr = pedidoDescStr.slice(0, -2);
-                await run("UPDATE pedidos SET pedido_desc = ? WHERE id = ?", [pedidoDescStr, pedido_id]);
+                await run("UPDATE pedidos SET pedido_descricao = ? WHERE id = ?", [pedidoDescStr, pedido_id]);
             } else if (pedido) {
-                // Vem do Chatbot Antigo: Regex Dedução
+                // Fallback legado regex
                 const desc = pedido.toLowerCase();
-                if (desc.includes('galeto'))         await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Galetos'");
-                if (desc.includes('salpicão') || desc.includes('salpicao')) await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Salpicão'");
-                if (desc.includes('feijão') || desc.includes('feijao'))     await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Feijão Tropeiro'");
-                if (desc.includes('refrigerante'))   await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Refrigerante'");
-                if (desc.includes('suco'))           await run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Suco'");
+                if (desc.includes('galeto'))         await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Galeto%'");
+                if (desc.includes('salpicão') || desc.includes('salpicao')) await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Salpicão%'");
+                if (desc.includes('feijão') || desc.includes('feijao'))     await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Feijão Tropeiro%'");
             }
 
             // Disparo de Webhook para Novo Pedido (Automação WhatsApp)
@@ -247,7 +244,12 @@ function startServer(mainWindow = null) {
         db.run("UPDATE pedidos SET status = ? WHERE id = ?", [status, id], function (err) {
             if (err) return res.status(500).json({ erro: err.message });
             
-            queryOne("SELECT * FROM pedidos WHERE id = ?", [id]).then(pedido => {
+            queryOne(`
+                SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
+                FROM pedidos p 
+                LEFT JOIN clientes c ON p.cliente_id = c.id 
+                WHERE p.id = ?
+            `, [id]).then(pedido => {
                 if (pedido) {
                     // Notificação por WhatsApp Bot (Automática)
                     if (['Preparando', 'Saiu para Entrega', 'Entregue', 'Pronto para Retirada', 'Retirado'].includes(status) && pedido.cliente_tel) {
@@ -286,7 +288,13 @@ function startServer(mainWindow = null) {
 
     server.get('/api/pedidos/hoje', async (req, res) => {
         try {
-            const rows = await query("SELECT * FROM pedidos WHERE date(data_hora, 'localtime') = date('now','localtime') ORDER BY id DESC");
+            const rows = await query(`
+                SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
+                FROM pedidos p 
+                LEFT JOIN clientes c ON p.cliente_id = c.id 
+                WHERE date(p.data_hora, 'localtime') = date('now','localtime') 
+                ORDER BY p.id DESC
+            `);
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
@@ -297,12 +305,14 @@ function startServer(mainWindow = null) {
                 SELECT
                     count(*)                                              AS total_pedidos,
                     COALESCE(sum(total), 0)                              AS faturamento,
-                    sum(CASE WHEN origem  = 'Site'      THEN 1 ELSE 0 END) AS pedidos_site,
+                    sum(CASE WHEN origem LIKE 'Site%' THEN 1 ELSE 0 END) AS pedidos_site,
                     sum(CASE WHEN origem LIKE 'WhatsApp%' THEN 1 ELSE 0 END) AS pedidos_zap,
-                    sum(CASE WHEN status  = 'Pendente'  THEN 1 ELSE 0 END) AS pendentes,
-                    sum(CASE WHEN status  = 'Preparando'THEN 1 ELSE 0 END) AS em_preparo,
-                    sum(CASE WHEN status  = 'Saiu para Entrega'    THEN 1 ELSE 0 END) AS prontos,
-                    sum(CASE WHEN status  = 'Entregue'  THEN 1 ELSE 0 END) AS entregues
+                    sum(CASE WHEN status  = 'pendente' OR status = 'Pendente'  THEN 1 ELSE 0 END) AS pendentes,
+                    sum(CASE WHEN status  = 'em_preparo' OR status = 'Preparando' THEN 1 ELSE 0 END) AS em_preparo,
+                    sum(CASE WHEN status  = 'saiu_entrega' OR status = 'Saiu para Entrega'  THEN 1 ELSE 0 END) AS prontos,
+                    sum(CASE WHEN status  = 'entregue' OR status = 'Entregue'  THEN 1 ELSE 0 END) AS entregues,
+                    COALESCE(sum(CASE WHEN origem LIKE '%Churrasquinho%' OR pedido_descricao LIKE '%Espetinho%' OR pedido_descricao LIKE '%Churrasco%' THEN total ELSE 0 END), 0) AS fat_churrasco,
+                    COALESCE(sum(CASE WHEN origem LIKE '%Galeto%' OR pedido_descricao LIKE '%Galeto%' THEN total ELSE 0 END), 0) AS fat_galeto
                 FROM pedidos
                 WHERE date(data_hora, 'localtime') = date('now','localtime')
             `);
@@ -323,6 +333,96 @@ function startServer(mainWindow = null) {
             if (err) return res.status(500).json({erro: err.message});
             res.json({ status: 'ok' });
         });
+    });
+
+    // ──────── APIs DE PRODUTOS E CATEGORIAS ────────
+    server.get('/api/cardapio-itens', async (req, res) => {
+        try {
+            const categorias = await query("SELECT * FROM categoria_produtos WHERE status = 1 ORDER BY nome_listagem");
+            const produtos = await query("SELECT * FROM produtos WHERE status = 1 ORDER BY nome");
+            
+            // Format to match old structure or group them easily for the frontend
+            const menu = categorias.map(c => ({
+                id: c.id,
+                nome: c.nome_listagem || c.nome,
+                descricao: c.descricao,
+                produtos: produtos.filter(p => p.categoria_id === c.id)
+            })).filter(c => c.produtos.length > 0);
+            
+            res.json(menu);
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+    server.get('/api/produtos', async (req, res) => {
+        try {
+            const rows = await query(`
+                SELECT p.*, c.nome as categoria_nome 
+                FROM produtos p 
+                LEFT JOIN categoria_produtos c ON p.categoria_id = c.id 
+                ORDER BY c.nome, p.nome
+            `);
+            res.json(rows);
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.get('/api/produtos/:id', async (req, res) => {
+        try {
+            const row = await queryOne("SELECT * FROM produtos WHERE id = ?", [req.params.id]);
+            res.json(row);
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.post('/api/produtos', async (req, res) => {
+        const { nome, categoria_id, preco, quantidade_estoque } = req.body;
+        try {
+            await run("INSERT INTO produtos (nome, categoria_id, preco, quantidade_estoque) VALUES (?, ?, ?, ?)", 
+                [nome, categoria_id || null, parseFloat(preco) || 0, parseInt(quantidade_estoque) || 0]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.put('/api/produtos/:id', async (req, res) => {
+        const { nome, categoria_id, preco, quantidade_estoque } = req.body;
+        try {
+            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco = ?, quantidade_estoque = ? WHERE id = ?", 
+                [nome, categoria_id || null, parseFloat(preco) || 0, parseInt(quantidade_estoque) || 0, req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.patch('/api/produtos/:id/estoque', async (req, res) => {
+        try {
+            await run("UPDATE produtos SET quantidade_estoque = ? WHERE id = ?", [parseInt(req.body.quantidade) || 0, req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.patch('/api/produtos/:id/ativo', async (req, res) => {
+        try {
+            await run("UPDATE produtos SET ativo = ? WHERE id = ?", [parseInt(req.body.ativo), req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.get('/api/categorias', async (req, res) => {
+        try {
+            const rows = await query("SELECT * FROM categoria_produtos ORDER BY nome");
+            res.json(rows);
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.post('/api/categorias', async (req, res) => {
+        try {
+            await run("INSERT INTO categoria_produtos (nome, nome_listagem) VALUES (?, ?)", [req.body.nome, req.body.nome]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.delete('/api/categorias/:id', async (req, res) => {
+        try {
+            await run("UPDATE produtos SET categoria_id = NULL WHERE categoria_id = ?", [req.params.id]);
+            await run("DELETE FROM categoria_produtos WHERE id = ?", [req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.post('/api/despesas', (req, res) => {
@@ -396,13 +496,17 @@ function startServer(mainWindow = null) {
         try {
             const limite = parseInt(req.query.limite) || 200;
             const data = req.query.data;
-            let sql = `SELECT * FROM pedidos`;
+            let sql = `
+                SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
+                FROM pedidos p 
+                LEFT JOIN clientes c ON p.cliente_id = c.id
+            `;
             let params = [];
             if (data) {
-                sql += ` WHERE date(data_hora) = ?`;
+                sql += ` WHERE date(p.data_hora) = ?`;
                 params.push(data);
             }
-            sql += ` ORDER BY id DESC LIMIT ?`;
+            sql += ` ORDER BY p.id DESC LIMIT ?`;
             params.push(limite);
             
             const rows = await query(sql, params);
@@ -412,8 +516,23 @@ function startServer(mainWindow = null) {
 
     server.get('/api/pedido/:id', async (req, res) => {
         try {
-            const row = await queryOne("SELECT * FROM pedidos WHERE id = ?", [req.params.id]);
+            const row = await queryOne(`
+                SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
+                FROM pedidos p 
+                LEFT JOIN clientes c ON p.cliente_id = c.id 
+                WHERE p.id = ?
+            `, [req.params.id]);
             if (!row) return res.status(404).json({erro: 'Pedido não encontrado'});
+            
+            // Buscar itens
+            const itens = await query(`
+                SELECT i.*, pr.nome as produto_nome 
+                FROM itens_pedido i 
+                LEFT JOIN produtos pr ON i.produto_id = pr.id 
+                WHERE i.pedido_id = ?
+            `, [row.id]);
+            
+            row.itens = itens;
             res.json(row);
         } catch (e) { res.status(500).json({erro: e.message}); }
     });

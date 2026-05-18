@@ -328,4 +328,11 @@ header {
     background: #333;
     color: #666;
     cursor: not-allowed;
-}
+}
+
+/* Ajustes rápidos de última hora */
+.btn-add { font-size: 1.2rem; font-weight: bold; }
+.success-view { padding: 60px 20px; }
+.resumo-row button { color: #ff3131; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0 10px; }
+
+
