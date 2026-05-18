@@ -1,5 +1,5 @@
 // ── CONFIG ──
-const NUMERO_DONO = "5527988573982";
+let CONFIG = { whatsapp_dono: '', pix_chave: '' };
 let carrinho = [];
 let pagSelecionado = 'Pix';
 let tipoEntrega = 'Entrega';
@@ -27,6 +27,10 @@ function resolveImgUrl(url) {
 // ── CARREGAMENTO DINÂMICO DO CARDÁPIO ──
 async function carregarCardapio() {
     try {
+        // Carregar config dinâmica
+        const configRes = await fetch('/api/config');
+        CONFIG = await configRes.json();
+
         const res = await fetch('/api/cardapio-itens');
         const menu = await res.json();
         
@@ -188,7 +192,7 @@ function selecionarPag(btn) {
     btn.classList.add('selected');
     pagSelecionado = btn.dataset.pag;
     const det = document.getElementById('pag-detalhe-container');
-    if(pagSelecionado === 'Pix') det.innerHTML = '<p style="font-size:0.8rem; color:#aaa; margin:10px 0;">Chave PIX: 27988573982</p><input type="file" id="inp-comprovante" class="form-input">';
+    if(pagSelecionado === 'Pix') det.innerHTML = `<p style="font-size:0.8rem; color:#aaa; margin:10px 0;">Chave PIX: ${CONFIG.pix_chave}</p><input type="file" id="inp-comprovante" class="form-input">`;
     else if(pagSelecionado === 'Dinheiro') det.innerHTML = '<input type="text" id="inp-troco" class="form-input" placeholder="Troco para quanto?">';
     else det.innerHTML = '';
 }
@@ -261,7 +265,7 @@ async function enviarPedido() {
             zapMsg += `%0A%0A*🔗 LINK DO COMPROVANTE:*%0A${linkComp}`;
         }
         
-        window.open(`https://wa.me/${NUMERO_DONO}?text=${zapMsg}`, '_blank');
+        window.open(`https://wa.me/${CONFIG.whatsapp_dono}?text=${zapMsg}`, '_blank');
         
         document.getElementById('form-view').style.display = 'none';
         document.getElementById('success-view').style.display = 'block';

@@ -224,6 +224,20 @@ function initDb() {
             item       TEXT,
             quantidade INTEGER
         )`);
+
+        // ── Configurações do Sistema ──────────────────────────────
+        db.run(`CREATE TABLE IF NOT EXISTS configuracoes (
+            chave TEXT PRIMARY KEY,
+            valor TEXT NOT NULL
+        )`, () => {
+            db.get("SELECT count(*) as qtd FROM configuracoes", (err, row) => {
+                if (row && row.qtd === 0) {
+                    const stmt = db.prepare("INSERT INTO configuracoes (chave, valor) VALUES (?, ?)");
+                    [['whatsapp_dono', '5527988573982'], ['pix_chave', '27988573982']].forEach(r => stmt.run(r));
+                    stmt.finalize();
+                }
+            });
+        });
     });
 }
 

@@ -4,10 +4,13 @@
   "description": "Sistema Garagem do Galeto",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "electron .",
-    "server": "node server-standalone.js",
-    "dev": "nodemon server-standalone.js",
-    "dist": "electron-builder --win --x64"
+    "start":       "electron .",
+    "server":      "node server-standalone.js",
+    "dev":         "nodemon server-standalone.js",
+    "dist":        "electron-builder --win --x64",
+    "db:clean":    "node scripts/limpar-banco.js",
+    "db:clean:run":"node scripts/limpar-banco.js --confirmar",
+    "lint:deps":   "npx depcheck --ignores=electron,electron-builder,nodemon"
   },
   "build": {
     "appId": "com.santirine.galetomaster",

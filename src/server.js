@@ -213,13 +213,8 @@ function startServer(mainWindow = null) {
                 if (desc.includes('feijão') || desc.includes('feijao'))     await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Feijão Tropeiro%'");
             }
 
-            // Disparo de Webhook para Novo Pedido (Automação WhatsApp)
-            const N8N_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/galeto-pedido';
-            fetch(N8N_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: pedido_id, nome, telefone, pedido: pedidoDescStr, total, pagamento, origem, status: 'Pendente', endereco })
-            }).catch(() => {});
+            // Webhook removido: Apenas dependência local no banco e envio WS local
+            console.log(`[INFO] Novo pedido #${pedido_id} salvo localmente.`);
 
             emitUpdate(); // Notifica via SSE
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
@@ -268,13 +263,7 @@ function startServer(mainWindow = null) {
                         enviarMensagemPainel(pedido.cliente_tel, msg);
                     }
 
-                    // Disparo n8n antigo (mantido por compatibilidade)
-                    const N8N_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/galeto-status'; 
-                    fetch(N8N_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(pedido)
-                    }).catch(e => {});
+                    // Disparo n8n removido para garantir fluxo local exclusivo.
                 }
             });
 
@@ -282,6 +271,16 @@ function startServer(mainWindow = null) {
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
             res.json({ status: 'ok' });
         });
+    });
+
+    // ──────── APIs DE CONFIGURAÇÃO ────────
+    server.get('/api/config', async (req, res) => {
+        try {
+            const rows = await query("SELECT * FROM configuracoes");
+            const config = {};
+            rows.forEach(r => config[r.chave] = r.valor);
+            res.json(config);
+        } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     // ──────── APIs DO DASHBOARD ────────
