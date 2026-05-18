@@ -1,12 +1,19 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { startServer } = require('../server'); 
 
 const PORT = process.env.PORT || 3000;
 let mainWindow;
 
+// ── Protocolo customizado para servir imagens locais com segurança ──────────
+// Registrar ANTES de app.whenReady()
+protocol.registerSchemesAsPrivileged([
+    { scheme: 'app-media', privileges: { secure: true, standard: true, supportFetchAPI: true } }
+]);
+
 // Inicializa o Servidor Web
-const server = startServer(null); 
+const server = startServer(null);
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -74,6 +81,26 @@ ipcMain.on('solicitar-impressao-automatica', (event, dadosPedido) => {
 });
 
 app.whenReady().then(() => {
+    // Servir imagens da pasta uploads/ com o protocolo seguro app-media://
+    // Uso no frontend: <img src="app-media://uploads/arquivo.jpg">
+    const uploadsBase = path.join(__dirname, '../../public/uploads');
+    protocol.handle('app-media', (req) => {
+        const url = new URL(req.url);
+        // O hostname é a pasta (ex: 'uploads'), pathname é o arquivo
+        const relativePath = url.hostname + decodeURIComponent(url.pathname);
+        const filePath = path.join(__dirname, '../../public', relativePath);
+        // Segurança: não permitir path traversal
+        if (!filePath.startsWith(path.join(__dirname, '../../public'))) {
+            return new Response('Forbidden', { status: 403 });
+        }
+        if (!fs.existsSync(filePath)) {
+            return new Response('Not Found', { status: 404 });
+        }
+        const ext = path.extname(filePath).toLowerCase();
+        const mime = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
+        return net.fetch(`file://${filePath}`);
+    });
+
     createWindow();
 });
 

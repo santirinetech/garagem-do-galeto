@@ -582,9 +582,22 @@ async function editarProduto(id) {
         document.getElementById('prod-preco').value = p.preco_unitario;
         document.getElementById('prod-qtd').value = p.quantidade_estoque;
         document.getElementById('prod-categoria').value = p.categoria_id || '';
+        const imgUrl = p.imagem_url || '';
+        document.getElementById('prod-imagem').value = imgUrl;
+        previewProdImg(imgUrl);
         document.getElementById('modal-produto-titulo').textContent = 'Editar Produto';
         document.getElementById('modal-produto').style.display = 'flex';
     } catch(e) {}
+}
+
+function previewProdImg(url) {
+    const el = document.getElementById('prod-img-preview');
+    if (!url || url.trim() === '') {
+        el.src = '';
+        el.className = '';
+        return;
+    }
+    el.src = url.trim();
 }
 
 async function toggleProdutoAtivo(id, statusAtual) {
@@ -602,6 +615,9 @@ function abrirModalProduto() {
     document.getElementById('prod-nome').value = '';
     document.getElementById('prod-preco').value = '';
     document.getElementById('prod-qtd').value = '0';
+    document.getElementById('prod-imagem').value = '';
+    document.getElementById('prod-img-preview').src = '';
+    document.getElementById('prod-img-preview').className = '';
     document.getElementById('modal-produto-titulo').textContent = 'Novo Produto';
     document.getElementById('modal-produto').style.display = 'flex';
 }
@@ -616,10 +632,11 @@ async function salvarProduto() {
     const categoria_id = document.getElementById('prod-categoria').value;
     const preco = parseFloat(document.getElementById('prod-preco').value);
     const quantidade_estoque = parseInt(document.getElementById('prod-qtd').value);
+    const imagem_url = document.getElementById('prod-imagem').value.trim() || null;
     
     if (!nome || isNaN(preco)) return alert('Preencha nome e preço válidos.');
     
-    const payload = { nome, categoria_id, preco_unitario: preco, quantidade_estoque };
+    const payload = { nome, categoria_id, preco_unitario: preco, quantidade_estoque, imagem_url };
     const url = id ? '/api/produtos/' + id : '/api/produtos';
     const method = id ? 'PUT' : 'POST';
     

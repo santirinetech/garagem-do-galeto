@@ -6,6 +6,24 @@ let tipoEntrega = 'Entrega';
 let regioes = [];
 let freteAtual = 0;
 
+// URL da imagem de fallback quando o produto não tem foto
+const FALLBACK_IMG = '/img/produto-placeholder.png';
+
+// Resolve a URL da imagem de acordo com o ambiente (Electron ou browser)
+function resolveImgUrl(url) {
+    if (!url) return FALLBACK_IMG;
+    // Se for uma URL completa (http/https), usar diretamente
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    // Se estivermos no Electron, usar o protocolo customizado
+    if (window.electronAPI || navigator.userAgent.includes('Electron')) {
+        // uploads/arquivo.jpg => app-media://uploads/arquivo.jpg
+        const clean = url.replace(/^\//, '');
+        return `app-media://${clean}`;
+    }
+    // Browser normal: usar URL relativa (servida pelo Express)
+    return url.startsWith('/') ? url : '/' + url;
+}
+
 // ── CARREGAMENTO DINÂMICO DO CARDÁPIO ──
 async function carregarCardapio() {
     try {
@@ -16,49 +34,76 @@ async function carregarCardapio() {
         const container = document.getElementById('produtos-container');
         
         if (!menu || menu.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--ink-2);">Nenhum produto disponível no momento.</div>';
+            container.innerHTML = '<div style="text-align:center;padding:60px;color:#666;">Nenhum produto disponível no momento.</div>';
             return;
         }
 
-        // Construir Navegação
+        // ── Navegação de categorias
         let navHtml = `<div class="cat-chip ativo" onclick="filtrarCat('todos', this)">Todos</div>`;
         menu.forEach(cat => {
             navHtml += `<div class="cat-chip" onclick="filtrarCat('cat-${cat.id}', this)">${cat.nome}</div>`;
         });
         nav.innerHTML = navHtml;
 
-        // Construir Produtos
-        let prodsHtml = '';
+        // ── Seccões + Grid de produtos
+        let html = '';
         menu.forEach(cat => {
-            prodsHtml += `<div class="section-title" data-cat="cat-${cat.id}">🍽️ ${cat.nome.toUpperCase()}</div>`;
-            
+            html += `
+            <div class="section-title" data-cat="cat-${cat.id}">
+                🍽️ ${(cat.nome_listagem || cat.nome).toUpperCase()}
+            </div>
+            <div class="produtos-grid" data-cat="cat-${cat.id}">`;
+
             cat.produtos.forEach(p => {
-                const esgotado = p.quantidade_estoque <= 0;
-                const ultimas = !esgotado && p.quantidade_estoque <= 5;
-                
-                prodsHtml += `
-                <div class="produto" data-cat="cat-${cat.id}">
-                    <div class="prod-info">
-                        <h3 class="prod-nome">${p.nome}</h3>
-                        <p class="prod-desc">${p.descricao || ''}</p>
+                const esgotado = (p.quantidade_estoque ?? 0) <= 0;
+                const ultimas  = !esgotado && (p.quantidade_estoque ?? 99) <= 5;
+                const imgSrc   = resolveImgUrl(p.imagem_url);
+                const preco    = (p.preco_unitario || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                html += `
+                <div class="produto${esgotado ? ' esgotado' : ''}" data-cat="cat-${cat.id}" data-prod-id="${p.id}">
+
+                    <!-- Imagem ── ocupa 50% do card via aspect-ratio quadrado -->
+                    <div class="prod-img-wrap">
+                        <img
+                            src="${imgSrc}"
+                            class="prod-img"
+                            alt="${p.nome}"
+                            loading="lazy"
+                            onerror="this.src='${FALLBACK_IMG}'; this.onerror=null;"
+                        >
+                        ${esgotado
+                            ? `<span class="tag-esgotado">Esgotado</span>`
+                            : (ultimas ? `<span class="stock-badge">🔥 Últimas</span>` : '')
+                        }
+                    </div>
+
+                    <!-- Informações ── -->
+                    <div class="prod-body">
+                        <div class="prod-nome">${p.nome}</div>
+                        ${p.descricao ? `<div class="prod-desc">${p.descricao}</div>` : ''}
                         <div class="prod-footer">
-                            <span class="prod-preco">${(p.preco_unitario || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
-                            <button class="btn-add ${esgotado ? 'disabled' : ''}" onclick="${esgotado ? "alert('Esgotado!')" : `addItem(${p.id}, '${p.nome}', ${p.preco_unitario})`}">${esgotado ? '🚫' : '+'}</button>
+                            <span class="prod-preco">${preco}</span>
+                            <button
+                                class="btn-add"
+                                onclick="addItem(${p.id}, '${p.nome.replace(/'/g, "\\'")}'  , ${p.preco_unitario})"
+                                aria-label="Adicionar ${p.nome} ao carrinho"
+                            >+</button>
                         </div>
                     </div>
-                    <div class="prod-img-wrap">
-                        ${p.imagem_url ? `<img src="${p.imagem_url}" class="prod-img">` : `<div style="width:90px;height:90px;background:var(--bg-2);border-radius:10px;"></div>`}
-                        ${esgotado ? `<div class="stock-badge esgotado">🚫 ESGOTADO</div>` : (ultimas ? `<div class="stock-badge">🔥 ÚLTIMAS UNIDADES</div>` : '')}
-                    </div>
+
                 </div>`;
             });
+
+            html += `</div>`; // fecha .produtos-grid
         });
         
-        container.innerHTML = prodsHtml;
+        container.innerHTML = html;
 
     } catch(e) {
         console.error('Erro ao carregar cardapio', e);
-        document.getElementById('produtos-container').innerHTML = '<div style="text-align: center; padding: 40px; color: red;">Erro ao carregar cardápio.</div>';
+        document.getElementById('produtos-container').innerHTML =
+            '<div style="text-align:center;padding:60px;color:#ff3131;">Erro ao carregar cardápio. Tente novamente.</div>';
     }
 }
 
@@ -87,7 +132,8 @@ function atualizarBarra() {
 function filtrarCat(cat, btn) {
     document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('ativo'));
     btn.classList.add('ativo');
-    document.querySelectorAll('.produto, .section-title').forEach(el => {
+    // Controla seccões (section-title) e grids (.produtos-grid)
+    document.querySelectorAll('.produto, .section-title, .produtos-grid').forEach(el => {
         if (cat === 'todos') {
             el.style.display = '';
         } else {
@@ -109,12 +155,13 @@ async function carregarRegioes() {
     const resp = await fetch('/api/regioes');
     regioes = await resp.json();
     const sel = document.getElementById('sel-regiao');
-    if(sel && sel.options.length <= 1) {
+    if (sel && sel.options.length <= 1) {
         regioes.forEach(r => {
             const opt = document.createElement('option');
             opt.value = r.id;
-            opt.textContent = `${r.nome} (${r.taxa.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`;
-            opt.dataset.taxa = r.taxa;
+            const taxa = r.taxa_entrega ?? r.taxa ?? 0;
+            opt.textContent = `${r.nome} (${taxa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
+            opt.dataset.taxa = taxa;
             sel.appendChild(opt);
         });
     }

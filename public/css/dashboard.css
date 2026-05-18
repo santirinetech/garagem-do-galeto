@@ -507,3 +507,115 @@
             .print-line { border-bottom: 2px dashed black; margin: 10px 0; }
             .print-row { display: flex; justify-content: space-between; }
         }
+
+        /* ── MODAL OVERLAY ROBUSTO ── */
+        /* Garante que o overlay cubra TUDO e o card seja completamente sólido */
+        .overlay {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 9999 !important;
+            background: rgba(0, 0, 0, 0.65) !important;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay[style*="flex"] { display: flex !important; }
+
+        /* Card do modal — completamente sólido, sem leak de conteúdo */
+        .overlay > .card {
+            position: relative;
+            z-index: 10000;
+            background: var(--white) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25), 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+            border: 1px solid var(--border) !important;
+            overflow: visible !important; /* Permite o conteúdo scrollar internamente */
+            padding: 24px !important;
+        }
+
+        /* ── SELECT / DROPDOWN UNIFORME ── */
+        /* Todos os <select> herdam o padrão visual dos inputs */
+        select.status-select,
+        .overlay select,
+        #prod-categoria,
+        #desp-categoria,
+        #manual-produto-select,
+        #manual-pagamento,
+        #filtro-tipo,
+        #filtro-status {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px !important;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background-color: var(--white);
+            color: var(--ink-2);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select.status-select:focus,
+        .overlay select:focus {
+            outline: none;
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+        }
+
+        /* ── PREVIEW DE IMAGEM NO MODAL DE PRODUTO ── */
+        .img-preview-wrap {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .img-preview-wrap input {
+            flex: 1;
+            height: 40px;
+            margin-bottom: 0 !important;
+        }
+        #prod-img-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            border: 2px dashed var(--border);
+            object-fit: cover;
+            background: var(--bg);
+            flex-shrink: 0;
+            transition: border-color 0.2s;
+            display: block;
+        }
+        #prod-img-preview.loaded {
+            border-color: var(--green);
+            border-style: solid;
+        }
+        #prod-img-preview.error {
+            border-color: var(--red);
+        }
+
+        /* Badge "atrasado" na tabela */
+        .badge-atrasado {
+            display: inline-block;
+            background: var(--red-lt);
+            color: var(--red);
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            margin-top: 3px;
+        }
+        .tr-atrasado td { background: #fff8f8 !important; }
+        .tr-atrasado:hover td { background: #fff0f0 !important; }
+
+        /* btn-small para ações de tabela */
+        .btn.btn-small {
+            padding: 5px 10px;
+            font-size: 0.75rem;
+        }

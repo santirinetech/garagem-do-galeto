@@ -465,6 +465,12 @@
         <label class="nav-label" style="color:var(--ink-2); padding-left:0;">QUANTIDADE INICIAL</label>
         <input type="number" id="prod-qtd" class="status-select" style="width:100%; height:40px; margin-bottom:20px;" value="0">
         
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">IMAGEM (URL ou caminho)</label>
+        <div class="img-preview-wrap">
+            <input type="text" id="prod-imagem" class="status-select" style="height:40px;" placeholder="https://... ou /uploads/foto.jpg" oninput="previewProdImg(this.value)">
+            <img id="prod-img-preview" src="" alt="Preview" onerror="this.classList.remove('loaded');this.classList.add('error');" onload="this.classList.remove('error');this.classList.add('loaded');">
+        </div>
+
         <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarProduto()">
             <span class="material-icons-round icon-small">save</span> SALVAR PRODUTO
         </button>
