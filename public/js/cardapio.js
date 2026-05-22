@@ -268,7 +268,7 @@ async function enviarPedido() {
         window.open(`https://wa.me/${CONFIG.whatsapp_dono}?text=${zapMsg}`, '_blank');
         
         document.getElementById('form-view').style.display = 'none';
-        document.getElementById('success-view').style.display = 'block';
+        document.getElementById('success-view').style.display = 'flex';
         carrinho = [];
         atualizarBarra();
     } catch (e) {

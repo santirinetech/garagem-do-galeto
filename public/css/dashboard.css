@@ -1,17 +1,17 @@
 :root {
-    /* ── PALETA OFICIAL GARAGEM DO GALETO ─────────────────────────────────── */
-    --color-primary:      #E3262A;  /* Vermelho Assados — Ação principal            */
-    --color-primary-dk:   #C11F23;  /* Vermelho escuro — hover                      */
-    --color-primary-lt:   #fdecea;  /* Vermelho claro — backgrounds sutis           */
-    --color-accent:       #F39200;  /* Laranja Brasa — destaque de preço / ativo    */
-    --color-accent-dk:    #D97E00;  /* Laranja escuro — hover                        */
-    --color-accent-lt:    #FFF3E0;  /* Laranja pálido — badges                       */
-    --color-dark:         #111111;  /* Preto Escudo — sidebar / fundo catálogo       */
-    --color-surface-dark: #1E1E1E;  /* Cinza Escuro — cards cliente                  */
-    --color-light:        #FFF9F2;  /* Bege/Creme — fundo painel ADM                 */
+    /* ── PALETA OFICIAL GARAGEM DO GALETO (Premium & Sleek) ── */
+    --color-primary:      #D32F2F;  /* Vermelho Brasa — Ação principal            */
+    --color-primary-dk:   #B71C1C;  /* Vermelho escuro — hover                      */
+    --color-primary-lt:   #FFEBEE;  /* Vermelho claro — backgrounds sutis           */
+    --color-accent:       #F59E0B;  /* Laranja Dourado — destaque                   */
+    --color-accent-dk:    #D97706;  /* Laranja escuro — hover                        */
+    --color-accent-lt:    #FEF3C7;  /* Laranja pálido — badges                       */
+    --color-dark:         #111111;  /* Carvão Escuro — sidebar                       */
+    --color-surface-dark: #1E1E1E;  /* Cinza Escuro — cards dark                     */
+    --color-light:        #F8FAFC;  /* Slate Super Claro — fundo painel ADM          */
     --color-surface-light:#FFFFFF;  /* Branco — cards painel ADM                     */
 
-    /* ── ALIASES INTERNOS (mantidos para não quebrar classes já existentes) ── */
+    /* ── ALIASES INTERNOS ── */
     --red:     var(--color-primary);
     --red-dk:  var(--color-primary-dk);
     --red-lt:  var(--color-primary-lt);
@@ -19,10 +19,10 @@
     --amber-lt:var(--color-accent-lt);
     --green:   #10B981;
     --green-lt:#ECFDF5;
-    --blue:    #2563eb;
-    --blue-lt: #eff6ff;
-    --ink:     var(--color-dark);
-    --ink-2:   #334155;
+    --blue:    #3B82F6;
+    --blue-lt: #EFF6FF;
+    --ink:     #111111;
+    --ink-2:   #333333;
     --ink-3:   #64748B;
     --bg:      var(--color-light);
     --white:   var(--color-surface-light);

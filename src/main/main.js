@@ -30,7 +30,7 @@ function createWindow() {
     });
 
     mainWindow.setMenuBarVisibility(false);
-    mainWindow.loadURL(`http://localhost:${PORT}/index.html`);
+    mainWindow.loadURL(`http://localhost:${PORT}/login.html`);
 }
 
 // Lógica de Impressão Térmica Automática

@@ -336,8 +336,7 @@ async function carregarDashboard() {
             document.getElementById('kpi-pend').textContent = resumo.pendentes || 0;
             document.getElementById('kpi-zap').textContent  = resumo.pedidos_zap || 0;
             document.getElementById('kpi-site').textContent = resumo.pedidos_site || 0;
-            if (document.getElementById('kpi-fat-churrasco')) document.getElementById('kpi-fat-churrasco').textContent = fmtReal(resumo.fat_churrasco || 0);
-            if (document.getElementById('kpi-fat-galeto')) document.getElementById('kpi-fat-galeto').textContent = fmtReal(resumo.fat_galeto || 0);
+            if (document.getElementById('kpi-fat-mensal')) document.getElementById('kpi-fat-mensal').textContent = fmtReal(resumo.faturamento_mensal || 0);
         }
 
         // Tabela de abertos — compatível com status legado (Capitalized) e novo (snake_case)
@@ -798,15 +797,23 @@ async function carregarClientes() {
 
 async function excluirCliente(id) {
     if (!confirm('ATENÇÃO (LGPD): Você tem certeza que deseja excluir todos os dados deste cliente? Esta ação não pode ser desfeita.')) return;
-    
     try {
-        const res = await fetch('/api/clientes/' + id, { method: 'DELETE' });
-        if (res.ok) {
-            showToast('Dados do cliente excluídos permanentemente.');
-            carregarClientes();
-        }
+        await fetch('/api/clientes/' + id, { method: 'DELETE' });
+        carregarClientes();
     } catch(e) {}
 }
+
+async function carregarConfiguracoes() {
+    try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        // Configurações globais adicionais, se houver
+    } catch(e) {}
+}
+
+// Chamar ao iniciar
+setTimeout(carregarConfiguracoes, 1000);
+
 
 // ── TOAST ─────────────────────────────────────────────
 let toastTimer;

@@ -1,15 +1,48 @@
-node_modules/
-npm-debug.log
+# Segurança / Configurações Sensíveis
 .env
-.DS_Store
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Dependências Node
+node_modules/
+package-lock.json
+
+# Banco de Dados SQLite (Dados da Produção/Testes não devem ir para o repositório)
+loja.db
+loja.db-journal
+loja.db-wal
+loja.db-shm
+database.sqlite
+database.sqlite3
+
+# Arquivos de Build / Executáveis
 dist/
 build/
-*.db
-*.zip
-node_modules/
-.env
-# WhatsApp Web.js
+out/
+.electron-builder/
+
+# Whatsapp Web JS (Auth e Cache)
 .wwebjs_auth/
 .wwebjs_cache/
-public/uploads/*
-!public/uploads/.gitkeep
+
+# Arquivos temporários e logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# Uploads / Arquivos estáticos gerados por usuários
+public/uploads/
+
+# IDE / Configurações locais
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

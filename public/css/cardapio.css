@@ -534,8 +534,10 @@ header {
 /* ─────────────────────────────────────────────────────────────
    SUCCESS STATE
 ───────────────────────────────────────────────────────────────*/
-.success-view { display: none; text-align: center; padding: 60px 20px; }
-.success-icon { font-size: 4rem; margin-bottom: 14px; display: block; }
+.success-view { display: none; flex-direction: column; justify-content: center; align-items: center; min-height: 50vh; text-align: center; padding: 40px 20px; }
+.success-logo { max-width: 220px; margin-bottom: 20px; border-radius: 12px; }
+img.success-logo[style*="display: none"] + #success-brand-fallback { display: flex !important; }
+#success-brand-fallback { display: none; }
 
 /* ─────────────────────────────────────────────────────────────
    UTILITY / SCROLLBAR

@@ -51,13 +51,16 @@ function startServer(mainWindow = null) {
     server.use(bodyParser.json());
     server.use(cors());
 
-    // Configuração de Sessão
+    // Configuração de Sessão (Melhoria de Segurança)
     server.use(session({
-        secret: 'galeto-master-secret-key-2026',
+        name: 'galetomaster_sess',
+        secret: process.env.SESSION_SECRET || 'secret_fallback_local_inseguro_123',
         resave: false,
         saveUninitialized: false,
         cookie: { 
-            secure: false, // true em produção com HTTPS
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+            sameSite: 'lax',
             maxAge: 1000 * 60 * 60 * 24 // 1 dia
         }
     }));
@@ -132,7 +135,7 @@ function startServer(mainWindow = null) {
                 return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
             }
 
-            const match = await bcrypt.compare(senha, user.senha_hash || user.senha);
+            const match = await bcrypt.compare(senha, user.senha);
             if (!match) {
                 return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
             }
@@ -283,6 +286,18 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
+    server.post('/api/config', async (req, res) => {
+        const { chave, valor } = req.body;
+        if (!chave) return res.status(400).json({ erro: 'Chave obrigatória' });
+        try {
+            await run(`
+                INSERT INTO configuracoes (chave, valor) VALUES (?, ?)
+                ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor
+            `, [chave, valor]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
     // ──────── APIs DO DASHBOARD ────────
 
     server.get('/api/pedidos/hoje', async (req, res) => {
@@ -310,8 +325,7 @@ function startServer(mainWindow = null) {
                     sum(CASE WHEN status  = 'em_preparo' OR status = 'Preparando' THEN 1 ELSE 0 END) AS em_preparo,
                     sum(CASE WHEN status  = 'saiu_entrega' OR status = 'Saiu para Entrega'  THEN 1 ELSE 0 END) AS prontos,
                     sum(CASE WHEN status  = 'entregue' OR status = 'Entregue'  THEN 1 ELSE 0 END) AS entregues,
-                    COALESCE(sum(CASE WHEN origem LIKE '%Churrasquinho%' OR pedido_descricao LIKE '%Espetinho%' OR pedido_descricao LIKE '%Churrasco%' THEN total ELSE 0 END), 0) AS fat_churrasco,
-                    COALESCE(sum(CASE WHEN origem LIKE '%Galeto%' OR pedido_descricao LIKE '%Galeto%' THEN total ELSE 0 END), 0) AS fat_galeto
+                    (SELECT COALESCE(sum(total), 0) FROM pedidos WHERE strftime('%Y-%m', data_hora, 'localtime') = strftime('%Y-%m', 'now', 'localtime') AND status IN ('Entregue', 'Retirado', 'entregue', 'retirado')) AS faturamento_mensal
                 FROM pedidos
                 WHERE date(data_hora, 'localtime') = date('now','localtime')
             `);
@@ -543,7 +557,16 @@ function startServer(mainWindow = null) {
         const { nome, taxa, taxa_entrega } = req.body;
         const valor = parseFloat(taxa_entrega ?? taxa ?? 0);
         try {
-            const r = await run("INSERT INTO regioes (nome, taxa_entrega) VALUES (?, ?)", [nome, valor]);
+            let r;
+            try {
+                r = await run("INSERT INTO regioes (nome, taxa_entrega) VALUES (?, ?)", [nome, valor]);
+            } catch (err) {
+                if (err.message.includes('no such column')) {
+                    r = await run("INSERT INTO regioes (nome, taxa) VALUES (?, ?)", [nome, valor]);
+                } else {
+                    throw err;
+                }
+            }
             res.json({ status: 'ok', id: r.lastID });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });

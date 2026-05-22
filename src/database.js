@@ -30,20 +30,16 @@ function initDb() {
         db.run(`CREATE TABLE IF NOT EXISTS usuarios (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario   TEXT    NOT NULL UNIQUE,
-            senha_hash TEXT   NOT NULL DEFAULT '',
+            senha     TEXT    NOT NULL DEFAULT '',
             criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`, () => {
-            // Migração: copiar senha → senha_hash se existir
-            db.run(`ALTER TABLE usuarios ADD COLUMN senha_hash TEXT NOT NULL DEFAULT ''`, () => {
-                db.run(`UPDATE usuarios SET senha_hash = senha WHERE senha_hash = '' AND senha IS NOT NULL`);
-            });
             db.run(`ALTER TABLE usuarios ADD COLUMN criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`, () => {});
             // Criar admin padrão se vazio
             db.get("SELECT count(*) as qtd FROM usuarios", (err, row) => {
                 if (row && row.qtd === 0) {
                     const bcrypt = require('bcryptjs');
                     const hash = bcrypt.hashSync('admin123', 10);
-                    db.run("INSERT INTO usuarios (usuario, senha_hash) VALUES (?, ?)", ['admin', hash]);
+                    db.run("INSERT INTO usuarios (usuario, senha) VALUES (?, ?)", ['admin', hash]);
                 }
             });
         });
@@ -141,16 +137,19 @@ function initDb() {
 
             db.get("SELECT count(*) as qtd FROM produtos", (err, row) => {
                 if (row && row.qtd === 0) {
-                    const stmt = db.prepare("INSERT INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id) VALUES (?, ?, ?, ?)");
-                    [
-                        ['Galeto Completo Família', 50.0, 50, 1],
-                        ['Galeto Individual',       28.0, 50, 1],
-                        ['Feijão Tropeiro',         25.0, 30, 2],
-                        ['Salpicão',                25.0, 30, 2],
-                        ['Refrigerante 2L',         12.0, 50, 3],
-                        ['Suco Natural',             9.0, 40, 3],
-                    ].forEach(r => stmt.run(r));
-                    stmt.finalize();
+                    // Timeout sutil para garantir que as categorias foram inseridas (evita Foreign Key Constraint)
+                    setTimeout(() => {
+                        const stmt = db.prepare("INSERT INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)");
+                        [
+                            ['Galeto Completo Família', 50.0, 50, 1, '/img/galeto.png'],
+                            ['Galeto Individual',       28.0, 50, 1, '/img/galeto.png'],
+                            ['Feijão Tropeiro',         25.0, 30, 2, '/img/feijao.png'],
+                            ['Salpicão',                25.0, 30, 2, '/img/salpicao.png'],
+                            ['Refrigerante 2L',         12.0, 50, 3, '/img/bebidas.png'],
+                            ['Suco Natural',             9.0, 40, 3, '/img/bebidas.png'],
+                        ].forEach(r => stmt.run(r));
+                        stmt.finalize();
+                    }, 500);
                 }
             });
         });
@@ -168,6 +167,7 @@ function initDb() {
             forma_pagamento  TEXT,
             data_hora        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             comprovante_url  TEXT,
+            is_test          INTEGER NOT NULL DEFAULT 0,
             atualizado_em    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`, () => {
             db.run(`ALTER TABLE pedidos ADD COLUMN cliente_id INTEGER`, () => {});
@@ -175,6 +175,7 @@ function initDb() {
             db.run(`ALTER TABLE pedidos ADD COLUMN pedido_descricao TEXT`, () => {});
             db.run(`ALTER TABLE pedidos ADD COLUMN taxa_aplicada REAL NOT NULL DEFAULT 0.0`, () => {});
             db.run(`ALTER TABLE pedidos ADD COLUMN comprovante_url TEXT`, () => {});
+            db.run(`ALTER TABLE pedidos ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0`, () => {});
             db.run(`ALTER TABLE pedidos ADD COLUMN atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`, () => {});
         });
 
@@ -212,10 +213,12 @@ function initDb() {
             descricao    TEXT    NOT NULL,
             categoria_id INTEGER REFERENCES categoria_despesas(id),
             valor        REAL    NOT NULL DEFAULT 0.0,
+            is_test      INTEGER NOT NULL DEFAULT 0,
             data_hora    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`, () => {
             db.run(`ALTER TABLE despesas ADD COLUMN usuario_id INTEGER`, () => {});
             db.run(`ALTER TABLE despesas ADD COLUMN categoria_id INTEGER`, () => {});
+            db.run(`ALTER TABLE despesas ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0`, () => {});
         });
 
         // ── Estoque legado (mantido por compatibilidade) ──────────

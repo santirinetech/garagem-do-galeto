@@ -5,12 +5,9 @@
   "main": "src/main/main.js",
   "scripts": {
     "start":       "electron .",
-    "server":      "node server-standalone.js",
-    "dev":         "nodemon server-standalone.js",
+    "dev":         "nodemon --exec electron .",
     "dist":        "electron-builder --win --x64",
-    "db:clean":    "node scripts/limpar-banco.js",
-    "db:clean:run":"node scripts/limpar-banco.js --confirmar",
-    "lint:deps":   "npx depcheck --ignores=electron,electron-builder,nodemon"
+    "db:reset":    "node scripts/reset-banco-prod.js"
   },
   "build": {
     "appId": "com.santirine.galetomaster",
@@ -19,17 +16,12 @@
     "files": [
       "src/**/*",
       "public/**/*",
-      "package.json",
-      "server-standalone.js",
-      "loja.db"
+      "package.json"
     ],
     "win": {
       "target": "nsis",
       "artifactName": "GaletoMaster-Setup-${version}.${ext}"
     },
-    "extraResources": [
-      "loja.db"
-    ],
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
