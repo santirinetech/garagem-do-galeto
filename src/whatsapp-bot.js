@@ -18,6 +18,17 @@ let qrCodeDataUrl = null;
 let isReady = false;
 let wppClient = null;
 
+/**
+ * Finaliza o processo de um pedido via WhatsApp, inserindo-o no banco de dados,
+ * enviando a confirmação para o cliente e atualizando o estoque e o dashboard.
+ * 
+ * @param {Object} client Instância do cliente WhatsApp (whatsapp-web.js).
+ * @param {string} from O número/ID do chat do cliente.
+ * @param {Object} session O objeto de sessão atual do cliente contendo os dados do pedido.
+ * @param {Object} db Instância de conexão do banco de dados SQLite.
+ * @param {Function} emitUpdateFunc Função para emitir um evento SSE de atualização para o frontend.
+ * @returns {Promise<void>}
+ */
 async function finalizarPedido(client, from, session, db, emitUpdateFunc) {
     const { name, items, total, payment, address, comprovanteUrl, deliveryType, freight, changeFor } = session.order;
     const phone = from; // ex: 552799999999@c.us
@@ -59,6 +70,13 @@ async function finalizarPedido(client, from, session, db, emitUpdateFunc) {
     session.order = { items: [], total: 0, payment: '', address: '', name: session.order.name, deliveryType: '', freight: 0, changeFor: '' };
 }
 
+/**
+ * Envia uma mensagem proativa para um cliente via WhatsApp através do painel.
+ * 
+ * @param {string} telefone O número de telefone do cliente (com ou sem DDI/DDD).
+ * @param {string} mensagem O texto da mensagem a ser enviada.
+ * @returns {Promise<boolean>} Retorna true se a mensagem for enviada com sucesso, false caso contrário.
+ */
 async function enviarMensagemPainel(telefone, mensagem) {
     if (!wppClient || !isReady) return false;
     try {
@@ -76,6 +94,15 @@ async function enviarMensagemPainel(telefone, mensagem) {
     }
 }
 
+/**
+ * Inicializa a instância do bot de WhatsApp, define os manipuladores de eventos (QR, mensagens) 
+ * e controla o fluxo de atendimento automatizado (máquina de estados).
+ * 
+ * @param {Object} db Instância de conexão do banco de dados SQLite.
+ * @param {Function} emitUpdateFunc Função para notificar atualizações ao dashboard.
+ * @param {Function} broadcastFunc Função para transmitir eventos do bot (QR code, status) aos clientes conectados via SSE.
+ * @returns {void}
+ */
 function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     const client = new Client({
         authStrategy: new LocalAuth(),
@@ -338,6 +365,11 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     client.initialize();
 }
 
+/**
+ * Retorna o status atual da conexão do robô do WhatsApp.
+ * 
+ * @returns {Object} Objeto contendo o estado `isReady` e a string do `qrCodeDataUrl` se aplicável.
+ */
 function getBotStatus() {
     return { isReady, qrCodeDataUrl };
 }

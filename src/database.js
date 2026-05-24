@@ -22,6 +22,12 @@ if (isPackaged) {
 
 const db = new sqlite3.Database(dbPath);
 
+/**
+ * Inicializa e estrutura o banco de dados da galeteria, criando as tabelas e inserindo dados padrão.
+ * Garante que o banco está pronto para as operações de negócio.
+ * 
+ * @returns {void}
+ */
 function initDb() {
     db.serialize(() => {
         db.run('PRAGMA foreign_keys = ON');
@@ -246,18 +252,43 @@ function initDb() {
 
 initDb();
 
+/**
+ * Executa uma consulta no banco de dados e retorna todos os resultados.
+ * 
+ * @param {string} sql A instrução SQL a ser executada.
+ * @param {Array} [params=[]] Parâmetros opcionais para a query SQL.
+ * @returns {Promise<Array>} Uma promise que resolve para um array de resultados.
+ * @throws {Error} Lança um erro se a execução da consulta falhar.
+ */
 function query(sql, params = []) {
     return new Promise((resolve, reject) => {
         db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)));
     });
 }
 
+/**
+ * Executa uma consulta no banco de dados e retorna o primeiro resultado encontrado.
+ * 
+ * @param {string} sql A instrução SQL a ser executada.
+ * @param {Array} [params=[]] Parâmetros opcionais para a query SQL.
+ * @returns {Promise<Object|undefined>} Uma promise que resolve para a linha resultante ou undefined.
+ * @throws {Error} Lança um erro se a execução da consulta falhar.
+ */
 function queryOne(sql, params = []) {
     return new Promise((resolve, reject) => {
         db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)));
     });
 }
 
+/**
+ * Executa uma instrução SQL (INSERT, UPDATE, DELETE) que não retorna linhas, 
+ * devolvendo o contexto da execução.
+ * 
+ * @param {string} sql A instrução SQL a ser executada.
+ * @param {Array} [params=[]] Parâmetros opcionais para a instrução SQL.
+ * @returns {Promise<Object>} Uma promise que resolve para o contexto da instrução (`this` do sqlite3).
+ * @throws {Error} Lança um erro se a execução da instrução falhar.
+ */
 function run(sql, params = []) {
     return new Promise((resolve, reject) => {
         db.run(sql, params, function (err) {

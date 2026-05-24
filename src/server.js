@@ -12,6 +12,12 @@ const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('./whatsapp
 
 // ── SSE: Atualização em tempo real ──────────────────────────
 let clients = [];
+/**
+ * Emite um evento de atualização (SSE - Server-Sent Events) para todos os clientes conectados.
+ * Utilizado para atualizar o dashboard em tempo real quando há novos pedidos ou mudanças de status.
+ * 
+ * @returns {void}
+ */
 function emitUpdate() {
     clients.forEach(c => {
         try { c.res.write('data: update\n\n'); } catch(e) {}
@@ -39,6 +45,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+/**
+ * Inicializa o servidor Express, configurando middlewares, rotas de API e conexões WebSocket (SSE).
+ * 
+ * @param {Object} [mainWindow=null] Instância opcional da janela principal do Electron (se rodando no desktop).
+ * @returns {Object} A instância do servidor Express configurada.
+ */
 function startServer(mainWindow = null) {
     const server = express();
     
@@ -66,6 +78,15 @@ function startServer(mainWindow = null) {
     }));
 
     // Middleware de Proteção de Rotas
+    /**
+     * Middleware de autenticação que valida a sessão do usuário antes de liberar o acesso às rotas da API.
+     * Rotas públicas como login e criação de pedido são ignoradas.
+     * 
+     * @param {Object} req O objeto de requisição do Express.
+     * @param {Object} res O objeto de resposta do Express.
+     * @param {Function} next Função callback para passar o controle ao próximo middleware.
+     * @returns {void}
+     */
     const authMiddleware = (req, res, next) => {
         // Rotas que NÃO precisam de autenticação
         const publicPaths = ['/api/login', '/api/novo-pedido', '/api/cardapio-itens'];
@@ -126,6 +147,13 @@ function startServer(mainWindow = null) {
 
     // ──────── APIs DE AUTENTICAÇÃO ────────
 
+    /**
+     * Autentica o usuário no sistema e cria uma sessão válida.
+     * 
+     * @param {Object} req Objeto de requisição do Express. Contém {usuario, senha} no body.
+     * @param {Object} res Objeto de resposta do Express.
+     * @returns {Promise<void>}
+     */
     server.post('/api/login', async (req, res) => {
         const { usuario, senha } = req.body;
         
@@ -164,6 +192,14 @@ function startServer(mainWindow = null) {
         }
     });
 
+    /**
+     * Registra um novo pedido no sistema, incluindo os dados do cliente, itens comprados e comprovante.
+     * Atualiza o estoque, cadastra/atualiza o cliente e emite notificação para o painel.
+     * 
+     * @param {Object} req Objeto de requisição do Express.
+     * @param {Object} res Objeto de resposta do Express.
+     * @returns {Promise<void>}
+     */
     server.post('/api/novo-pedido', pedidoLimiter, upload.single('comprovante'), async (req, res) => {
         const { nome, telefone, pedido, total, pagamento, origem, endereco, itens, taxa } = req.body;
         const comprovante = req.file ? `/uploads/${req.file.filename}` : null;
@@ -233,6 +269,13 @@ function startServer(mainWindow = null) {
     });
 
     // PATCH /pedido/:id/status
+    /**
+     * Atualiza o status de um pedido específico e, se aplicável, notifica o cliente via WhatsApp.
+     * 
+     * @param {Object} req Objeto de requisição do Express. O id está nos parâmetros da rota e o status no body.
+     * @param {Object} res Objeto de resposta do Express.
+     * @returns {void}
+     */
     server.patch('/pedido/:id/status', (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
@@ -313,6 +356,13 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
+    /**
+     * Retorna o resumo financeiro e estatístico do dia (faturamento, quantidade de pedidos, etc.).
+     * 
+     * @param {Object} req Objeto de requisição do Express.
+     * @param {Object} res Objeto de resposta do Express.
+     * @returns {Promise<void>}
+     */
     server.get('/api/resumo', async (req, res) => {
         try {
             const row = await queryOne(`
