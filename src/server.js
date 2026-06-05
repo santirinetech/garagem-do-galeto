@@ -157,12 +157,15 @@ function startServer(mainWindow = null) {
             try { c.res.write(`data: ${JSON.stringify(evt)}\n\n`); } catch(e) {}
         });
     };
+
+    // WhatsApp sempre ativo localmente (Dev/Electron) e opcional na Nuvem (Railway) via ENABLE_WHATSAPP
+    const isWppEnabled = process.env.ENABLE_WHATSAPP === "true" || process.env.NODE_ENV !== "production";
     
-    if (process.env.ENABLE_WHATSAPP === "true") {
+    if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);
         console.log("WhatsApp carregado.");
     } else {
-        console.log("WhatsApp desabilitado (ENABLE_WHATSAPP não está 'true').");
+        console.log("WhatsApp desabilitado na nuvem (ENABLE_WHATSAPP não está 'true').");
     }
 
     server.get('/health', (req, res) => {
