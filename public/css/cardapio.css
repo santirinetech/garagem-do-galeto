@@ -557,6 +557,22 @@ img.success-logo[style*="display: none"] + #success-brand-fallback { display: fl
 }
 
 /* ─────────────────────────────────────────────────────────────
+   PROMO MODAL & SUCCESS VIEW
+───────────────────────────────────────────────────────────────*/
+#promo-modal { z-index: 3000; }
+.promo-sheet { border-radius: 20px; max-width: 400px; padding: 30px; text-align: center; background: #1a1a1a; position: relative; margin: auto; max-height: 90vh; overflow-y: auto; }
+.promo-close { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); }
+.promo-icon { font-size: 3rem; color: var(--color-accent); margin-bottom: 10px; }
+.promo-title { font-family: var(--font-heading); color: white; margin-bottom: 15px; font-size: 1.4rem; }
+.promo-text { color: var(--text-dim); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px; }
+.promo-btn { width: 100%; padding: 14px; font-size: 0.9rem; }
+
+.success-view-title { justify-content: center; font-size: 1.8rem; margin-bottom: 20px; }
+.success-view-h2 { text-align: center; font-family: var(--font-heading); font-size: 2rem; color: var(--color-primary); }
+.success-view-p { text-align: center; color: #aaa; margin: 20px 0; font-size: 1.1rem; }
+.success-view-btn { margin-top: 10px; }
+
+/* ─────────────────────────────────────────────────────────────
    RESPONSIVE TWEAKS
 ───────────────────────────────────────────────────────────────*/
 @media (max-width: 480px) {
@@ -571,4 +587,5 @@ img.success-logo[style*="display: none"] + #success-brand-fallback { display: fl
     .btn-add { width: 34px; height: 34px; font-size: 1.3rem; border-radius: 10px; }
     .container { padding: 0 16px; }
     .cat-nav { padding: 14px 16px 4px; }
-}
+} 
+ 

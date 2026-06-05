@@ -84,25 +84,25 @@
 
         <div class="success-view" id="success-view" style="display:none">
             <img src="/img/banner.png" alt="Garagem do Galeto" class="success-logo" onerror="this.style.display='none'">
-            <div class="brand-name" style="justify-content: center; font-size: 1.8rem; margin-bottom: 20px;" id="success-brand-fallback">GARAGEM DO GALETO</div>
-            <h2 style="text-align:center; font-family:'Outfit'; font-size: 2rem; color: var(--color-primary);">PEDIDO ENVIADO!</h2>
-            <p style="text-align:center; color:#aaa; margin:20px 0; font-size: 1.1rem;">Acompanhe os detalhes e a entrega pelo WhatsApp.</p>
-            <button class="btn-confirmar" onclick="location.reload()" style="margin-top: 10px;">VOLTAR AO CARDÁPIO</button>
+            <div class="brand-name success-view-title" id="success-brand-fallback">GARAGEM DO GALETO</div>
+            <h2 class="success-view-h2">PEDIDO ENVIADO!</h2>
+            <p class="success-view-p">Acompanhe os detalhes e a entrega pelo WhatsApp.</p>
+            <button class="btn-confirmar success-view-btn" onclick="location.reload()">VOLTAR AO CARDÁPIO</button>
         </div>
         </div>
     </div>
 </div>
 
 <!-- INFORMATIVO MODAL -->
-<div class="overlay" id="promo-modal" style="z-index: 3000; display: none;">
-    <div class="sheet" style="border-radius: 20px; max-width: 400px; padding: 30px; text-align: center; background: #1a1a1a; position: relative; margin: auto; max-height: 90vh; overflow-y: auto;">
-        <button class="sheet-close" onclick="fecharPromoModal()" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1);">×</button>
-        <span class="material-icons-round" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 10px;">campaign</span>
-        <h2 style="font-family: var(--font-heading); color: white; margin-bottom: 15px; font-size: 1.4rem;">⚠️ ATENÇÃO, CLIENTES!</h2>
-        <p style="color: var(--text-dim); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
+<div class="overlay" id="promo-modal" style="display: none;">
+    <div class="sheet promo-sheet">
+        <button class="sheet-close promo-close" onclick="fecharPromoModal()">×</button>
+        <span class="material-icons-round promo-icon">campaign</span>
+        <h2 class="promo-title">⚠️ ATENÇÃO, CLIENTES!</h2>
+        <p class="promo-text">
             Informamos que neste domingo, 07 de Junho, terá reajuste no valor do galeto. O galeto com acompanhamento de farofa passará a ser <strong>R$ 55,00</strong>.<br><br>Agradecemos a compreensão e a preferência!
         </p>
-        <button class="btn-confirmar" onclick="fecharPromoModal()" style="width: 100%; padding: 14px; font-size: 0.9rem;">ENTENDI</button>
+        <button class="btn-confirmar promo-btn" onclick="fecharPromoModal()">ENTENDI</button>
     </div>
 </div>
 
