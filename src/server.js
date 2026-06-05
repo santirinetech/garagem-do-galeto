@@ -6,6 +6,7 @@ const multer = require('multer');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const bcrypt = require('bcryptjs');
 const { db, query, queryOne, run } = require('./database');
 const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('./whatsapp-bot');
@@ -28,12 +29,16 @@ const fs = require('fs');
 
 const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1 || process.argv.some(arg => arg.includes('app.asar')) || (process.resourcesPath && __dirname.includes('app.asar'));
 let uploadDir;
+let dataDir;
 if (process.env.NODE_ENV === 'production' && !isPackaged) {
-    uploadDir = path.join(process.cwd(), 'data', 'uploads');
+    dataDir = path.join(process.cwd(), 'data');
+    uploadDir = path.join(dataDir, 'uploads');
 } else if (isPackaged) {
     const appData = process.env.APPDATA || process.env.HOME;
-    uploadDir = path.join(appData, 'GaletoMaster', 'uploads');
+    dataDir = path.join(appData, 'GaletoMaster');
+    uploadDir = path.join(dataDir, 'uploads');
 } else {
+    dataDir = path.join(__dirname, '..');
     uploadDir = path.join(__dirname, '../public/uploads/');
 }
 
@@ -63,10 +68,18 @@ function startServer(mainWindow = null) {
     }));
 
     server.use(bodyParser.json());
-    server.use(cors());
+    // Habilitar credenciais no CORS para permitir que o Electron (local) envie cookies de sessão para o Railway
+    server.use(cors({ origin: true, credentials: true }));
 
-    // Configuração de Sessão (Melhoria de Segurança)
+    // Confiar no Proxy do Railway (necessário para HTTPS e cookies secure)
+    server.set('trust proxy', 1);
+
+    // Configuração de Sessão com persistência no SQLite (Evita perda de login no deploy do Railway)
     server.use(session({
+        store: new SQLiteStore({
+            db: 'sessions.db',
+            dir: dataDir
+        }),
         name: 'galetomaster_sess',
         secret: process.env.SESSION_SECRET || 'secret_fallback_local_inseguro_123',
         resave: false,
@@ -74,7 +87,8 @@ function startServer(mainWindow = null) {
         cookie: { 
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
-            sameSite: 'lax',
+            // sameSite 'none' é obrigatório para cross-origin (Electron -> Cloud) junto com secure=true
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 1000 * 60 * 60 * 24 // 1 dia
         }
     }));
