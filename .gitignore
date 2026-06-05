@@ -9,12 +9,12 @@
 node_modules/
 package-lock.json
 
-# Banco de Dados SQLite (Dados da Produção/Testes não devem ir para o repositório)
-loja.db
+# Banco de Dados SQLite (Comentado para permitir deploy inicial no Railway)
+# loja.db
 loja.db-journal
 loja.db-wal
 loja.db-shm
-database.sqlite
+# database.sqlite
 database.sqlite3
 
 # Arquivos de Build / Executáveis

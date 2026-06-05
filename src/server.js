@@ -110,14 +110,16 @@ function startServer(mainWindow = null) {
         message: { erro: 'Muitos pedidos enviados deste IP. Tente novamente em uma hora.' }
     });
 
-    // Servir arquivos estáticos da pasta public
-    server.use(express.static(path.join(__dirname, '../public')));
+    // Corrigindo o caminho para subir um nível e achar a pasta public na raiz
+    server.use(express.static(path.join(__dirname, '..', 'public')));
     
     // Servir os comprovantes salvos no AppData (ou public/uploads localmente)
     server.use('/uploads', express.static(uploadDir));
     
-    // Rota raiz redireciona para o dashboard (index.html)
-    server.get('/', (req, res) => res.redirect('/index.html'));
+    // Corrigindo a rota principal do cardápio
+    server.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+    });
     
     // Endpoint SSE para o Dashboard
     server.get('/api/events', (req, res) => {
