@@ -9,8 +9,10 @@
 node_modules/
 package-lock.json
 
-# Banco de Dados SQLite (Comentado para permitir deploy inicial no Railway)
-# loja.db
+# Banco de Dados SQLite (Ignorado para não sobrescrever a nuvem com dados de teste)
+loja.db
+sessions.db
+data/
 loja.db-journal
 loja.db-wal
 loja.db-shm
