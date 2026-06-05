@@ -239,7 +239,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
             case 'ORDER_DELIVERY_TYPE':
                 if (text === '1') {
                     session.order.deliveryType = 'Entrega';
-                    db.all("SELECT id, nome, taxa FROM regioes ORDER BY nome", [], async (err, rows) => {
+                    db.all("SELECT id, nome, taxa_entrega as taxa FROM regioes ORDER BY nome", [], async (err, rows) => {
                         if (err || rows.length === 0) {
                             await client.sendMessage(from, `💳 *FORMA DE PAGAMENTO*\n\nComo deseja pagar o total de R$ ${session.order.total.toFixed(2)}?\n\n*1* - Pix\n*2* - Cartão\n*3* - Dinheiro`);
                             session.state = 'ORDER_PAYMENT';

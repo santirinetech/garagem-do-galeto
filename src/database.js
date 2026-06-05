@@ -79,13 +79,30 @@ function initDb() {
             db.run(`ALTER TABLE regioes ADD COLUMN taxa_entrega REAL NOT NULL DEFAULT 0.0`, () => {
                 db.run(`UPDATE regioes SET taxa_entrega = taxa WHERE taxa_entrega = 0.0 AND taxa IS NOT NULL AND taxa > 0`, () => {});
             });
-            db.get("SELECT count(*) as qtd FROM regioes", (err, row) => {
-                if (row && row.qtd === 0) {
-                    const stmt = db.prepare("INSERT INTO regioes (nome, taxa_entrega) VALUES (?, ?)");
-                    [['Centro', 5.0], ['Bairro Norte', 8.0], ['Bairro Sul', 10.0]].forEach(r => stmt.run(r));
-                    stmt.finalize();
-                }
-            });
+            // Garante que os bairros pré-cadastrados existam (sem apagar as edições/inserções manuais)
+            const bairrosPadrao = [
+                ['Presidente Médici', 2.0],
+                ['Morro do Sesi', 3.0],
+                ['Porto Novo', 3.0],
+                ['Vila Oasis', 3.0],
+                ['Graúna', 3.0],
+                ['Bairro Aparecida', 3.0],
+                ['Mangue Seco', 3.0],
+                ['Bela Vista (Morro do Quiabo)', 3.0],
+                ['Del porto', 3.0],
+                ['Retiro Saudoso', 4.0],
+                ['Tucum', 4.0],
+                ['Flexal', 5.0],
+                ['Nova canaã', 5.0],
+                ['Santa Rosa', 5.0],
+                ['Tabajara', 5.0],
+                ['Vila Prudêncio', 5.0],
+                ['Itacibá', 7.0],
+                ['Campo Grande', 10.0]
+            ];
+            const stmt = db.prepare("INSERT OR IGNORE INTO regioes (nome, taxa_entrega) VALUES (?, ?)");
+            bairrosPadrao.forEach(r => stmt.run(r));
+            stmt.finalize();
         });
 
         // ── Endereços ─────────────────────────────────────────────
