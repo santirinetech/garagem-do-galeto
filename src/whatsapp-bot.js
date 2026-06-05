@@ -318,7 +318,9 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                         const crypto = require('crypto');
                         const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1 || process.argv.some(arg => arg.includes('app.asar')) || (process.resourcesPath && __dirname.includes('app.asar'));
                         let uploadDir = path.join(__dirname, '../public/uploads/');
-                        if (isPackaged) {
+                        if (process.env.NODE_ENV === 'production' && !isPackaged) {
+                            uploadDir = path.join(process.cwd(), 'data', 'uploads');
+                        } else if (isPackaged) {
                             const appData = process.env.APPDATA || process.env.HOME;
                             uploadDir = path.join(appData, 'GaletoMaster', 'uploads');
                         }
