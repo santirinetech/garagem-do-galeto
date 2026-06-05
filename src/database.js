@@ -7,7 +7,12 @@ const isPackaged = process.mainModule && process.mainModule.filename.indexOf('ap
     || process.argv.some(arg => arg.includes('app.asar'))
     || (process.resourcesPath && __dirname.includes('app.asar'));
 
-if (isPackaged) {
+if (process.env.NODE_ENV === 'production' && !isPackaged) {
+    // Ambientes Cloud / Railway
+    const dataDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    dbPath = process.env.DB_PATH || path.join(dataDir, 'loja.db');
+} else if (isPackaged) {
     const appData = process.env.APPDATA || process.env.HOME;
     const userDataDir = path.join(appData, 'GaletoMaster');
     if (!fs.existsSync(userDataDir)) fs.mkdirSync(userDataDir, { recursive: true });

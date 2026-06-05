@@ -28,7 +28,9 @@ const fs = require('fs');
 
 const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1 || process.argv.some(arg => arg.includes('app.asar')) || (process.resourcesPath && __dirname.includes('app.asar'));
 let uploadDir;
-if (isPackaged) {
+if (process.env.NODE_ENV === 'production' && !isPackaged) {
+    uploadDir = path.join(process.cwd(), 'data', 'uploads');
+} else if (isPackaged) {
     const appData = process.env.APPDATA || process.env.HOME;
     uploadDir = path.join(appData, 'GaletoMaster', 'uploads');
 } else {
@@ -141,7 +143,17 @@ function startServer(mainWindow = null) {
             try { c.res.write(`data: ${JSON.stringify(evt)}\n\n`); } catch(e) {}
         });
     };
-    initWhatsApp(db, emitUpdate, broadcastWppEvent);
+    
+    if (process.env.ENABLE_WHATSAPP === "true") {
+        initWhatsApp(db, emitUpdate, broadcastWppEvent);
+        console.log("WhatsApp carregado.");
+    } else {
+        console.log("WhatsApp desabilitado (ENABLE_WHATSAPP não está 'true').");
+    }
+
+    server.get('/health', (req, res) => {
+        res.json({ status: "ok" });
+    });
 
     server.get('/api/whatsapp/status', (req, res) => {
         res.json(getBotStatus());
@@ -799,8 +811,17 @@ function startServer(mainWindow = null) {
     });
 
     const PORT = process.env.PORT || 3000;
-    server.listen(PORT, '0.0.0.0', () => console.log(`✅ Galeto System V3 rodando na porta ${PORT}`));
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log("Servidor iniciando...");
+        console.log("Banco carregado.");
+        console.log("Servidor ouvindo na porta:", PORT);
+        console.log(`✅ Galeto System V3 rodando na porta ${PORT}`);
+    });
     return server;
 }
 
 module.exports = { startServer };
+
+if (require.main === module) {
+    startServer();
+}

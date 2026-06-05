@@ -4,10 +4,12 @@
   "description": "Sistema Garagem do Galeto",
   "main": "src/main/main.js",
   "scripts": {
-    "start":       "electron .",
-    "dev":         "nodemon --exec electron .",
-    "dist":        "electron-builder --win --x64",
-    "db:reset":    "node scripts/reset-banco-prod.js"
+    "start": "node src/server.js",
+    "electron": "electron .",
+    "dev": "nodemon src/server.js",
+    "desktop": "electron .",
+    "dist": "electron-builder --win --x64",
+    "db:reset": "node scripts/reset-banco-prod.js"
   },
   "build": {
     "appId": "com.santirine.galetomaster",
