@@ -172,7 +172,7 @@ function initDb() {
                 });
                 
                 const produtosPadrao = [
-                    ['Galeto com Farofa', 45.0, 50, 1, '/img/galeto.png'], // Categoria 1 (Principais)
+                    ['Galeto com Farofa', 55.0, 50, 1, '/img/galeto.png'], // Categoria 1 (Principais)
                     ['Salpicão',          25.0, 30, 2, '/img/salpicao.png'], // Categoria 2 (Acompanhamentos)
                     ['Feijão Tropeiro',   25.0, 30, 2, '/img/feijao.png']
                 ];
@@ -180,6 +180,9 @@ function initDb() {
                 const stmt = db.prepare("INSERT OR IGNORE INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)");
                 produtosPadrao.forEach(r => stmt.run(r));
                 stmt.finalize();
+                
+                // Força a atualização do preço caso o produto já exista no banco
+                db.run("UPDATE produtos SET preco_unitario = 55.0 WHERE nome = 'Galeto com Farofa'");
             }, 500);
         });
 

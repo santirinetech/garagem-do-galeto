@@ -6,7 +6,7 @@ const userSessions = {};
 
 // Preços simulados ou buscados do DB (Simplificado para o bot)
 const menuPrecos = {
-    '1': { nome: 'Galeto com Farofa', preco: 45 },
+    '1': { nome: 'Galeto com Farofa', preco: 55 },
     '2': { nome: 'Salpicão', preco: 25 },
     '3': { nome: 'Feijão Tropeiro', preco: 25 }
 };

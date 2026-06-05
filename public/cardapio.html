@@ -89,9 +89,43 @@
             <p style="text-align:center; color:#aaa; margin:20px 0; font-size: 1.1rem;">Acompanhe os detalhes e a entrega pelo WhatsApp.</p>
             <button class="btn-confirmar" onclick="location.reload()" style="margin-top: 10px;">VOLTAR AO CARDÁPIO</button>
         </div>
+        </div>
     </div>
 </div>
 
-<script src="js/cardapio.js?v=1"></script>
+<!-- INFORMATIVO MODAL -->
+<div class="overlay" id="promo-modal" style="z-index: 3000; display: none;">
+    <div class="sheet" style="border-radius: 20px; max-width: 400px; padding: 30px; text-align: center; background: #1a1a1a; position: relative; margin: auto; max-height: 90vh; overflow-y: auto;">
+        <button class="sheet-close" onclick="fecharPromoModal()" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1);">×</button>
+        <span class="material-icons-round" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 10px;">campaign</span>
+        <h2 style="font-family: var(--font-heading); color: white; margin-bottom: 15px; font-size: 1.4rem;">⚠️ ATENÇÃO, CLIENTES!</h2>
+        <p style="color: var(--text-dim); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
+            Informamos que neste domingo, 07 de Junho, terá reajuste no valor do frango. O frango (acompanha farofa) passará a ser <strong>R$ 55,00</strong>.<br><br>Agradecemos a compreensão e a preferência!
+        </p>
+        <button class="btn-confirmar" onclick="fecharPromoModal()" style="width: 100%; padding: 14px; font-size: 0.9rem;">ENTENDI</button>
+    </div>
+</div>
+
+<script>
+    function fecharPromoModal() {
+        document.getElementById('promo-modal').style.display = 'none';
+        localStorage.setItem('promo_visto_07_jun', 'true');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('promo_visto_07_jun')) {
+            // Pequeno delay para a página carregar primeiro
+            setTimeout(() => {
+                const modal = document.getElementById('promo-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center'; // Centraliza verticalmente e horizontalmente
+                }
+            }, 800);
+        }
+    });
+</script>
+
+<script src="js/cardapio.js?v=2"></script>
 </body>
 </html>
