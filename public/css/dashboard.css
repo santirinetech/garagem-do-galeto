@@ -643,6 +643,201 @@
             padding: 2px 7px;
             border-radius: 6px;
             margin-top: 3px;
+        .estoque-nome { font-weight: 600; font-size: .9rem; margin-bottom: 10px; color: var(--ink-2); }
+        .estoque-qtd  { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; }
+        .estoque-un   { font-size: .75rem; color: var(--ink-3); margin-left: 4px; }
+        .estoque-bar  { height: 5px; background: var(--bg); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .estoque-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width .5s; }
+        .estoque-low .estoque-qtd  { color: var(--red); }
+        .estoque-low .estoque-fill { background: var(--red); }
+
+        /* ── STATUS PILLS spacing ── */
+        .s-Em\ Preparo { background: var(--blue-lt); color: #1e40af; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--ink-3);
+        }
+        .empty-state .material-icons-round { font-size: 3rem; margin-bottom: 10px; display: block; opacity: .3; }
+        .empty-state p { font-size: .9rem; }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            background: var(--ink);
+            color: white;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-size: .85rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,.2);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all .3s cubic-bezier(.175,.885,.32,1.275);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .btn-comprovante-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--blue-lt);
+            color: var(--blue);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 8px;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            transition: 0.2s;
+        }
+        .btn-comprovante-link:hover {
+            background: var(--blue);
+            color: white;
+        }
+        .btn-comprovante-link .material-icons-round {
+            font-size: 1rem;
+        }
+
+        /* ── PRINT AREA (IMPRESSÃO TÉRMICA) ── */
+        #print-area { display: none; }
+        
+        @media print {
+            body > * { display: none !important; }
+            #print-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                font-family: monospace;
+                font-size: 13px;
+                color: black;
+                background: white;
+            }
+            #print-area * {
+                visibility: visible;
+            }
+            .print-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+            .print-line { border-bottom: 2px dashed black; margin: 10px 0; }
+            .print-row { display: flex; justify-content: space-between; }
+        }
+
+        /* ── MODAL OVERLAY ROBUSTO ── */
+        /* Garante que o overlay cubra TUDO e o card seja completamente sólido */
+        .overlay {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 9999 !important;
+            background: rgba(0, 0, 0, 0.65) !important;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay[style*="flex"] { display: flex !important; }
+
+        /* Card do modal — completamente sólido, sem leak de conteúdo */
+        .overlay > .card {
+            position: relative;
+            z-index: 10000;
+            background: var(--white) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25), 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+            border: 1px solid var(--border) !important;
+            overflow: visible !important; /* Permite o conteúdo scrollar internamente */
+            padding: 24px !important;
+        }
+
+        /* ── SELECT / DROPDOWN UNIFORME ── */
+        /* Todos os <select> herdam o padrão visual dos inputs */
+        select.status-select,
+        .overlay select,
+        #prod-categoria,
+        #desp-categoria,
+        #manual-produto-select,
+        #manual-pagamento,
+        #filtro-tipo,
+        #filtro-status {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px !important;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background-color: var(--white);
+            color: var(--ink-2);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select.status-select:focus,
+        .overlay select:focus {
+            outline: none;
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+        }
+
+        /* ── PREVIEW DE IMAGEM NO MODAL DE PRODUTO ── */
+        .img-preview-wrap {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .img-preview-wrap input {
+            flex: 1;
+            height: 40px;
+            margin-bottom: 0 !important;
+        }
+        #prod-img-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            border: 2px dashed var(--border);
+            object-fit: cover;
+            background: var(--bg);
+            flex-shrink: 0;
+            transition: border-color 0.2s;
+            display: block;
+        }
+        #prod-img-preview.loaded {
+            border-color: var(--green);
+            border-style: solid;
+        }
+        #prod-img-preview.error {
+            border-color: var(--red);
+        }
+
+        /* Badge "atrasado" na tabela */
+        .badge-atrasado {
+            display: inline-block;
+            background: var(--red-lt);
+            color: var(--red);
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            margin-top: 3px;
         }
         .tr-atrasado td { background: #fff8f8 !important; }
         .tr-atrasado:hover td { background: #fff0f0 !important; }
@@ -651,4 +846,95 @@
         .btn.btn-small {
             padding: 5px 10px;
             font-size: 0.75rem;
+        }
+
+        /* ── RESPONSIVIDADE (MOBILE / TABLET) ── */
+        @media (max-width: 800px) {
+            body {
+                flex-direction: column;
+                height: 100vh;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px;
+                overflow-x: auto;
+            }
+            .brand {
+                padding: 0 15px;
+                border: none;
+                flex-shrink: 0;
+            }
+            .brand-sub { display: none; }
+            .nav {
+                display: flex;
+                flex-direction: row;
+                padding: 0;
+                gap: 5px;
+            }
+            .nav-label { display: none; }
+            .nav-item {
+                flex-direction: column;
+                padding: 8px 12px;
+                font-size: 0.7rem;
+                gap: 4px;
+            }
+            .nav-item .badge-count {
+                position: absolute;
+                top: 0; right: 0;
+            }
+            .sidebar-footer { display: none; }
+            
+            .main {
+                flex: 1;
+                overflow-y: auto;
+            }
+            .topbar {
+                padding: 10px 15px;
+                flex-wrap: wrap;
+                height: auto;
+                gap: 10px;
+                justify-content: center;
+            }
+            .kpi-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .estoque-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .card {
+                overflow-x: auto;
+            }
+            .view {
+                padding: 15px 10px;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .overlay > .card {
+                width: 95% !important;
+                max-width: 100% !important;
+                padding: 15px !important;
+                margin: 10px;
+                max-height: 90vh;
+                overflow-y: auto !important;
+            }
+            .img-preview-wrap {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .kpi-grid, .estoque-grid {
+                grid-template-columns: 1fr;
+            }
+            .topbar-right {
+                width: 100%;
+                justify-content: center;
+            }
         }

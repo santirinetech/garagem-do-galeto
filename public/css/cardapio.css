@@ -561,10 +561,13 @@ img.success-logo[style*="display: none"] + #success-brand-fallback { display: fl
 ───────────────────────────────────────────────────────────────*/
 @media (max-width: 480px) {
     .brand-name { font-size: 1.2rem; }
-    .produtos-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .prod-body { padding: 10px 12px 12px; }
-    .prod-nome { font-size: 0.88rem; }
-    .prod-preco { font-size: 1rem; }
+    .produtos-grid { grid-template-columns: 1fr; gap: 14px; }
+    .produto { flex-direction: row; align-items: center; }
+    .prod-img-wrap { width: 100px; height: 100px; aspect-ratio: auto; border-radius: 10px; margin: 10px; flex-shrink: 0; }
+    .prod-body { padding: 10px 10px 10px 0; justify-content: center; }
+    .prod-nome { font-size: 0.95rem; }
+    .prod-desc { display: none; /* Esconde descrição no mobile para ficar clean */ }
+    .prod-preco { font-size: 1.1rem; }
     .btn-add { width: 34px; height: 34px; font-size: 1.3rem; border-radius: 10px; }
     .container { padding: 0 16px; }
     .cat-nav { padding: 14px 16px 4px; }
