@@ -164,23 +164,23 @@ function initDb() {
                 db.run(`UPDATE produtos SET preco_unitario = preco WHERE preco_unitario = 0.0 AND preco IS NOT NULL AND preco > 0`, () => {});
             });
 
-            db.get("SELECT count(*) as qtd FROM produtos", (err, row) => {
-                if (row && row.qtd === 0) {
-                    // Timeout sutil para garantir que as categorias foram inseridas (evita Foreign Key Constraint)
-                    setTimeout(() => {
-                        const stmt = db.prepare("INSERT INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)");
-                        [
-                            ['Galeto Completo Família', 50.0, 50, 1, '/img/galeto.png'],
-                            ['Galeto Individual',       28.0, 50, 1, '/img/galeto.png'],
-                            ['Feijão Tropeiro',         25.0, 30, 2, '/img/feijao.png'],
-                            ['Salpicão',                25.0, 30, 2, '/img/salpicao.png'],
-                            ['Refrigerante 2L',         12.0, 50, 3, '/img/bebidas.png'],
-                            ['Suco Natural',             9.0, 40, 3, '/img/bebidas.png'],
-                        ].forEach(r => stmt.run(r));
-                        stmt.finalize();
-                    }, 500);
-                }
-            });
+            // Gerenciamento de Produtos: Remove obsoletos e garante os atuais via INSERT OR IGNORE
+            setTimeout(() => {
+                const removerAntigos = ['Galeto Completo Família', 'Galeto Individual', 'Refrigerante 2L', 'Suco Natural'];
+                removerAntigos.forEach(nome => {
+                    db.run("DELETE FROM produtos WHERE nome = ?", [nome], () => {});
+                });
+                
+                const produtosPadrao = [
+                    ['Galeto com Farofa', 45.0, 50, 1, '/img/galeto.png'], // Categoria 1 (Principais)
+                    ['Salpicão',          25.0, 30, 2, '/img/salpicao.png'], // Categoria 2 (Acompanhamentos)
+                    ['Feijão Tropeiro',   25.0, 30, 2, '/img/feijao.png']
+                ];
+                
+                const stmt = db.prepare("INSERT OR IGNORE INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)");
+                produtosPadrao.forEach(r => stmt.run(r));
+                stmt.finalize();
+            }, 500);
         });
 
         // ── Pedidos ───────────────────────────────────────────────

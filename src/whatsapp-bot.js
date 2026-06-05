@@ -6,12 +6,9 @@ const userSessions = {};
 
 // Preços simulados ou buscados do DB (Simplificado para o bot)
 const menuPrecos = {
-    '1': { nome: 'Galeto Completo', preco: 50 },
-    '2': { nome: 'Galeto Individual', preco: 28 },
-    '3': { nome: 'Feijão Tropeiro', preco: 25 },
-    '4': { nome: 'Salpicão', preco: 25 },
-    '5': { nome: 'Refrigerante 2L', preco: 12 },
-    '6': { nome: 'Suco Natural', preco: 9 }
+    '1': { nome: 'Galeto com Farofa', preco: 45 },
+    '2': { nome: 'Salpicão', preco: 25 },
+    '3': { nome: 'Feijão Tropeiro', preco: 25 }
 };
 
 let qrCodeDataUrl = null;
