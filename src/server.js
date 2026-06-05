@@ -212,13 +212,14 @@ function startServer(mainWindow = null) {
         try {
             // 1. Cliente (UPSERT)
             await run(`
-                INSERT INTO clientes (nome, telefone, compras_qtd, valor_gasto) 
-                VALUES (?, ?, 1, ?)
+                INSERT INTO clientes (nome, telefone, compras_qtd, valor_gasto, ultimo_pedido) 
+                VALUES (?, ?, 1, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(telefone) DO UPDATE SET 
                 nome = excluded.nome,
                 compras_qtd = compras_qtd + 1,
                 valor_gasto = valor_gasto + excluded.valor_gasto,
-                ultimo_pedido = CURRENT_TIMESTAMP
+                ultimo_pedido = CURRENT_TIMESTAMP,
+                deleted_at = NULL
             `, [nome, telefone, total]);
             
             const cliente = await queryOne("SELECT id FROM clientes WHERE telefone = ?", [telefone]);
@@ -266,6 +267,18 @@ function startServer(mainWindow = null) {
             console.error("Erro ao registrar pedido:", e);
             res.status(500).json({ erro: e.message });
         }
+    });
+
+    server.put('/api/pedidos/:id', async (req, res) => {
+        const { pedido_descricao, total, endereco_entrega, forma_pagamento } = req.body;
+        try {
+            await run(`
+                UPDATE pedidos 
+                SET pedido_descricao = ?, total = ?, endereco_entrega = ?, forma_pagamento = ? 
+                WHERE id = ?
+            `, [pedido_descricao, parseFloat(total), endereco_entrega, forma_pagamento, req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     // PATCH /pedido/:id/status
@@ -345,13 +358,28 @@ function startServer(mainWindow = null) {
 
     server.get('/api/pedidos/hoje', async (req, res) => {
         try {
-            const rows = await query(`
+            const dataFiltro = req.query.data;
+            let sql = `
                 SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
                 FROM pedidos p 
                 LEFT JOIN clientes c ON p.cliente_id = c.id 
                 WHERE date(p.data_hora, 'localtime') = date('now','localtime') 
                 ORDER BY p.id DESC
-            `);
+            `;
+            let params = [];
+            
+            if (dataFiltro) {
+                sql = `
+                    SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
+                    FROM pedidos p 
+                    LEFT JOIN clientes c ON p.cliente_id = c.id 
+                    WHERE date(p.data_hora, 'localtime') = ? 
+                    ORDER BY p.id DESC
+                `;
+                params.push(dataFiltro);
+            }
+            
+            const rows = await query(sql, params);
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
@@ -491,6 +519,13 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
+    server.put('/api/categorias/:id', async (req, res) => {
+        try {
+            await run("UPDATE categoria_produtos SET nome = ?, nome_listagem = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [req.body.nome, req.body.nome, req.params.id]);
+            res.json({ status: 'ok' });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
     server.delete('/api/categorias/:id', async (req, res) => {
         try {
             await run("UPDATE produtos SET categoria_id = NULL WHERE categoria_id = ?", [req.params.id]);
@@ -522,24 +557,30 @@ function startServer(mainWindow = null) {
     });
 
     server.post('/api/despesas', async (req, res) => {
-        const { descricao, categoria_id, valor } = req.body;
+        const { descricao, categoria_id, valor, data } = req.body;
         if (!descricao || !valor) return res.status(400).json({ erro: 'Preencha descrição e valor.' });
         try {
-            const r = await run(
-                "INSERT INTO despesas (usuario_id, descricao, categoria_id, valor) VALUES (?, ?, ?, ?)",
-                [req.session?.userId || null, descricao, categoria_id || null, parseFloat(valor)]
-            );
+            let sql = "INSERT INTO despesas (usuario_id, descricao, categoria_id, valor) VALUES (?, ?, ?, ?)";
+            let params = [req.session?.userId || null, descricao, categoria_id || null, parseFloat(valor)];
+            if (data) {
+                sql = "INSERT INTO despesas (usuario_id, descricao, categoria_id, valor, data_hora) VALUES (?, ?, ?, ?, ?)";
+                params.push(data);
+            }
+            const r = await run(sql, params);
             res.json({ status: 'ok', id: r.lastID });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.put('/api/despesas/:id', async (req, res) => {
-        const { descricao, categoria_id, valor } = req.body;
+        const { descricao, categoria_id, valor, data } = req.body;
         try {
-            await run(
-                "UPDATE despesas SET descricao = ?, categoria_id = ?, valor = ? WHERE id = ?",
-                [descricao, categoria_id || null, parseFloat(valor), req.params.id]
-            );
+            let sql = "UPDATE despesas SET descricao = ?, categoria_id = ?, valor = ? WHERE id = ?";
+            let params = [descricao, categoria_id || null, parseFloat(valor), req.params.id];
+            if (data) {
+                sql = "UPDATE despesas SET descricao = ?, categoria_id = ?, valor = ?, data_hora = ? WHERE id = ?";
+                params = [descricao, categoria_id || null, parseFloat(valor), data, req.params.id];
+            }
+            await run(sql, params);
             res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
@@ -570,13 +611,13 @@ function startServer(mainWindow = null) {
     
     server.get('/api/clientes', async (req, res) => {
         try {
-            const rows = await query("SELECT * FROM clientes ORDER BY nome");
+            const rows = await query("SELECT * FROM clientes WHERE deleted_at IS NULL ORDER BY nome");
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.delete('/api/clientes/:id', (req, res) => {
-        db.run("DELETE FROM clientes WHERE id = ?", [req.params.id], function (err) {
+        db.run("UPDATE clientes SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?", [req.params.id], function (err) {
             if (err) return res.status(500).json({erro: err.message});
             res.json({ status: 'ok' });
         });
@@ -589,6 +630,7 @@ function startServer(mainWindow = null) {
                 SELECT nome, telefone, ultimo_pedido, total_gasto, qtd_pedidos 
                 FROM clientes 
                 WHERE date(ultimo_pedido) <= date('now', 'localtime', '-' || ? || ' days')
+                AND deleted_at IS NULL
             `, [dias]);
             res.json(rows);
         } catch (e) { res.status(500).json({erro: e.message}); }
@@ -618,6 +660,23 @@ function startServer(mainWindow = null) {
                 }
             }
             res.json({ status: 'ok', id: r.lastID });
+        } catch (e) { res.status(500).json({erro: e.message}); }
+    });
+
+    server.put('/api/regioes/:id', async (req, res) => {
+        const { nome, taxa, taxa_entrega } = req.body;
+        const valor = parseFloat(taxa_entrega ?? taxa ?? 0);
+        try {
+            try {
+                await run("UPDATE regioes SET nome = ?, taxa_entrega = ? WHERE id = ?", [nome, valor, req.params.id]);
+            } catch (err) {
+                if (err.message.includes('no such column')) {
+                    await run("UPDATE regioes SET nome = ?, taxa = ? WHERE id = ?", [nome, valor, req.params.id]);
+                } else {
+                    throw err;
+                }
+            }
+            res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
@@ -737,7 +796,8 @@ function startServer(mainWindow = null) {
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
-    server.listen(3000, () => console.log('✅ Galeto System V3 rodando em http://localhost:3000'));
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, '0.0.0.0', () => console.log(`✅ Galeto System V3 rodando na porta ${PORT}`));
     return server;
 }
 

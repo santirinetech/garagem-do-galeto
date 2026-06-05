@@ -61,6 +61,7 @@ function initDb() {
             criado_em     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`, () => {
             db.run(`ALTER TABLE clientes ADD COLUMN criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`, () => {});
+            db.run(`ALTER TABLE clientes ADD COLUMN deleted_at DATETIME`, () => {});
         });
 
         // ── Regiões ───────────────────────────────────────────────

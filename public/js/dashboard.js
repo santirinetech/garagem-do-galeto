@@ -96,6 +96,9 @@ async function carregarRegioesDash() {
                 <td><strong>${r.nome}</strong></td>
                 <td>${fmtReal(r.taxa_entrega ?? r.taxa ?? 0)}</td>
                 <td>
+                    <button class="btn btn-ghost btn-small" onclick="editarRegiao(${r.id}, '${r.nome.replace(/'/g,"\\'")}', ${r.taxa_entrega ?? r.taxa ?? 0})">
+                        <span class="material-icons-round icon-small">edit</span> Editar
+                    </button>
                     <button class="btn btn-ghost btn-small" style="color:var(--red);" onclick="excluirRegiao(${r.id})">
                         <span class="material-icons-round icon-small">delete</span> Excluir
                     </button>
@@ -106,9 +109,11 @@ async function carregarRegioesDash() {
 }
 
 async function salvarNovaRegiao() {
+    const idInp = document.getElementById('regiao-id');
     const nomeInp = document.getElementById('regiao-nome');
     const taxaInp = document.getElementById('regiao-taxa');
     
+    const id = idInp.value;
     const nome = nomeInp.value.trim();
     const taxa = parseFloat(taxaInp.value);
 
@@ -118,15 +123,19 @@ async function salvarNovaRegiao() {
     }
 
     try {
-        const resp = await fetch('/api/regioes', {
-            method: 'POST',
+        const url = id ? '/api/regioes/' + id : '/api/regioes';
+        const method = id ? 'PUT' : 'POST';
+        const resp = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome, taxa })
+            body: JSON.stringify({ nome, taxa_entrega: taxa })
         });
         if (resp.ok) {
-            showToast("Região cadastrada!");
+            showToast(id ? "Região atualizada!" : "Região cadastrada!");
+            idInp.value = '';
             nomeInp.value = '';
             taxaInp.value = '';
+            document.getElementById('titulo-regiao').textContent = 'Adicionar / Editar Região';
             carregarRegioesDash();
         } else {
             const data = await resp.json();
@@ -136,6 +145,14 @@ async function salvarNovaRegiao() {
         console.error(e);
         alert("Erro de conexão.");
     }
+}
+
+function editarRegiao(id, nome, taxa) {
+    document.getElementById('regiao-id').value = id;
+    document.getElementById('regiao-nome').value = nome;
+    document.getElementById('regiao-taxa').value = taxa;
+    document.getElementById('titulo-regiao').textContent = 'Editando Região #' + id;
+    document.getElementById('regiao-nome').focus();
 }
 
 // Mantendo para compatibilidade caso algo chame, mas redirecionando
@@ -458,7 +475,9 @@ async function carregarDashboard() {
 // ── TODOS OS PEDIDOS DE HOJE ─────────────────────────
 async function carregarTodos() {
     try {
-        const res = await fetch('/api/pedidos/hoje');
+        const dataInput = document.getElementById('filtro-data-pedidos')?.value;
+        const url = dataInput ? `/api/pedidos/hoje?data=${dataInput}` : '/api/pedidos/hoje';
+        const res = await fetch(url);
         const pedidos = await res.json();
         const tbody = document.getElementById('tbody-todos');
 
@@ -481,12 +500,12 @@ async function carregarTodos() {
                         <a href="${urlWpp}" target="_blank" class="btn-zap">WhatsApp</a>
                     </div>
                 </td>
-                <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
+                <td class="pedido-desc" title="${p.pedido_descricao || ''}">${p.pedido_descricao || '—'}</td>
                 <td>
                     ${p.forma_pagamento || '—'}
                     ${p.comprovante ? `<br><a href="${p.comprovante}" target="_blank" style="font-size:0.75rem; color:var(--blue); font-weight:700;">Ver Comprovante</a>` : ''}
                 </td>
-                <td style="font-size:0.85rem;">${p.endereco || '—'}</td>
+                <td style="font-size:0.85rem;">${p.endereco_entrega || '—'}</td>
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:6px;">
@@ -549,6 +568,7 @@ async function carregarProdutos() {
                 <tr>
                     <td><strong>${c.nome}</strong></td>
                     <td style="text-align: right;">
+                        <button class="btn btn-ghost btn-small" onclick="editarCategoria(${c.id}, '${c.nome.replace(/'/g,"\\'")}')"><span class="material-icons-round">edit</span></button>
                         <button class="btn btn-ghost btn-small" style="color:var(--red);" onclick="excluirCategoria(${c.id})"><span class="material-icons-round">delete</span></button>
                     </td>
                 </tr>
@@ -648,11 +668,33 @@ async function salvarProduto() {
     } catch (e) { alert('Erro ao salvar produto'); }
 }
 
-async function abrirModalCategoria() {
-    const nome = prompt('Nome da nova categoria:');
-    if (!nome) return;
+function abrirModalCategoria() {
+    document.getElementById('cat-id').value = '';
+    document.getElementById('cat-nome').value = '';
+    document.getElementById('modal-categoria-titulo').textContent = 'Nova Categoria';
+    document.getElementById('modal-categoria').style.display = 'flex';
+}
+
+function editarCategoria(id, nome) {
+    document.getElementById('cat-id').value = id;
+    document.getElementById('cat-nome').value = nome;
+    document.getElementById('modal-categoria-titulo').textContent = 'Editar Categoria';
+    document.getElementById('modal-categoria').style.display = 'flex';
+}
+
+function fecharModalCategoria(e) {
+    if (e.target.id === 'modal-categoria') document.getElementById('modal-categoria').style.display = 'none';
+}
+
+async function salvarCategoria() {
+    const id = document.getElementById('cat-id').value;
+    const nome = document.getElementById('cat-nome').value.trim();
+    if (!nome) return alert('Digite um nome válido.');
     try {
-        await fetch('/api/categorias', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome }) });
+        const url = id ? '/api/categorias/' + id : '/api/categorias';
+        const method = id ? 'PUT' : 'POST';
+        await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome }) });
+        document.getElementById('modal-categoria').style.display = 'none';
         carregarProdutos();
     } catch(e) { alert('Erro ao salvar'); }
 }
@@ -683,6 +725,7 @@ async function abrirModalDetalhes(id) {
                 <div><strong>Origem:</strong> ${p.origem}</div>
                 <div><strong>Endereço:</strong> ${p.endereco_entrega || 'Retirada no Local'}</div>
                 <div><strong>Pagamento:</strong> ${p.forma_pagamento} ${p.comprovante_url ? `<a href="${p.comprovante_url}" target="_blank">[Ver]</a>` : ''}</div>
+                <div><strong>Taxa de Entrega:</strong> ${fmtReal(p.taxa_aplicada || 0)}</div>
             </div>
             <div style="background:var(--bg-2); padding:10px; border-radius:5px; margin-top:10px;">
                 <strong>Itens do Pedido:</strong>
@@ -716,6 +759,9 @@ async function abrirModalDetalhes(id) {
         
         const a = document.getElementById('detalhes-acoes');
         a.innerHTML = `
+            <button class="btn btn-ghost" onclick="editarPedidoAdmin(${id}, '${(p.pedido_descricao||'').replace(/'/g, "\\'")}', '${(p.endereco_entrega||'').replace(/'/g, "\\'")}', ${p.total||0}, '${p.forma_pagamento||'Dinheiro'}')">
+                <span class="material-icons-round">edit</span> Editar
+            </button>
             ${statusSelectHTML(p.id, p.status)}
             <button class="btn btn-primary" onclick="imprimirComanda(${p.id})">
                 <span class="material-icons-round">print</span> Imprimir
@@ -728,6 +774,50 @@ async function abrirModalDetalhes(id) {
 
 function fecharModalDetalhes(e) {
     if (e.target.id === 'modal-detalhes') document.getElementById('modal-detalhes').style.display = 'none';
+}
+
+function editarPedidoAdmin(id, desc, end, total, pag) {
+    document.getElementById('edit-pedido-id').value = id;
+    document.getElementById('edit-pedido-desc').value = desc;
+    document.getElementById('edit-pedido-end').value = end;
+    document.getElementById('edit-pedido-total').value = total;
+    document.getElementById('edit-pedido-pag').value = pag;
+    document.getElementById('modal-detalhes').style.display = 'none';
+    document.getElementById('modal-editar-pedido').style.display = 'flex';
+}
+
+function fecharModalEditarPedido(e) {
+    if(e.target.id === 'modal-editar-pedido') e.target.style.display = 'none';
+}
+
+async function salvarEdicaoPedido() {
+    const id = document.getElementById('edit-pedido-id').value;
+    const desc = document.getElementById('edit-pedido-desc').value.trim();
+    const end = document.getElementById('edit-pedido-end').value.trim();
+    const total = parseFloat(document.getElementById('edit-pedido-total').value);
+    const pag = document.getElementById('edit-pedido-pag').value;
+    
+    if(!desc || isNaN(total)) {
+        alert("Preencha descrição e total corretamente.");
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/pedidos/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ pedido_descricao: desc, endereco_entrega: end, total, forma_pagamento: pag })
+        });
+        if(res.ok) {
+            showToast("Pedido atualizado!");
+            document.getElementById('modal-editar-pedido').style.display = 'none';
+            carregarTudo();
+        } else {
+            alert("Erro ao editar.");
+        }
+    } catch(e) {
+        alert("Erro de conexão.");
+    }
 }
 
 // ── HISTÓRICO ────────────────────────────────────────
@@ -757,8 +847,8 @@ async function carregarHistorico() {
                     <div class="cliente-name">${p.cliente_nome || '—'}</div>
                     <div class="cliente-tel">${p.cliente_tel || ''}</div>
                 </td>
-                <td class="pedido-desc" title="${p.pedido_desc || ''}">${p.pedido_desc || '—'}</td>
-                <td>${p.endereco || '—'}</td>
+                <td class="pedido-desc" title="${p.pedido_descricao || ''}">${p.pedido_descricao || '—'}</td>
+                <td>${p.endereco_entrega || '—'}</td>
                 <td><strong>${fmtReal(p.total)}</strong></td>
                 <td>${statusBadge(p.status)}</td>
             </tr>
@@ -828,6 +918,11 @@ function showToast(msg) {
 }
 
 // ── INIT ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const fDate = document.getElementById('filtro-data-pedidos');
+    if(fDate) fDate.value = hoje;
+});
 carregarTudo();
 
 // Bind logout
@@ -1000,6 +1095,11 @@ async function abrirModalDespesa(dados = null) {
     document.getElementById('desp-id').value = dados?.id || '';
     document.getElementById('desp-descricao').value = dados?.descricao || '';
     document.getElementById('desp-valor').value = dados?.valor || '';
+    if (dados?.data_hora) {
+        document.getElementById('desp-data').value = dados.data_hora.substring(0, 16).replace(' ', 'T');
+    } else {
+        document.getElementById('desp-data').value = '';
+    }
     document.getElementById('modal-despesa-titulo').textContent = dados ? 'Editar Despesa' : 'Nova Despesa';
 
     // Carregar categorias
@@ -1038,13 +1138,16 @@ async function salvarDespesa() {
     const descricao = document.getElementById('desp-descricao').value.trim();
     const categoria_id = document.getElementById('desp-categoria').value || null;
     const valor = parseFloat(document.getElementById('desp-valor').value);
+    
+    const dataRaw = document.getElementById('desp-data').value;
+    const data = dataRaw ? dataRaw.replace('T', ' ') + ':00' : null;
 
     if (!descricao || isNaN(valor) || valor <= 0) {
         alert('Preencha descrição e valor válido.');
         return;
     }
 
-    const payload = { descricao, categoria_id, valor };
+    const payload = { descricao, categoria_id, valor, data };
     const url = id ? '/api/despesas/' + id : '/api/despesas';
     const method = id ? 'PUT' : 'POST';
 

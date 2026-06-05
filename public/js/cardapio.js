@@ -111,7 +111,17 @@ async function carregarCardapio() {
     }
 }
 
-window.addEventListener('DOMContentLoaded', carregarCardapio);
+window.addEventListener('DOMContentLoaded', () => {
+    carregarCardapio();
+    
+    const inpTel = document.getElementById('inp-tel');
+    if (inpTel) {
+        inpTel.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+    }
+});
 
 // ── CORE ──
 function addItem(id, nome, preco) {
@@ -212,6 +222,7 @@ async function enviarPedido() {
     const btn = document.getElementById('btn-confirmar');
 
     if(!nome || !tel) { alert("Por favor, preencha nome e WhatsApp."); return; }
+    if(tel.replace(/\D/g, '').length < 10) { alert("Por favor, digite um WhatsApp válido com DDD."); return; }
     if(tipoEntrega === 'Entrega' && !document.getElementById('sel-regiao').value) { alert("Selecione o bairro para entrega."); return; }
     if(!document.getElementById('chk-lgpd').checked) { alert("Aceite os termos para continuar."); return; }
 

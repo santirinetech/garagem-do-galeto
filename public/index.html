@@ -148,8 +148,9 @@
     <!-- ═══ VIEW: PEDIDOS ═══ -->
     <div class="view" id="view-pedidos">
         <div class="card">
-            <div class="card-header">
-                <span class="card-title">Todos os Pedidos de Hoje</span>
+            <div class="card-header" style="justify-content: space-between;">
+                <span class="card-title">Todos os Pedidos</span>
+                <input type="date" id="filtro-data-pedidos" class="status-select" onchange="carregarTodos()">
             </div>
             <table>
                 <thead>
@@ -281,10 +282,11 @@
 
         <div class="card card-spaced">
             <div class="card-header">
-                <span class="card-title">Adicionar Nova Região</span>
+                <span class="card-title" id="titulo-regiao">Adicionar / Editar Região</span>
             </div>
             <div class="card-padded">
                 <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <input type="hidden" id="regiao-id">
                     <div style="flex: 2;">
                         <label class="nav-label" style="color:var(--ink-2); padding-left:0;">NOME DO BAIRRO/REGIÃO</label>
                         <input type="text" id="regiao-nome" class="status-select" style="width:100%; height:40px;" placeholder="Ex: Centro">
@@ -538,6 +540,9 @@
             </button>
         </div>
         <input type="hidden" id="desp-id">
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">DATA E HORA (Deixe vazio para usar a atual)</label>
+        <input type="datetime-local" id="desp-data" class="status-select" style="width:100%; height:40px; margin-bottom:15px;">
+
         <label class="nav-label" style="color:var(--ink-2); padding-left:0;">DESCRIÇÃO</label>
         <input type="text" id="desp-descricao" class="status-select" style="width:100%; height:40px; margin-bottom:15px;" placeholder="Ex: Compra de gás">
 
@@ -549,6 +554,62 @@
 
         <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarDespesa()">
             <span class="material-icons-round icon-small">save</span> SALVAR
+        </button>
+    </div>
+</div>
+
+<!-- MODAL CATEGORIA -->
+<div class="overlay" id="modal-categoria" onclick="fecharModalCategoria(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:100%; max-width:400px; padding:20px; background:var(--bg-1);">
+        <div class="card-header" style="justify-content:space-between; margin-bottom:15px;">
+            <span class="card-title" id="modal-categoria-titulo">Nova Categoria</span>
+            <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-categoria').style.display='none'">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <input type="hidden" id="cat-id">
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">NOME DA CATEGORIA</label>
+        <input type="text" id="cat-nome" class="status-select" style="width:100%; height:40px; margin-bottom:20px;" placeholder="Ex: Bebidas">
+
+        <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarCategoria()">
+            <span class="material-icons-round icon-small">save</span> SALVAR CATEGORIA
+        </button>
+    </div>
+</div>
+
+<!-- MODAL EDITAR PEDIDO -->
+<div class="overlay" id="modal-editar-pedido" onclick="fecharModalEditarPedido(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:100%; max-width:500px; padding:20px; background:var(--bg-1);">
+        <div class="card-header" style="justify-content:space-between; margin-bottom:15px;">
+            <span class="card-title">Editar Pedido</span>
+            <button class="btn btn-ghost" style="padding:5px;" onclick="document.getElementById('modal-editar-pedido').style.display='none'">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <input type="hidden" id="edit-pedido-id">
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">ITENS / DESCRIÇÃO</label>
+        <textarea id="edit-pedido-desc" class="status-select" style="width:100%; height:80px; margin-bottom:15px; resize:vertical; padding:10px; font-family:inherit;"></textarea>
+
+        <label class="nav-label" style="color:var(--ink-2); padding-left:0;">ENDEREÇO DE ENTREGA</label>
+        <input type="text" id="edit-pedido-end" class="status-select" style="width:100%; height:40px; margin-bottom:15px;">
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div style="flex: 1;">
+                <label class="nav-label" style="color:var(--ink-2); padding-left:0;">TOTAL (R$)</label>
+                <input type="number" id="edit-pedido-total" class="status-select" style="width:100%; height:40px;" step="0.01">
+            </div>
+            <div style="flex: 1;">
+                <label class="nav-label" style="color:var(--ink-2); padding-left:0;">PAGAMENTO</label>
+                <select id="edit-pedido-pag" class="status-select" style="width:100%; height:40px;">
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%; height:45px;" onclick="salvarEdicaoPedido()">
+            <span class="material-icons-round icon-small">save</span> SALVAR ALTERAÇÕES
         </button>
     </div>
 </div>
