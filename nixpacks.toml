@@ -21,5 +21,7 @@ aptPkgs = [
     "libdrm2",
     "libxshmfence1",
     "chromium",
-    "libxss1"
+    "libxss1",
+    "libglib2.0-0",
+    "libxkbcommon0"
 ]
