@@ -108,6 +108,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         }),
         puppeteer: {
             headless: true,
+            executablePath: process.env.PORT ? '/usr/bin/chromium' : undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
