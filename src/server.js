@@ -159,7 +159,8 @@ function startServer(mainWindow = null) {
     };
 
     // WhatsApp sempre ativo localmente (Dev/Electron) e opcional na Nuvem (Railway) via ENABLE_WHATSAPP
-    const isWppEnabled = process.env.ENABLE_WHATSAPP === "true" || process.env.NODE_ENV !== "production";
+    const wppEnv = process.env.ENABLE_WHATSAPP ? process.env.ENABLE_WHATSAPP.toLowerCase() : "";
+    const isWppEnabled = wppEnv === "true" || process.env.NODE_ENV !== "production";
     
     if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);

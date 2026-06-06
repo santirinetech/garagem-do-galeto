@@ -105,6 +105,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         authStrategy: new LocalAuth({ dataPath: process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth' }),
         puppeteer: {
             headless: true,
+            executablePath: process.env.PORT ? '/usr/bin/chromium' : undefined,
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu']
         }
     });
@@ -361,7 +362,11 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         }
     });
 
-    client.initialize();
+    client.initialize().catch(err => {
+        console.error('❌ Erro fatal ao iniciar o Puppeteer do WhatsApp:', err);
+        isReady = false;
+        qrCodeDataUrl = null;
+    });
 }
 
 /**

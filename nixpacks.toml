@@ -19,5 +19,7 @@ aptPkgs = [
     "libatk1.0-0",
     "libcups2",
     "libdrm2",
-    "libxshmfence1"
+    "libxshmfence1",
+    "chromium",
+    "libxss1"
 ]
