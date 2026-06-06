@@ -10,17 +10,21 @@ eventSource.onmessage = (e) => {
     try {
         const evt = JSON.parse(e.data);
         if (evt.type === 'qr') {
-            document.getElementById('wpp-qr-container').innerHTML = `<img src="${evt.data}" style="width: 200px; height: 200px; border-radius: 10px;">`;
+            document.getElementById('wpp-qr-container').innerHTML = `<img src="${evt.data}" class="qr-code-img">`;
             document.getElementById('wpp-status-pill').textContent = 'Aguardando Leitura do QR...';
             document.getElementById('wpp-status-pill').style.background = 'var(--amber)';
         } else if (evt.type === 'whatsapp-ready') {
-            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round" style="color: var(--green); font-size: 80px;">check_circle</span>`;
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round qr-code-success">check_circle</span>`;
             document.getElementById('wpp-status-pill').textContent = 'Conectado (Online)';
             document.getElementById('wpp-status-pill').style.background = 'var(--green)';
             showToast("WhatsApp Bot Conectado!");
         } else if (evt.type === 'whatsapp-disconnected') {
-            document.getElementById('wpp-qr-container').innerHTML = `<span style="color: var(--red); font-size: 0.8rem; text-align: center; padding: 10px;">Desconectado.<br>Aguarde novo QR Code...</span>`;
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Desconectado.<br>Aguarde novo QR Code...</span>`;
             document.getElementById('wpp-status-pill').textContent = 'Desconectado';
+            document.getElementById('wpp-status-pill').style.background = 'var(--red)';
+        } else if (evt.type === 'whatsapp-error') {
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Erro Interno no Bot:<br>${evt.message || 'Falha ao gerar QR Code.'}</span>`;
+            document.getElementById('wpp-status-pill').textContent = 'Erro no Servidor';
             document.getElementById('wpp-status-pill').style.background = 'var(--red)';
         }
     } catch(err) {}
@@ -32,15 +36,19 @@ async function checkWppStatus() {
         const status = await res.json();
         
         if (status.isReady) {
-            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round" style="color: var(--green); font-size: 80px;">check_circle</span>`;
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round qr-code-success">check_circle</span>`;
             document.getElementById('wpp-status-pill').textContent = 'Conectado (Online)';
             document.getElementById('wpp-status-pill').style.background = 'var(--green)';
         } else if (status.qrCodeDataUrl) {
-            document.getElementById('wpp-qr-container').innerHTML = `<img src="${status.qrCodeDataUrl}" style="width: 200px; height: 200px; border-radius: 10px;">`;
+            document.getElementById('wpp-qr-container').innerHTML = `<img src="${status.qrCodeDataUrl}" class="qr-code-img">`;
             document.getElementById('wpp-status-pill').textContent = 'Aguardando Leitura do QR...';
             document.getElementById('wpp-status-pill').style.background = 'var(--amber)';
+        } else if (status.errorMessage) {
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Erro Interno no Bot:<br>${status.errorMessage}</span>`;
+            document.getElementById('wpp-status-pill').textContent = 'Erro no Servidor';
+            document.getElementById('wpp-status-pill').style.background = 'var(--red)';
         } else {
-            document.getElementById('wpp-qr-container').innerHTML = `<span style="color: black; font-size: 0.8rem; text-align: center; padding: 10px;">Aguarde, gerando...</span>`;
+            document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-pending">Aguarde, gerando...</span>`;
         }
     } catch(e) {}
 }

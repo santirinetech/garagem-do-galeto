@@ -13,6 +13,7 @@ const menuPrecos = {
 
 let qrCodeDataUrl = null;
 let isReady = false;
+let errorMessage = null;
 let wppClient = null;
 
 /**
@@ -123,6 +124,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
 
     client.on('qr', async (qr) => {
         console.log('QR Code recebido. Envie para o frontend.');
+        errorMessage = null;
         qrCodeDataUrl = await qrcode.toDataURL(qr);
         isReady = false;
         broadcastFunc({ type: 'qr', data: qrCodeDataUrl });
@@ -132,6 +134,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         console.log('✅ Robô do WhatsApp conectado e pronto!');
         isReady = true;
         qrCodeDataUrl = null;
+        errorMessage = null;
         broadcastFunc({ type: 'whatsapp-ready' });
     });
 
@@ -139,9 +142,10 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         console.log('❌ WhatsApp desconectado:', reason);
         isReady = false;
         qrCodeDataUrl = null;
-        broadcastFunc({ type: 'whatsapp-disconnected' });
+        errorMessage = 'Desconectado: ' + reason;
+        broadcastFunc({ type: 'whatsapp-disconnected', reason });
         // Tentativa de reconexão automática ou limpar LocalAuth
-        client.initialize();
+        client.initialize().catch(() => {});
     });
 
     client.on('message', async msg => {
@@ -376,6 +380,8 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         console.error('❌ Erro fatal ao iniciar o Puppeteer do WhatsApp:', err);
         isReady = false;
         qrCodeDataUrl = null;
+        errorMessage = err.message;
+        broadcastFunc({ type: 'whatsapp-error', message: err.message });
     });
 }
 
@@ -385,7 +391,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
  * @returns {Object} Objeto contendo o estado `isReady` e a string do `qrCodeDataUrl` se aplicável.
  */
 function getBotStatus() {
-    return { isReady, qrCodeDataUrl };
+    return { isReady, qrCodeDataUrl, errorMessage };
 }
 
 module.exports = { initWhatsApp, getBotStatus, enviarMensagemPainel };
