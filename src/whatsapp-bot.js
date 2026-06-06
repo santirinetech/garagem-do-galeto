@@ -102,11 +102,21 @@ async function enviarMensagemPainel(telefone, mensagem) {
  */
 function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     const client = new Client({
-        authStrategy: new LocalAuth({ dataPath: process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth' }),
+        authStrategy: new LocalAuth({
+            dataPath: process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth'
+        }),
         puppeteer: {
             headless: true,
-            executablePath: process.env.PORT ? '/usr/bin/chromium' : undefined,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
+                '--disable-gpu'
+            ]
         }
     });
     wppClient = client;
