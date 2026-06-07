@@ -4,14 +4,33 @@
     size: 58mm auto;
 }
 
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important; /* Essencial para a impressora não cuspir papel até o final */
+}
+
 body {
     font-family: 'Courier New', Courier, monospace;
     font-size: 12px;
     width: 280px; /* Adapta-se a ~58mm na maioria das impressoras térmicas */
-    margin: 0 auto;
-    padding: 10px 5px; /* Margem pequena pra não cortar na guilhotina/bordas */
+    max-width: 100%;
+    margin: 0 auto !important;
+    padding: 5px !important; /* Margem pequena pra não cortar na guilhotina/bordas */
     color: #000;
     background: #fff;
+}
+
+@media print {
+    body {
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden;
+    }
+    .cupom-container {
+        padding-bottom: 0 !important;
+    }
 }
 
 .cupom-container {
