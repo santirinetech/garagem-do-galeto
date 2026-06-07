@@ -90,6 +90,11 @@ function showView(name, el) {
     document.getElementById('view-' + name).classList.add('active');
     if (el) el.classList.add('active');
     document.getElementById('topbar-title').textContent = titles[name] || name;
+    
+    // Fecha a sidebar no mobile ao clicar em um menu
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.classList.remove('open');
+    
     carregarTudo();
 }
 

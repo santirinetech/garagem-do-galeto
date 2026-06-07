@@ -839,6 +839,105 @@
             border-radius: 6px;
             margin-top: 3px;
         }
+
+        /* ── MOBILE FIRST / RESPONSIVIDADE ── */
+
+        /* Botão hambúrguer escondido por padrão (Desktop) */
+        .btn-hamburger {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--ink-2);
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+        .btn-hamburger:hover {
+            color: var(--color-primary);
+        }
+
+        @media (max-width: 768px) {
+            /* Mostra o botão hambúrguer no mobile */
+            .btn-hamburger {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Menu Lateral vira gaveta (Drawer) */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: calc(var(--sidebar) * -1.5); /* Escondido fora da tela com folga */
+                height: 100vh;
+                z-index: 9999;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+            }
+            .sidebar.open {
+                left: 0; /* Aparece quando tem a classe open */
+            }
+
+            /* Reduz padding principal */
+            .view {
+                padding: 15px 12px;
+            }
+            .topbar {
+                padding: 0 15px;
+            }
+
+            /* Cards empilhados na vertical (Stack) */
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Tabelas com rolagem horizontal no mobile para não cortar */
+            .card table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch; /* Suavidade no iOS */
+            }
+
+            /* Ocultar textos dos botões principais para ganhar espaço na Topbar */
+            .topbar-right .btn-primary, .topbar-right .btn-ghost {
+                font-size: 0; /* Oculta o texto base */
+                padding: 8px 10px;
+                gap: 0;
+            }
+            .topbar-right .btn-primary .material-icons-round,
+            .topbar-right .btn-ghost .material-icons-round {
+                font-size: 1.2rem !important; /* Mantém apenas o ícone */
+            }
+            .live-label {
+                display: none; /* Esconde a palavra "Ao vivo" */
+            }
+
+            /* Organizar headers de cards que quebram */
+            .card-header, .card-header-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 15px;
+            }
+            .card-header > div {
+                width: 100%;
+            }
+
+            /* Ajuste de layout de inputs lado a lado na config de região */
+            #view-config .card-padded > div {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+            #view-config .card-padded > div > div {
+                width: 100%;
+                flex: none;
+            }
+            #view-config .card-padded > div > button {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
         .tr-atrasado td { background: #fff8f8 !important; }
         .tr-atrasado:hover td { background: #fff0f0 !important; }
 
