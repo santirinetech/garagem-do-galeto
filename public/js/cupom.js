@@ -52,8 +52,13 @@ function renderizar(dados) {
 
     // Itens (novo formato ou fallback pro formato texto)
     let itensHtml = '';
-    if (dados.itens && dados.itens.length > 0) {
-        itensHtml = dados.itens.map(i => `
+    let itensArray = dados.itens;
+    if (typeof itensArray === 'string') {
+        try { itensArray = JSON.parse(itensArray); } catch(e) { itensArray = null; }
+    }
+    
+    if (itensArray && Array.isArray(itensArray) && itensArray.length > 0) {
+        itensHtml = itensArray.map(i => `
             <div class="item-row">
                 <span class="item-qty">${i.quantidade}x</span>
                 <span class="item-name">${i.produto_nome || 'Item'}</span>

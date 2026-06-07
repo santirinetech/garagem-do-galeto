@@ -30,16 +30,19 @@ body {
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-        overflow: hidden;
     }
     .cupom-container {
-        padding: 0 15px !important; /* Margem forte no container para fugir da zona morta do cabeçote térmico */
+        width: 250px !important; /* Largura rígida bem dentro dos 58mm */
+        margin: 0 !important;
+        padding: 0 15px !important; /* Margem de segurança de 15px de cada lado para evitar corte */
     }
 }
 
 .cupom-container {
-    width: 100%;
-    word-wrap: break-word; /* Nunca corta palavras nas bordas */
+    width: 250px;
+    margin: 0;
+    padding: 0 15px;
+    word-wrap: break-word; 
     overflow-wrap: break-word;
 }
 
@@ -73,32 +76,42 @@ body {
 }
 
 .item-row {
-    display: flex;
-    justify-content: space-between;
+    clear: both;
     margin-bottom: 4px;
     line-height: 1.2;
+    width: 100%;
+    overflow: hidden; /* Apenas para conter os floats internos */
 }
 
 .item-qty {
+    float: left;
     margin-right: 5px;
     font-weight: bold;
 }
 
 .item-name {
-    flex: 1;
-    padding-right: 5px;
+    float: left;
+    max-width: 65%;
 }
 
 .item-price {
+    float: right;
     white-space: nowrap;
 }
 
 .total-row {
+    clear: both;
     font-size: 12px;
     font-weight: bold;
-    display: flex;
-    justify-content: space-between;
     margin: 6px 0;
+    width: 100%;
+    overflow: hidden;
+}
+.total-row span:first-child {
+    float: left;
+}
+.total-row span:last-child {
+    float: right;
 }
 
 .footer-msg {

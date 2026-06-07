@@ -40,7 +40,11 @@ function createWindow() {
         // Agora o Electron consome 100% da Nuvem para o Painel, evitando dados locais antigos
         const targetUrl = `${RAILWAY_URL.replace(/\/$/, '')}/login.html`;
         console.log('[ELECTRON] Carregando Dashboard da Nuvem:', targetUrl);
-        mainWindow.loadURL(targetUrl);
+        
+        // Limpa o cache para garantir que sempre baixe o dashboard.js mais recente da nuvem (Railway)
+        mainWindow.webContents.session.clearCache().then(() => {
+            mainWindow.loadURL(targetUrl);
+        });
     } catch (e) {
         console.error('[ERRO] Falha ao criar a janela principal:', e.message);
     }
@@ -112,7 +116,9 @@ function inicializarBotLocal() {
 }
 
 ipcMain.handle('get-wpp-status', () => {
-    return getBotStatus();
+    const status = getBotStatus();
+    console.log('[IPC] Dashboard solicitou get-wpp-status. isReady:', status.isReady, '| Tem QR?', !!status.qrCodeDataUrl, '| Erro:', status.errorMessage);
+    return status;
 });
 
 // ── CONEXÃO COM O SERVIDOR RAILWAY VIA SOCKET.IO ──────────
@@ -137,8 +143,9 @@ function setupSocketIO() {
     socket.on('painel:novo-pedido', (pedido) => {
         console.log(`[SOCKET] 🍕 Novo pedido recebido (#${pedido.id}) via Railway Socket!`);
         
-        // Opcional: Se for necessário salvar no banco local para o painel exibir
-        // Aqui você faria um db.run("INSERT INTO pedidos ...") com base no pedido recebido
+        if (lastPollId === -1 || pedido.id > lastPollId) {
+            lastPollId = pedido.id;
+        }
         
         if (mainWindow) {
             mainWindow.webContents.send('atualizar-dashboard', pedido);
@@ -148,27 +155,48 @@ function setupSocketIO() {
 }
 
 // ── FALLBACK / CONTINGÊNCIA (HTTP POLLING) ──────────
-let lastPollId = 0;
+let lastPollId = -1; // -1 indica que ainda não foi inicializado
 function setupContingenciaPolling() {
     setInterval(async () => {
         try {
             const res = await net.fetch(`${RAILWAY_URL}/api/pedidos/hoje`);
             if (res.ok) {
                 const pedidos = await res.json();
+                
+                // Inicializa o ID máximo na primeira execução para não reimprimir pedidos antigos ao abrir o app
+                if (lastPollId === -1) {
+                    lastPollId = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id)) : 0;
+                    return;
+                }
+
                 const pendentes = pedidos.filter(p => p.status === 'Pendente' || p.status === 'pendente');
                 
                 let novosPedidos = false;
                 pendentes.forEach(p => {
                     if (p.id > lastPollId) {
-                        console.log(`[CONTINGÊNCIA] Pedido pendente não processado encontrado (#${p.id}) via HTTP Polling.`);
-                        if (mainWindow) mainWindow.webContents.send('atualizar-dashboard', p);
-                        imprimirPedidoSilencioso(p);
+                        console.log(`[CONTINGÊNCIA] Pedido pendente não processado (#${p.id}) encontrado via HTTP Polling.`);
+                        
+                        // Formata o pedido para os nomes de colunas que o cupom.html espera (evita valores null)
+                        const pFormatado = {
+                            id: p.id,
+                            nome: p.cliente_nome,
+                            telefone: p.cliente_tel,
+                            pedido: p.pedido_descricao || p.pedido_desc,
+                            itens: typeof p.itens === 'string' ? JSON.parse(p.itens || '[]') : (p.itens || []),
+                            taxa: p.taxa_aplicada || 0,
+                            data_hora: p.data_hora,
+                            total: p.total,
+                            pagamento: p.forma_pagamento,
+                            endereco: p.endereco_entrega || p.endereco
+                        };
+
+                        if (mainWindow) mainWindow.webContents.send('atualizar-dashboard', pFormatado);
+                        imprimirPedidoSilencioso(pFormatado);
                         lastPollId = p.id;
                         novosPedidos = true;
                     }
                 });
 
-                // Atualiza o ID mais recente verificado para não repetir na próxima checagem
                 if (pedidos.length > 0) {
                     const maxId = Math.max(...pedidos.map(p => p.id));
                     if (maxId > lastPollId && !novosPedidos) {

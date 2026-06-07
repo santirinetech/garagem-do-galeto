@@ -39,31 +39,35 @@ async function finalizarPedido(client, from, session, db, emitUpdateFunc) {
 
     let enderecoFormatado = deliveryType === 'Entrega' ? `${address} (Taxa: R$ ${freight})` : 'Retirada no Local';
 
-    db.run(`INSERT INTO pedidos (cliente_nome, cliente_tel, pedido_desc, total, forma_pagamento, origem, endereco, status, comprovante) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, phone, itemsDesc, total, pagamentoDesc, 'WhatsApp (Robô)', enderecoFormatado, 'Pendente', comprovanteUrl || null],
-        function(err) {
-            if (err) {
-                client.sendMessage(from, "Ops, ocorreu um erro ao registrar seu pedido. Por favor, tente novamente ou fale com um atendente.");
-            } else {
-                const idPedido = this.lastID;
-                if (payment === 'Pix') {
-                    client.sendMessage(from, `🎉 *PEDIDO RECEBIDO!*\nO número do seu pedido é *#${idPedido}*.\n\nRecebemos a foto do seu comprovante. Nossa equipe fará a conferência e já iniciará o preparo! Você receberá atualizações por aqui.`);
-                } else {
-                    client.sendMessage(from, `🎉 *PEDIDO CONFIRMADO!*\nO número do seu pedido é *#${idPedido}*.\n\nNossa equipe já recebeu e está preparando com muito carinho. O status será atualizado e te avisaremos quando sair para entrega!`);
-                }
-                
-                // Baixa automática de estoque
-                const descLower = itemsDesc.toLowerCase();
-                if (descLower.includes('galeto'))         db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Galetos'");
-                if (descLower.includes('salpicão'))       db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Salpicão'");
-                if (descLower.includes('feijão'))         db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Feijão Tropeiro'");
-                if (descLower.includes('refrigerante'))   db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Refrigerante'");
-                if (descLower.includes('suco'))           db.run("UPDATE estoque SET quantidade = MAX(0, quantidade - 1) WHERE item = 'Suco'");
+    const payload = {
+        cliente_nome: name,
+        cliente_tel: phone,
+        pedido: itemsDesc,
+        itens: JSON.stringify(session.order.items.map(i => ({ produto_nome: i, quantidade: 1, preco_unitario: 0 }))),
+        taxa_aplicada: freight,
+        total: total,
+        forma_pagamento: pagamentoDesc,
+        endereco_entrega: enderecoFormatado,
+        origem: 'WhatsApp (Robô)'
+    };
 
-                emitUpdateFunc(); // Atualiza dashboard
-            }
+    try {
+        await fetch('https://www.garagemdomarcao.online/api/novo-pedido', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const idPedido = Math.floor(Math.random() * 10000); // Simulando ID já que o Railway é que gera agora
+        if (payment === 'Pix') {
+            await client.sendMessage(from, `🎉 *PEDIDO RECEBIDO!*\nO seu pedido foi recebido pelo sistema!\n\nRecebemos a foto do seu comprovante. Nossa equipe fará a conferência e já iniciará o preparo!`);
+        } else {
+            await client.sendMessage(from, `🎉 *PEDIDO CONFIRMADO!*\nO seu pedido já caiu no nosso sistema!\n\nNossa equipe já recebeu e está preparando com muito carinho. O status será atualizado e te avisaremos quando sair para entrega!`);
         }
-    );
+    } catch (err) {
+        console.error('Erro ao enviar pedido do bot para o Railway:', err);
+        await client.sendMessage(from, "Ops, ocorreu um erro ao registrar seu pedido. Por favor, tente novamente ou fale com um atendente.");
+    }
     session.state = 'IDLE'; // Reseta o estado
     session.order = { items: [], total: 0, payment: '', address: '', name: session.order.name, deliveryType: '', freight: 0, changeFor: '' };
 }
@@ -111,9 +115,9 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
             const { app } = require('electron');
             authPath = require('path').join(app.getPath('userData'), '.wwebjs_auth');
             
-            // Busca o Chrome nativo do usuário no Windows para evitar o erro do Puppeteer sem Chromium
+            // Busca o Chrome nativo apenas se o app estiver empacotado, pois em dev o Chromium do puppeteer funciona melhor
             const fs = require('fs');
-            if (process.platform === 'win32') {
+            if (process.platform === 'win32' && app.isPackaged) {
                 const winPaths = [
                     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
                     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
@@ -149,8 +153,6 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
-                '--no-zygote',
-                '--single-process',
                 '--disable-gpu'
             ]
         }
@@ -207,10 +209,10 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         switch (session.state) {
             case 'IDLE':
                 if (['oi', 'olá', 'ola', 'boa noite', 'boa tarde', 'bom dia', 'menu', 'cardapio'].includes(text.toLowerCase())) {
-                    await client.sendMessage(from, `Olá, *${session.order.name}*! Sou o assistente virtual da *Garagem do Galeto* 🍗🔥.\n\nComo posso te ajudar hoje?\n\nDigite o *número* da opção desejada:\n*1️⃣* - Fazer um Pedido\n*2️⃣* - Consultar Estoque (O que tem hoje?)\n*3️⃣* - Falar com atendente humano`);
+                    await client.sendMessage(from, `Olá, *${session.order.name}*! Sou o assistente virtual da *Garagem do Marcão* 🍗🔥.\n\nSabia que agora ficou muito mais fácil pedir?\n\n🌐 *PELO SITE (Rápido e Prático):*\nAcesse www.garagemdomarcao.online/cardapio.html e monte seu pedido em poucos cliques!\n\n📱 *POR AQUI (WhatsApp):*\nDigite o *número* da opção desejada:\n*1️⃣* - Fazer um Pedido por aqui\n*2️⃣* - Consultar Estoque (O que tem hoje?)\n*3️⃣* - Falar com atendente humano`);
                     session.state = 'MENU';
                 } else {
-                    await client.sendMessage(from, `Olá! Para falar com o nosso sistema automático, mande um *"Oi"* ou escolha uma opção se já estiver no meio do pedido. Se quiser parar, digite *Cancelar*.`);
+                    await client.sendMessage(from, `Olá! Estamos recebendo pedidos através do nosso site 🌐 www.garagemdomarcao.online/cardapio.html ou por aqui mesmo!\n\nPara iniciar o atendimento automático e ver o cardápio, mande um *"Oi"*. Se quiser interromper o pedido atual, digite *Cancelar*.`);
                 }
                 break;
 
@@ -335,7 +337,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                     session.order.payment = pagMap[text];
                     
                     if (session.order.payment === 'Pix') {
-                        await client.sendMessage(from, `Sua chave Pix é: *27988573982* (Celular)\nNome: Santirine Tech\n\nPor favor, *NÃO* envie o comprovante ainda. Conclua o seu pedido primeiro.`);
+                        await client.sendMessage(from, `Sua chave Pix é: *27988100200* (Celular)\n\nPor favor, *NÃO* envie o comprovante ainda. Conclua o seu pedido primeiro.`);
                     }
 
                     if (session.order.payment === 'Dinheiro') {
