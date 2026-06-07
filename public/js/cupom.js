@@ -1,6 +1,45 @@
-const { ipcRenderer } = require('electron');
+let isElectron = false;
+try {
+    const { ipcRenderer } = require('electron');
+    isElectron = true;
+    ipcRenderer.on('render-cupom', (event, dados) => {
+        renderizar(dados);
+    });
+} catch (e) {
+    // Não é Electron (é navegador Web)
+}
 
-ipcRenderer.on('render-cupom', (event, dados) => {
+if (!isElectron) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    if (id) {
+        fetch('/api/pedido/' + id)
+            .then(res => res.json())
+            .then(p => {
+                const dados = {
+                    id: p.id,
+                    nome: p.cliente_nome,
+                    telefone: p.cliente_tel,
+                    pedido: p.pedido_descricao || p.pedido_desc,
+                    itens: p.itens,
+                    taxa: p.taxa_aplicada || 0,
+                    data_hora: p.data_hora,
+                    total: p.total,
+                    pagamento: p.forma_pagamento,
+                    endereco: p.endereco_entrega || p.endereco
+                };
+                renderizar(dados);
+                
+                // No navegador web, chama o diálogo de impressão após renderizar
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            })
+            .catch(err => console.error("Erro ao carregar pedido para impressão:", err));
+    }
+}
+
+function renderizar(dados) {
     const content = document.getElementById('cupom-content');
     
     // Formatação de data
@@ -78,4 +117,4 @@ ipcRenderer.on('render-cupom', (event, dados) => {
     `;
     
     content.innerHTML = html;
-});
+}

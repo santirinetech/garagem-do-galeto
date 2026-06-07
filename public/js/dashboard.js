@@ -291,39 +291,8 @@ function imprimirComanda(id) {
             return;
         }
 
-        // Fallback para navegador comum (abre diálogo de impressão)
-        const descRaw = p.pedido_descricao || p.pedido_desc || '';
-        const pdesc = descRaw.replace(/,/g, '<br>• ');
-        const num = (p.cliente_tel || '').replace(/\D/g, '');
-        const endStr = p.endereco_entrega || p.endereco || 'Retirada';
-        const html = `
-            <div class="print-title">GARAGEM DO GALETO</div>
-            <div style="text-align:center; font-size:12px;">Pedido #<strong>${p.id}</strong></div>
-            <div style="text-align:center; font-size:12px; margin-bottom:5px;">${fmtData(p.data_hora)}</div>
-            <div class="print-line"></div>
-            <div><strong>Cliente:</strong> ${p.cliente_nome}</div>
-            <div><strong>Tel:</strong> ${num}</div>
-            <div><strong>Canal:</strong> ${p.origem}</div>
-            <div style="margin-top:5px;"><strong>Entrega:</strong> ${endStr}</div>
-            <div class="print-line"></div>
-            <div><strong>ITENS:</strong></div>
-            <div style="margin: 5px 0 10px;">• ${pdesc}</div>
-            <div class="print-line"></div>
-            <div class="print-row" style="font-size:16px;">
-                <strong>TOTAL:</strong>
-                <strong>${fmtReal(p.total)}</strong>
-            </div>
-            <div style="margin-top:10px; font-size:14px;"><strong>Pgto:</strong> ${p.forma_pagamento}</div>
-            <div style="text-align:center; font-size:12px; margin-top:10px; font-weight:bold;">Obrigado pela prefeência!</div>
-            <div style="text-align:center; font-size:10px; margin-top:5px;">Santirine Tech</div>
-        `;
-        const printArea = document.getElementById('print-area');
-        if (printArea) {
-            printArea.innerHTML = html;
-            window.print();
-        } else {
-            console.error('Erro: print-area não encontrada no HTML');
-        }
+        // Fallback para navegador comum (abre o layout térmico oficial no navegador)
+        window.open('cupom.html?id=' + p.id, '_blank', 'width=350,height=600');
     });
 }
 
