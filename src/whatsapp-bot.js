@@ -108,7 +108,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
         }),
         puppeteer: {
             headless: true,
-            executablePath: process.env.PORT ? '/usr/bin/google-chrome' : undefined,
+            executablePath: process.env.PORT ? (require('fs').existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/usr/bin/chromium') : undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
