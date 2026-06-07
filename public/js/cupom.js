@@ -112,7 +112,7 @@ function renderizar(dados) {
         
         <div class="footer-msg">
             Obrigado pela preferência!<br>
-            Acesse: garagemdogaleto.com.br
+            Acesse: www.garagemdomarcao.online
         </div>
     `;
     
