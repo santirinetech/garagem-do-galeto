@@ -4,6 +4,10 @@
     size: 58mm auto;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 html, body {
     margin: 0 !important;
     padding: 0 !important;
@@ -24,7 +28,7 @@ body {
 @media print {
     body {
         width: 100% !important;
-        padding: 0 !important;
+        padding: 0 10px !important; /* Margem de segurança lateral pro cabeçote da impressora (evita "comer" letras) */
         margin: 0 !important;
         overflow: hidden;
     }
