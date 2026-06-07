@@ -16,7 +16,7 @@ html, body {
 
 body {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-size: 11px; /* Fonte levemente menor para garantir que todas as colunas caibam na bobina */
     width: 280px; /* Adapta-se a ~58mm na maioria das impressoras térmicas */
     max-width: 100%;
     margin: 0 auto !important;
@@ -28,12 +28,12 @@ body {
 @media print {
     body {
         width: 100% !important;
-        padding: 0 10px !important; /* Margem de segurança lateral pro cabeçote da impressora (evita "comer" letras) */
         margin: 0 !important;
+        padding: 0 !important;
         overflow: hidden;
     }
     .cupom-container {
-        padding-bottom: 0 !important;
+        padding: 0 15px !important; /* Margem forte no container para fugir da zona morta do cabeçote térmico */
     }
 }
 
