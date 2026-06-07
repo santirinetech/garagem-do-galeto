@@ -1,4 +1,4 @@
-// ── SSE: ATUALIZAÇÃO EM TEMPO REAL ──────────────────────
+// ── SSE / IPC: ATUALIZAÇÃO EM TEMPO REAL ──────────────────────
 const eventSource = new EventSource('/api/events');
 eventSource.onmessage = (e) => {
     if (e.data === 'update') {
@@ -7,33 +7,53 @@ eventSource.onmessage = (e) => {
         return;
     }
     
+    // Processamento de eventos de SSE para WhatsApp (usado na nuvem, se ativado)
     try {
         const evt = JSON.parse(e.data);
-        if (evt.type === 'qr') {
-            document.getElementById('wpp-qr-container').innerHTML = `<img src="${evt.data}" class="qr-code-img">`;
-            document.getElementById('wpp-status-pill').textContent = 'Aguardando Leitura do QR...';
-            document.getElementById('wpp-status-pill').style.background = 'var(--amber)';
-        } else if (evt.type === 'whatsapp-ready') {
-            document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round qr-code-success">check_circle</span>`;
-            document.getElementById('wpp-status-pill').textContent = 'Conectado (Online)';
-            document.getElementById('wpp-status-pill').style.background = 'var(--green)';
-            showToast("WhatsApp Bot Conectado!");
-        } else if (evt.type === 'whatsapp-disconnected') {
-            document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Desconectado.<br>Aguarde novo QR Code...</span>`;
-            document.getElementById('wpp-status-pill').textContent = 'Desconectado';
-            document.getElementById('wpp-status-pill').style.background = 'var(--red)';
-        } else if (evt.type === 'whatsapp-error') {
-            document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Erro Interno no Bot:<br>${evt.message || 'Falha ao gerar QR Code.'}</span>`;
-            document.getElementById('wpp-status-pill').textContent = 'Erro no Servidor';
-            document.getElementById('wpp-status-pill').style.background = 'var(--red)';
-        }
+        handleWppEvent(evt);
     } catch(err) {}
 };
 
+// Se estiver rodando dentro do Electron (Painel Local), intercepta os eventos diretamente dele
+if (window.electronAPI && window.electronAPI.onWppEvent) {
+    window.electronAPI.onWppEvent((evt) => {
+        handleWppEvent(evt);
+    });
+}
+
+function handleWppEvent(evt) {
+    if (evt.type === 'qr') {
+        document.getElementById('wpp-qr-container').innerHTML = `<img src="${evt.data}" class="qr-code-img">`;
+        document.getElementById('wpp-status-pill').textContent = 'Aguardando Leitura do QR...';
+        document.getElementById('wpp-status-pill').style.background = 'var(--amber)';
+    } else if (evt.type === 'whatsapp-ready') {
+        document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round qr-code-success">check_circle</span>`;
+        document.getElementById('wpp-status-pill').textContent = 'Conectado (Online)';
+        document.getElementById('wpp-status-pill').style.background = 'var(--green)';
+        showToast("WhatsApp Bot Conectado!");
+    } else if (evt.type === 'whatsapp-disconnected') {
+        document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Desconectado.<br>Aguarde novo QR Code...</span>`;
+        document.getElementById('wpp-status-pill').textContent = 'Desconectado';
+        document.getElementById('wpp-status-pill').style.background = 'var(--red)';
+    } else if (evt.type === 'whatsapp-error') {
+        document.getElementById('wpp-qr-container').innerHTML = `<span class="qr-code-error">Erro Interno no Bot:<br>${evt.message || 'Falha ao gerar QR Code.'}</span>`;
+        document.getElementById('wpp-status-pill').textContent = 'Erro no Servidor';
+        document.getElementById('wpp-status-pill').style.background = 'var(--red)';
+    }
+}
+
 async function checkWppStatus() {
     try {
-        const res = await fetch('/api/whatsapp/status');
-        const status = await res.json();
+        let status;
+        
+        // Verifica primeiro o bot local do Electron, se disponível
+        if (window.electronAPI && window.electronAPI.getWppStatus) {
+            status = await window.electronAPI.getWppStatus();
+        } else {
+            // Fallback para a nuvem
+            const res = await fetch('/api/whatsapp/status');
+            status = await res.json();
+        }
         
         if (status.isReady) {
             document.getElementById('wpp-qr-container').innerHTML = `<span class="material-icons-round qr-code-success">check_circle</span>`;

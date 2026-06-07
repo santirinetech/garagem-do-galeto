@@ -18,25 +18,32 @@ protocol.registerSchemesAsPrivileged([
     { scheme: 'app-media', privileges: { secure: true, standard: true, supportFetchAPI: true } }
 ]);
 
-// Inicializa o Servidor Web Local (caso ainda seja usado para visualizar o painel offline)
-const server = startServer(null);
+// Inicializa o Servidor Web Local (Comentado para forçar o uso da nuvem Railway)
+// const server = startServer(null);
 
 function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1366,
-        height: 800,
-        minWidth: 1100,
-        title: "Galeto Master — Sistema de Gestão",
-        icon: path.join(__dirname, '../../public/img/icon.png'),
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            preload: path.join(__dirname, 'preload.js') 
-        },
-    });
+    try {
+        mainWindow = new BrowserWindow({
+            width: 1366,
+            height: 800,
+            minWidth: 1100,
+            title: "Galeto Master — Sistema de Gestão",
+            icon: path.join(__dirname, '../../public/img/icon.png'),
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                preload: path.join(__dirname, 'preload.js') 
+            },
+        });
 
-    mainWindow.setMenuBarVisibility(false);
-    mainWindow.loadURL(`http://localhost:${PORT}/login.html`);
+        mainWindow.setMenuBarVisibility(false);
+        // Agora o Electron consome 100% da Nuvem para o Painel, evitando dados locais antigos
+        const targetUrl = `${RAILWAY_URL.replace(/\/$/, '')}/login.html`;
+        console.log('[ELECTRON] Carregando Dashboard da Nuvem:', targetUrl);
+        mainWindow.loadURL(targetUrl);
+    } catch (e) {
+        console.error('[ERRO] Falha ao criar a janela principal:', e.message);
+    }
 }
 
 function createWorkerWindow() {
@@ -90,15 +97,23 @@ function inicializarBotLocal() {
     try {
         console.log('[BOT] Inicializando WhatsApp Bot localmente no Electron...');
         
-        // Funções de mock para eventos SSE que não usamos diretamente aqui
-        const mockEmitUpdate = () => { if (mainWindow) mainWindow.webContents.send('atualizar-dashboard'); };
-        const mockBroadcastWppEvent = (evt) => { console.log('[BOT EVENT]', evt); };
+        const mockEmitUpdate = () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('atualizar-dashboard'); };
+        const mockBroadcastWppEvent = (evt) => { 
+            console.log(`[BOT EVENT] ${evt.type}`);
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('wpp-event', evt);
+            }
+        };
         
         initWhatsApp(db, mockEmitUpdate, mockBroadcastWppEvent);
     } catch (e) {
         console.error('[ERRO] Falha ao inicializar o Bot localmente:', e);
     }
 }
+
+ipcMain.handle('get-wpp-status', () => {
+    return getBotStatus();
+});
 
 // ── CONEXÃO COM O SERVIDOR RAILWAY VIA SOCKET.IO ──────────
 function setupSocketIO() {

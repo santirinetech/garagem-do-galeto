@@ -102,13 +102,47 @@ async function enviarMensagemPainel(telefone, mensagem) {
  * @returns {void}
  */
 function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
+    let authPath = process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth';
+    let execPath = process.env.PORT ? (require('fs').existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/usr/bin/chromium') : undefined;
+
+    // Correções para o ambiente empacotado do Electron (.exe no Windows)
+    try {
+        if (process.versions && process.versions.electron) {
+            const { app } = require('electron');
+            authPath = require('path').join(app.getPath('userData'), '.wwebjs_auth');
+            
+            // Busca o Chrome nativo do usuário no Windows para evitar o erro do Puppeteer sem Chromium
+            const fs = require('fs');
+            if (process.platform === 'win32') {
+                const winPaths = [
+                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+                ];
+                for (let p of winPaths) {
+                    if (fs.existsSync(p)) {
+                        execPath = p;
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback usando o puppeteer do node_modules modificado para descompactar do asar
+            if (!execPath) {
+                const puppeteer = require('puppeteer');
+                execPath = puppeteer.executablePath().replace('app.asar', 'app.asar.unpacked');
+            }
+        }
+    } catch (e) {
+        console.error('[AVISO] Falha ao configurar caminhos do Bot para Electron:', e.message);
+    }
+
     const client = new Client({
         authStrategy: new LocalAuth({
-            dataPath: process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth'
+            dataPath: authPath
         }),
         puppeteer: {
             headless: true,
-            executablePath: process.env.PORT ? (require('fs').existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/usr/bin/chromium') : undefined,
+            executablePath: execPath,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
