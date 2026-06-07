@@ -1,0 +1,84 @@
+/* Layout otimizado para papel térmico de 58mm (geralmente 48mm de área de impressão efetiva) */
+@page {
+    margin: 0;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    width: 280px; /* Adapta-se a ~58mm na maioria das impressoras térmicas */
+    margin: 0 auto;
+    padding: 10px 5px; /* Margem pequena pra não cortar na guilhotina/bordas */
+    color: #000;
+    background: #fff;
+}
+
+.cupom-container {
+    width: 100%;
+    word-wrap: break-word; /* Nunca corta palavras nas bordas */
+    overflow-wrap: break-word;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.divider {
+    border-top: 1px dashed #000;
+    margin: 8px 0;
+}
+
+.store-name {
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.info-line {
+    margin: 3px 0;
+    line-height: 1.2;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.item-qty {
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+.item-name {
+    flex: 1;
+    padding-right: 5px;
+}
+
+.item-price {
+    white-space: nowrap;
+}
+
+.total-row {
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+}
+
+.footer-msg {
+    text-align: center;
+    font-size: 10px;
+    margin-top: 15px;
+}

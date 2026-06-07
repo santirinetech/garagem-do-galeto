@@ -43,40 +43,24 @@ ipcMain.on('solicitar-impressao-automatica', (event, dadosPedido) => {
         } 
     });
 
-    const html = `
-        <html>
-        <body style="font-family: monospace; font-size: 12px; width: 280px; margin: 0; padding: 10px;">
-            <div style="text-align: center; font-weight: bold; font-size: 16px;">GARAGEM DO GALETO</div>
-            <hr>
-            <div style="text-align: center;">PEDIDO #${dadosPedido.id}</div>
-            <div style="text-align: center;">${new Date().toLocaleString('pt-BR')}</div>
-            <hr>
-            <div><b>Cliente:</b> ${dadosPedido.nome}</div>
-            <div><b>Tel:</b> ${dadosPedido.telefone}</div>
-            <div style="margin-top: 4px;"><b>Entrega:</b> ${dadosPedido.endereco || 'Retirada no Local'}</div>
-            <hr>
-            <div><b>PEDIDO:</b></div>
-            <div style="margin-top: 5px;">• ${dadosPedido.pedido.replace(/,/g, '<br>• ')}</div>
-            <hr>
-            <div style="font-size: 14px;"><b>TOTAL: R$ ${dadosPedido.total}</b></div>
-            <div>Forma Pgto: ${dadosPedido.pagamento}</div>
-            <hr>
-            <div style="text-align: center; font-size: 10px;">Obrigado pela preferência!</div>
-        </body>
-        </html>
-    `;
-
-    tempPrintWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    tempPrintWindow.loadFile(path.join(__dirname, '../../public/cupom.html'));
     
     tempPrintWindow.webContents.on('did-finish-load', () => {
-        tempPrintWindow.webContents.print({ 
-            silent: true, 
-            printBackground: true,
-            deviceName: '' // Deixa vazio para usar a impressora padrão do Windows
-        }, (success, failureReason) => {
-            if (!success) console.error('Falha na impressão:', failureReason);
-            tempPrintWindow.close(); // Fecha a janela após imprimir
-        });
+        tempPrintWindow.webContents.send('render-cupom', dadosPedido);
+        
+        // Aguarda 500ms para a renderização do JS no cupom.html concluir
+        setTimeout(() => {
+            if (!tempPrintWindow.isDestroyed()) {
+                tempPrintWindow.webContents.print({ 
+                    silent: true, 
+                    printBackground: true,
+                    deviceName: '' // Deixa vazio para usar a impressora padrão do Windows
+                }, (success, failureReason) => {
+                    if (!success) console.error('Falha na impressão térmica:', failureReason);
+                    if (!tempPrintWindow.isDestroyed()) tempPrintWindow.close(); // Fecha a janela após imprimir
+                });
+            }
+        }, 500);
     });
 });
 

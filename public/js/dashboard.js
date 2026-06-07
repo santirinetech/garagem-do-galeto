@@ -280,6 +280,9 @@ function imprimirComanda(id) {
                 nome: p.cliente_nome,
                 telefone: p.cliente_tel,
                 pedido: p.pedido_descricao || p.pedido_desc,
+                itens: p.itens,
+                taxa: p.taxa_aplicada || 0,
+                data_hora: p.data_hora,
                 total: p.total,
                 pagamento: p.forma_pagamento,
                 endereco: p.endereco_entrega || p.endereco
@@ -394,16 +397,20 @@ async function carregarDashboard() {
                 
                 // Impressão Automática (Somente se estiver no Electron)
                 if (window.electronAPI) {
-                    const novoPedido = abertos.find(p => p.id === maiorId);
-                    window.electronAPI.solicitarImpressao({
-                        id: novoPedido.id,
-                        nome: novoPedido.cliente_nome,
-                        telefone: novoPedido.cliente_tel,
-                        pedido: novoPedido.pedido_descricao || novoPedido.pedido_desc,
-                        total: novoPedido.total,
-                        pagamento: novoPedido.forma_pagamento,
-                        endereco: novoPedido.endereco_entrega || novoPedido.endereco
-                    });
+                    fetch('/api/pedido/' + maiorId).then(r => r.json()).then(p => {
+                        window.electronAPI.solicitarImpressao({
+                            id: p.id,
+                            nome: p.cliente_nome,
+                            telefone: p.cliente_tel,
+                            pedido: p.pedido_descricao || p.pedido_desc,
+                            itens: p.itens,
+                            taxa: p.taxa_aplicada || 0,
+                            data_hora: p.data_hora,
+                            total: p.total,
+                            pagamento: p.forma_pagamento,
+                            endereco: p.endereco_entrega || p.endereco
+                        });
+                    }).catch(err => console.error("Erro ao buscar pedido para impressão", err));
                 }
             }
             if (maiorId > lastHighestId) lastHighestId = maiorId;
