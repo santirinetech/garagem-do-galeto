@@ -112,7 +112,11 @@ async function carregarCardapio() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    carregarCardapio();
+    carregarCardapio().then(() => {
+        // Inicializa a opção de pagamento que estiver marcada por padrão (ex: PIX)
+        const pagDefault = document.querySelector('.pag-chips .pag-chip.selected');
+        if (pagDefault) selecionarPag(pagDefault);
+    });
     
     const inpTel = document.getElementById('inp-tel');
     if (inpTel) {
