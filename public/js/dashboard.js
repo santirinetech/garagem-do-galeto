@@ -369,23 +369,8 @@ async function carregarDashboard() {
                 tocarCampainha();
                 showToast('🔔 NOVO PEDIDO CHEGOU!');
                 
-                // Impressão Automática (Somente se estiver no Electron)
-                if (window.electronAPI) {
-                    fetch('/api/pedido/' + maiorId).then(r => r.json()).then(p => {
-                        window.electronAPI.solicitarImpressao({
-                            id: p.id,
-                            nome: p.cliente_nome,
-                            telefone: p.cliente_tel,
-                            pedido: p.pedido_descricao || p.pedido_desc,
-                            itens: p.itens,
-                            taxa: p.taxa_aplicada || 0,
-                            data_hora: p.data_hora,
-                            total: p.total,
-                            pagamento: p.forma_pagamento,
-                            endereco: p.endereco_entrega || p.endereco
-                        });
-                    }).catch(err => console.error("Erro ao buscar pedido para impressão", err));
-                }
+                // Dispara a rotina de impressão unificada (Electron ou Web Browser)
+                imprimirComanda(maiorId);
             }
             if (maiorId > lastHighestId) lastHighestId = maiorId;
         }
