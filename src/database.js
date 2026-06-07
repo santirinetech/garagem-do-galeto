@@ -78,31 +78,33 @@ function initDb() {
             // Migração: renomear taxa → taxa_entrega se necessário
             db.run(`ALTER TABLE regioes ADD COLUMN taxa_entrega REAL NOT NULL DEFAULT 0.0`, () => {
                 db.run(`UPDATE regioes SET taxa_entrega = taxa WHERE taxa_entrega = 0.0 AND taxa IS NOT NULL AND taxa > 0`, () => {});
+                
+                // Garante que os bairros pré-cadastrados existam após a coluna ser criada
+                const bairrosPadrao = [
+                    ['Presidente Médici', 2.0],
+                    ['Morro do Sesi', 3.0],
+                    ['Porto Novo', 3.0],
+                    ['Vila Oasis', 3.0],
+                    ['Graúna', 3.0],
+                    ['Bairro Aparecida', 3.0],
+                    ['Mangue Seco', 3.0],
+                    ['Bela Vista (Morro do Quiabo)', 3.0],
+                    ['Del porto', 3.0],
+                    ['Retiro Saudoso', 4.0],
+                    ['Tucum', 4.0],
+                    ['Flexal', 5.0],
+                    ['Nova canaã', 5.0],
+                    ['Santa Rosa', 5.0],
+                    ['Tabajara', 5.0],
+                    ['Vila Prudêncio', 5.0],
+                    ['Itacibá', 7.0],
+                    ['Campo Grande', 10.0]
+                ];
+                // Usando db.run em vez de db.prepare para evitar compilação antecipada antes da fila executar
+                bairrosPadrao.forEach(r => {
+                    db.run("INSERT OR IGNORE INTO regioes (nome, taxa_entrega) VALUES (?, ?)", r, () => {});
+                });
             });
-            // Garante que os bairros pré-cadastrados existam (sem apagar as edições/inserções manuais)
-            const bairrosPadrao = [
-                ['Presidente Médici', 2.0],
-                ['Morro do Sesi', 3.0],
-                ['Porto Novo', 3.0],
-                ['Vila Oasis', 3.0],
-                ['Graúna', 3.0],
-                ['Bairro Aparecida', 3.0],
-                ['Mangue Seco', 3.0],
-                ['Bela Vista (Morro do Quiabo)', 3.0],
-                ['Del porto', 3.0],
-                ['Retiro Saudoso', 4.0],
-                ['Tucum', 4.0],
-                ['Flexal', 5.0],
-                ['Nova canaã', 5.0],
-                ['Santa Rosa', 5.0],
-                ['Tabajara', 5.0],
-                ['Vila Prudêncio', 5.0],
-                ['Itacibá', 7.0],
-                ['Campo Grande', 10.0]
-            ];
-            const stmt = db.prepare("INSERT OR IGNORE INTO regioes (nome, taxa_entrega) VALUES (?, ?)");
-            bairrosPadrao.forEach(r => stmt.run(r));
-            stmt.finalize();
         });
 
         // ── Endereços ─────────────────────────────────────────────
@@ -162,10 +164,8 @@ function initDb() {
             // Se só tem preco (legado), adicionar preco_unitario
             db.run(`ALTER TABLE produtos ADD COLUMN preco_unitario REAL NOT NULL DEFAULT 0.0`, () => {
                 db.run(`UPDATE produtos SET preco_unitario = preco WHERE preco_unitario = 0.0 AND preco IS NOT NULL AND preco > 0`, () => {});
-            });
-
-            // Gerenciamento de Produtos: Remove obsoletos e garante os atuais via INSERT OR IGNORE
-            setTimeout(() => {
+                
+                // Gerenciamento de Produtos: Remove obsoletos e garante os atuais
                 const removerAntigos = ['Galeto Completo Família', 'Galeto Individual', 'Refrigerante 2L', 'Suco Natural'];
                 removerAntigos.forEach(nome => {
                     db.run("DELETE FROM produtos WHERE nome = ?", [nome], () => {});
@@ -177,13 +177,13 @@ function initDb() {
                     ['Feijão Tropeiro',   25.0, 30, 2, '/img/feijao.png']
                 ];
                 
-                const stmt = db.prepare("INSERT OR IGNORE INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)");
-                produtosPadrao.forEach(r => stmt.run(r));
-                stmt.finalize();
+                produtosPadrao.forEach(r => {
+                    db.run("INSERT OR IGNORE INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)", r, () => {});
+                });
                 
                 // Força a atualização do preço caso o produto já exista no banco
-                db.run("UPDATE produtos SET preco_unitario = 55.0 WHERE nome = 'Galeto com Farofa'");
-            }, 500);
+                db.run("UPDATE produtos SET preco_unitario = 55.0 WHERE nome = 'Galeto com Farofa'", () => {});
+            });
         });
 
         // ── Pedidos ───────────────────────────────────────────────

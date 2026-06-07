@@ -147,7 +147,7 @@ function setupSocketIO() {
             lastPollId = pedido.id;
         }
         
-        if (mainWindow) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('atualizar-dashboard', pedido);
         }
         imprimirPedidoSilencioso(pedido);

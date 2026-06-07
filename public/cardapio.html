@@ -13,7 +13,7 @@
 <header>
     <div class="header-inner">
         <div class="brand-name">GARAGEM DO GALETO</div>
-        <div class="status-badge">ABERTO AGORA</div>
+        <div class="status-badge" style="background: var(--red);">FECHADO</div>
     </div>
 </header>
 
@@ -93,37 +93,20 @@
     </div>
 </div>
 
-<!-- INFORMATIVO MODAL -->
-<div class="overlay" id="promo-modal" style="display: none;">
-    <div class="sheet promo-sheet">
-        <button class="sheet-close promo-close" onclick="fecharPromoModal()">×</button>
-        <span class="material-icons-round promo-icon">campaign</span>
-        <h2 class="promo-title">⚠️ ATENÇÃO, CLIENTES!</h2>
-        <p class="promo-text">
-            Informamos que neste domingo, 07 de Junho, terá reajuste no valor do galeto. O galeto com acompanhamento de farofa passará a ser <strong>R$ 55,00</strong>.<br><br>Agradecemos a compreensão e a preferência!
+<!-- INFORMATIVO MODAL (FECHADO) -->
+<div class="overlay" id="promo-modal" style="display: flex; align-items: center; z-index: 99999;">
+    <div class="sheet promo-sheet" style="text-align: center;">
+        <span class="material-icons-round promo-icon" style="color: var(--red); font-size: 64px; margin-bottom: 10px;">storefront</span>
+        <h2 class="promo-title" style="color: var(--red);">ENCERRAMOS POR HOJE!</h2>
+        <p class="promo-text" style="font-size: 1.1rem; margin-top: 15px;">
+            Muito obrigado a todos os nossos clientes!<br><br>
+            Já encerramos nosso expediente de hoje. Voltaremos no próximo final de semana com muito mais galeto quentinho para vocês!
         </p>
-        <button class="btn-confirmar promo-btn" onclick="fecharPromoModal()">ENTENDI</button>
     </div>
 </div>
 
 <script>
-    function fecharPromoModal() {
-        document.getElementById('promo-modal').style.display = 'none';
-        localStorage.setItem('promo_visto_07_jun', 'true');
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!localStorage.getItem('promo_visto_07_jun')) {
-            // Pequeno delay para a página carregar primeiro
-            setTimeout(() => {
-                const modal = document.getElementById('promo-modal');
-                if (modal) {
-                    modal.style.display = 'flex';
-                    modal.style.alignItems = 'center'; // Centraliza verticalmente e horizontalmente
-                }
-            }, 800);
-        }
-    });
+    // Site fechado, nenhum JS adicional de modal necessário
 </script>
 
 <script src="js/cardapio.js?v=2"></script>
