@@ -265,10 +265,14 @@ function initDb() {
             chave TEXT PRIMARY KEY,
             valor TEXT NOT NULL
         )`, () => {
+            // Atualização forçada para clientes existentes (Railway ou Local)
+            db.run(`UPDATE configuracoes SET valor = '5527988100200' WHERE chave = 'whatsapp_dono' AND valor = '5527988573982'`, () => {});
+            db.run(`UPDATE configuracoes SET valor = '27988100200' WHERE chave = 'pix_chave' AND valor = '27988573982'`, () => {});
+
             db.get("SELECT count(*) as qtd FROM configuracoes", (err, row) => {
                 if (row && row.qtd === 0) {
                     const stmt = db.prepare("INSERT INTO configuracoes (chave, valor) VALUES (?, ?)");
-                    [['whatsapp_dono', '5527988573982'], ['pix_chave', '27988573982']].forEach(r => stmt.run(r));
+                    [['whatsapp_dono', '5527988100200'], ['pix_chave', '27988100200']].forEach(r => stmt.run(r));
                     stmt.finalize();
                 }
             });
