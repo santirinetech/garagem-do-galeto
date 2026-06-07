@@ -82,6 +82,18 @@ async function logout() {
 // Chamar verificação imediatamente
 verificarSessao();
 
+// ── EVENTOS DE INTERFACE ───────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const btnMenu = document.getElementById('btn-hamburger');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (btnMenu && sidebar) {
+        btnMenu.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
+});
+
 // ── NAVEGAÇÃO ──────────────────────────────────────
 const titles = { dashboard:'Dashboard', pedidos:'Pedidos', produtos:'Produtos', despesas:'Despesas', relatorios:'Relatórios', historico:'Histórico', clientes:'Clientes (Privacidade)', config: 'Configurações' };
 function showView(name, el) {

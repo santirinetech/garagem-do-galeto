@@ -102,36 +102,13 @@ async function enviarMensagemPainel(telefone, mensagem) {
  * @returns {void}
  */
 function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
-    const fs = require('fs');
-    let chromePath = undefined;
-    
-    if (process.env.PORT) {
-        const possiblePaths = [
-            process.env.PUPPETEER_EXECUTABLE_PATH,
-            '/usr/bin/chromium',
-            '/usr/bin/chromium-browser',
-            '/usr/bin/google-chrome',
-            '/usr/bin/google-chrome-stable'
-        ];
-        for (const p of possiblePaths) {
-            if (p && fs.existsSync(p)) {
-                chromePath = p;
-                console.log(`[WhatsApp] Chromium detectado em: ${chromePath}`);
-                break;
-            }
-        }
-        if (!chromePath) {
-            console.error('[WhatsApp] ⚠️ Nenhum executável do Chromium/Chrome encontrado nos caminhos padrão do sistema Linux!');
-        }
-    }
-
     const client = new Client({
         authStrategy: new LocalAuth({
             dataPath: process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth'
         }),
         puppeteer: {
             headless: true,
-            executablePath: chromePath,
+            executablePath: process.env.PORT ? '/usr/bin/google-chrome' : undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
