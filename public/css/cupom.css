@@ -16,7 +16,7 @@ html, body {
 
 body {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 11px; /* Fonte levemente menor para garantir que todas as colunas caibam na bobina */
+    font-size: 10px; /* Fonte reduzida para encaixe perfeito na bobina de 58mm */
     width: 280px; /* Adapta-se a ~58mm na maioria das impressoras térmicas */
     max-width: 100%;
     margin: 0 auto !important;
@@ -61,7 +61,7 @@ body {
 }
 
 .store-name {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     text-align: center;
     margin-bottom: 5px;
@@ -94,7 +94,7 @@ body {
 }
 
 .total-row {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     display: flex;
     justify-content: space-between;
