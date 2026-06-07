@@ -1,18 +1,24 @@
 const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const ioClient = require('socket.io-client');
 const { startServer } = require('../server'); 
+const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('../whatsapp-bot');
+const { db } = require('../database');
 
 const PORT = process.env.PORT || 3000;
+// Defina a URL do seu Railway aqui (ou via .env)
+const RAILWAY_URL = process.env.RAILWAY_URL || 'https://www.garagemdomarcao.online'; 
+
 let mainWindow;
+let workerWindow; // Janela oculta para impressão
 
 // ── Protocolo customizado para servir imagens locais com segurança ──────────
-// Registrar ANTES de app.whenReady()
 protocol.registerSchemesAsPrivileged([
     { scheme: 'app-media', privileges: { secure: true, standard: true, supportFetchAPI: true } }
 ]);
 
-// Inicializa o Servidor Web
+// Inicializa o Servidor Web Local (caso ainda seja usado para visualizar o painel offline)
 const server = startServer(null);
 
 function createWindow() {
@@ -33,59 +39,155 @@ function createWindow() {
     mainWindow.loadURL(`http://localhost:${PORT}/login.html`);
 }
 
-// Lógica de Impressão Térmica Automática
-ipcMain.on('solicitar-impressao-automatica', (event, dadosPedido) => {
-    let tempPrintWindow = new BrowserWindow({ 
+function createWorkerWindow() {
+    workerWindow = new BrowserWindow({ 
         show: false, 
         webPreferences: { 
             nodeIntegration: true, 
             contextIsolation: false 
         } 
     });
+    workerWindow.loadFile(path.join(__dirname, '../../public/cupom.html'));
+}
 
-    tempPrintWindow.loadFile(path.join(__dirname, '../../public/cupom.html'));
+// Lógica de Impressão Térmica Silenciosa (com Try/Catch)
+function imprimirPedidoSilencioso(dadosPedido) {
+    if (!workerWindow || workerWindow.isDestroyed()) {
+        createWorkerWindow();
+    }
     
-    tempPrintWindow.webContents.on('did-finish-load', () => {
-        tempPrintWindow.webContents.send('render-cupom', dadosPedido);
+    try {
+        workerWindow.webContents.send('render-cupom', dadosPedido);
         
-        // Aguarda 500ms para a renderização do JS no cupom.html concluir
+        // Aguarda a renderização do cupom
         setTimeout(() => {
-            if (!tempPrintWindow.isDestroyed()) {
-                tempPrintWindow.webContents.print({ 
+            if (!workerWindow.isDestroyed()) {
+                workerWindow.webContents.print({ 
                     silent: true, 
                     printBackground: true,
-                    deviceName: '' // Deixa vazio para usar a impressora padrão do Windows
+                    deviceName: '' // Impressora padrão do SO
                 }, (success, failureReason) => {
-                    if (!success) console.error('Falha na impressão térmica:', failureReason);
-                    if (!tempPrintWindow.isDestroyed()) tempPrintWindow.close(); // Fecha a janela após imprimir
+                    if (!success) {
+                        console.error('[ERRO IMPRESSÃO] Falha ao imprimir pedido:', failureReason);
+                    } else {
+                        console.log(`[IMPRESSÃO] Pedido #${dadosPedido.id} impresso com sucesso.`);
+                    }
                 });
             }
         }, 500);
-    });
+    } catch (error) {
+        console.error('[ERRO] Falha crítica na função de impressão:', error.message);
+    }
+}
+
+// Permite acionar a impressão também via IPC (se o usuário clicar no botão de reimprimir)
+ipcMain.on('solicitar-impressao-automatica', (event, dadosPedido) => {
+    imprimirPedidoSilencioso(dadosPedido);
 });
 
+// ── INICIALIZAÇÃO DO WHATSAPP BOT NO ELECTRON ──────────
+function inicializarBotLocal() {
+    try {
+        console.log('[BOT] Inicializando WhatsApp Bot localmente no Electron...');
+        
+        // Funções de mock para eventos SSE que não usamos diretamente aqui
+        const mockEmitUpdate = () => { if (mainWindow) mainWindow.webContents.send('atualizar-dashboard'); };
+        const mockBroadcastWppEvent = (evt) => { console.log('[BOT EVENT]', evt); };
+        
+        initWhatsApp(db, mockEmitUpdate, mockBroadcastWppEvent);
+    } catch (e) {
+        console.error('[ERRO] Falha ao inicializar o Bot localmente:', e);
+    }
+}
+
+// ── CONEXÃO COM O SERVIDOR RAILWAY VIA SOCKET.IO ──────────
+function setupSocketIO() {
+    console.log(`[SOCKET] Conectando ao servidor Railway: ${RAILWAY_URL}...`);
+    
+    const socket = ioClient(RAILWAY_URL, {
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: Infinity
+    });
+
+    socket.on('connect', () => {
+        console.log('[SOCKET] ✅ Conectado com sucesso ao servidor Railway!');
+    });
+
+    socket.on('disconnect', () => {
+        console.warn('[SOCKET] ⚠️ Desconectado do Railway. Tentando reconectar automaticamente...');
+    });
+
+    socket.on('painel:novo-pedido', (pedido) => {
+        console.log(`[SOCKET] 🍕 Novo pedido recebido (#${pedido.id}) via Railway Socket!`);
+        
+        // Opcional: Se for necessário salvar no banco local para o painel exibir
+        // Aqui você faria um db.run("INSERT INTO pedidos ...") com base no pedido recebido
+        
+        if (mainWindow) {
+            mainWindow.webContents.send('atualizar-dashboard', pedido);
+        }
+        imprimirPedidoSilencioso(pedido);
+    });
+}
+
+// ── FALLBACK / CONTINGÊNCIA (HTTP POLLING) ──────────
+let lastPollId = 0;
+function setupContingenciaPolling() {
+    setInterval(async () => {
+        try {
+            const res = await net.fetch(`${RAILWAY_URL}/api/pedidos/hoje`);
+            if (res.ok) {
+                const pedidos = await res.json();
+                const pendentes = pedidos.filter(p => p.status === 'Pendente' || p.status === 'pendente');
+                
+                let novosPedidos = false;
+                pendentes.forEach(p => {
+                    if (p.id > lastPollId) {
+                        console.log(`[CONTINGÊNCIA] Pedido pendente não processado encontrado (#${p.id}) via HTTP Polling.`);
+                        if (mainWindow) mainWindow.webContents.send('atualizar-dashboard', p);
+                        imprimirPedidoSilencioso(p);
+                        lastPollId = p.id;
+                        novosPedidos = true;
+                    }
+                });
+
+                // Atualiza o ID mais recente verificado para não repetir na próxima checagem
+                if (pedidos.length > 0) {
+                    const maxId = Math.max(...pedidos.map(p => p.id));
+                    if (maxId > lastPollId && !novosPedidos) {
+                        lastPollId = maxId;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[CONTINGÊNCIA ERRO] Falha ao realizar polling na API do Railway:', error.message);
+        }
+    }, 30000); // 30 segundos
+}
+
 app.whenReady().then(() => {
-    // Servir imagens da pasta uploads/ com o protocolo seguro app-media://
-    // Uso no frontend: <img src="app-media://uploads/arquivo.jpg">
     const uploadsBase = path.join(__dirname, '../../public/uploads');
     protocol.handle('app-media', (req) => {
         const url = new URL(req.url);
-        // O hostname é a pasta (ex: 'uploads'), pathname é o arquivo
         const relativePath = url.hostname + decodeURIComponent(url.pathname);
         const filePath = path.join(__dirname, '../../public', relativePath);
-        // Segurança: não permitir path traversal
         if (!filePath.startsWith(path.join(__dirname, '../../public'))) {
             return new Response('Forbidden', { status: 403 });
         }
         if (!fs.existsSync(filePath)) {
             return new Response('Not Found', { status: 404 });
         }
-        const ext = path.extname(filePath).toLowerCase();
-        const mime = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
         return net.fetch(`file://${filePath}`);
     });
 
     createWindow();
+    createWorkerWindow();
+    
+    inicializarBotLocal();
+    setupSocketIO();
+    setupContingenciaPolling();
 });
 
 app.on('window-all-closed', () => { 

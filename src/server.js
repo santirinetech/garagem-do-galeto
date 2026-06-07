@@ -52,14 +52,36 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+const { Server } = require('socket.io');
+
 /**
- * Inicializa o servidor Express, configurando middlewares, rotas de API e conexões WebSocket (SSE).
+ * Inicializa o servidor Express, configurando middlewares, rotas de API e conexões WebSocket.
  * 
  * @param {Object} [mainWindow=null] Instância opcional da janela principal do Electron (se rodando no desktop).
  * @returns {Object} A instância do servidor Express configurada.
  */
 function startServer(mainWindow = null) {
     const server = express();
+    const http = require('http');
+    const httpServer = http.createServer(server);
+    
+    // Configuração do Socket.io para comunicação em tempo real com o Electron
+    const io = new Server(httpServer, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"]
+        }
+    });
+
+    io.on('connection', (socket) => {
+        console.log(`[Socket.io] Novo cliente conectado (Painel/Electron): ${socket.id}`);
+        socket.on('disconnect', () => {
+            console.log(`[Socket.io] Cliente desconectado: ${socket.id}`);
+        });
+    });
+
+    server.set('io', io);
+
     
     // Segurança: Configuração de Cabeçalhos
     server.use(helmet({
@@ -285,10 +307,27 @@ function startServer(mainWindow = null) {
                 if (desc.includes('feijão') || desc.includes('feijao'))     await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Feijão Tropeiro%'");
             }
 
-            // Webhook removido: Apenas dependência local no banco e envio WS local
-            console.log(`[INFO] Novo pedido #${pedido_id} salvo localmente.`);
+            // Emite notificação de novo pedido via Socket.io para o Electron local
+            console.log(`[INFO] Recebido novo pedido do site (#${pedido_id}). Despachando para Electron via Socket.io...`);
+            const io = req.app.get('io');
+            if (io) {
+                // Formata os dados do pedido de forma que o Painel consiga imprimir
+                const dadosPedido = {
+                    id: pedido_id,
+                    nome: nome,
+                    telefone: telefone,
+                    pedido: pedidoDescStr,
+                    itens: itens ? JSON.parse(itens) : [],
+                    taxa: taxa_aplicada,
+                    data_hora: new Date().toISOString(),
+                    total: total,
+                    pagamento: pagamento,
+                    endereco: endereco
+                };
+                io.emit('painel:novo-pedido', dadosPedido);
+            }
 
-            emitUpdate(); // Notifica via SSE
+            emitUpdate(); // Notifica via SSE (Fallback)
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
             res.json({ 
                 mensagem: 'Sucesso', 
@@ -296,7 +335,7 @@ function startServer(mainWindow = null) {
                 comprovante: comprovante 
             });
         } catch (e) {
-            console.error("Erro ao registrar pedido:", e);
+            console.error("[ERRO] Erro ao registrar pedido:", e);
             res.status(500).json({ erro: e.message });
         }
     });
@@ -829,13 +868,13 @@ function startServer(mainWindow = null) {
     });
 
     const PORT = process.env.PORT || 3000;
-    server.listen(PORT, '0.0.0.0', () => {
+    httpServer.listen(PORT, '0.0.0.0', () => {
         console.log("Servidor iniciando...");
         console.log("Banco carregado.");
         console.log("Servidor ouvindo na porta:", PORT);
         console.log(`✅ Galeto System V3 rodando na porta ${PORT}`);
     });
-    return server;
+    return httpServer;
 }
 
 module.exports = { startServer };
