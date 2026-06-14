@@ -7,9 +7,9 @@ const USER = 'admin';
 const PASS = 'admin123';
 
 const produtosDesejados = [
-    { nome: 'Galeto com Farofa', preco_unitario: 55.0, quantidade_estoque: 30, categoria_id: 1 },
-    { nome: 'Salpicão', preco_unitario: 25.0, quantidade_estoque: 20, categoria_id: 2 },
-    { nome: 'Feijão Tropeiro', preco_unitario: 25.0, quantidade_estoque: 20, categoria_id: 2 }
+    { nome: 'Galeto com Farofa', preco_unitario: 55.0, quantidade_estoque: 30, categoria_id: 1, imagem_url: '/img/galeto.png' },
+    { nome: 'Salpicão', preco_unitario: 25.0, quantidade_estoque: 20, categoria_id: 2, imagem_url: '/img/salpicao.png' },
+    { nome: 'Feijão Tropeiro', preco_unitario: 25.0, quantidade_estoque: 20, categoria_id: 2, imagem_url: '/img/feijao.png' }
 ];
 
 async function request(url, options, body = null) {

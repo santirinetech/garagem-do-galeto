@@ -542,21 +542,21 @@ function startServer(mainWindow = null) {
     });
 
     server.post('/api/produtos', async (req, res) => {
-        const { nome, categoria_id, preco_unitario, preco, quantidade_estoque } = req.body;
+        const { nome, categoria_id, preco_unitario, preco, quantidade_estoque, imagem_url } = req.body;
         const preco_val = parseFloat(preco_unitario ?? preco ?? 0);
         try {
-            const r = await run("INSERT INTO produtos (nome, categoria_id, preco_unitario, quantidade_estoque) VALUES (?, ?, ?, ?)", 
-                [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0]);
+            const r = await run("INSERT INTO produtos (nome, categoria_id, preco_unitario, quantidade_estoque, imagem_url) VALUES (?, ?, ?, ?, ?)", 
+                [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0, imagem_url || null]);
             res.json({ status: 'ok', id: r.lastID });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
 
     server.put('/api/produtos/:id', async (req, res) => {
-        const { nome, categoria_id, preco_unitario, preco, quantidade_estoque } = req.body;
+        const { nome, categoria_id, preco_unitario, preco, quantidade_estoque, imagem_url } = req.body;
         const preco_val = parseFloat(preco_unitario ?? preco ?? 0);
         try {
-            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco_unitario = ?, quantidade_estoque = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", 
-                [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0, req.params.id]);
+            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco_unitario = ?, quantidade_estoque = ?, imagem_url = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", 
+                [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0, imagem_url || null, req.params.id]);
             res.json({ status: 'ok' });
         } catch (e) { res.status(500).json({erro: e.message}); }
     });
