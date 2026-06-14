@@ -1,7 +1,6 @@
 /* Layout otimizado para papel térmico de 58mm (geralmente 48mm de área de impressão efetiva) */
 @page {
     margin: 0;
-    size: 58mm auto;
 }
 
 * {

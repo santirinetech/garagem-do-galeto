@@ -120,7 +120,9 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
             if (process.platform === 'win32' && app.isPackaged) {
                 const winPaths = [
                     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+                    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
                 ];
                 for (let p of winPaths) {
                     if (fs.existsSync(p)) {

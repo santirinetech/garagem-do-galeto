@@ -76,6 +76,7 @@ function imprimirPedidoSilencioso(dadosPedido) {
                 workerWindow.webContents.print({ 
                     silent: true, 
                     printBackground: true,
+                    margins: { marginType: 'none' }, // Isso previne que o Electron adicione margens que cortam o papel
                     deviceName: '' // Impressora padrão do SO
                 }, (success, failureReason) => {
                     if (!success) {
@@ -85,7 +86,7 @@ function imprimirPedidoSilencioso(dadosPedido) {
                     }
                 });
             }
-        }, 500);
+        }, 1200);
     } catch (error) {
         console.error('[ERRO] Falha crítica na função de impressão:', error.message);
     }
