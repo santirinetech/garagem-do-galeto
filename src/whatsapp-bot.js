@@ -124,6 +124,12 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
                     'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
                 ];
+                
+                if (process.env.LOCALAPPDATA) {
+                    winPaths.push(require('path').join(process.env.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe'));
+                    winPaths.push(require('path').join(process.env.LOCALAPPDATA, 'Microsoft\\Edge\\Application\\msedge.exe'));
+                }
+                
                 for (let p of winPaths) {
                     if (fs.existsSync(p)) {
                         execPath = p;
