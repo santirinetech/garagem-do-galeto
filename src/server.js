@@ -10,6 +10,8 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const bcrypt = require('bcryptjs');
 const { db, query, queryOne, run } = require('./database');
 const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('./whatsapp-bot');
+require('dotenv').config(); // Carrega as variaveis de ambiente
+const apiRoutes = require('./api/routes');
 
 // ── SSE: Atualização em tempo real ──────────────────────────
 let clients = [];
@@ -141,6 +143,9 @@ function startServer(mainWindow = null) {
     // Aplicar proteção apenas em rotas /api (exceto as públicas)
     server.use('/api', authMiddleware);
 
+    // Nova API Multi-Tenant em Postgres (Em transição)
+    server.use('/tenant-api', apiRoutes);
+
     // Rate Limiter: Evitar abusos (Max 15 pedidos por hora por IP)
     const pedidoLimiter = rateLimit({
         windowMs: 60 * 60 * 1000, 
@@ -184,12 +189,15 @@ function startServer(mainWindow = null) {
     const wppEnv = process.env.ENABLE_WHATSAPP ? process.env.ENABLE_WHATSAPP.toLowerCase() : "";
     const isWppEnabled = wppEnv === "true" || process.env.NODE_ENV !== "production";
     
+    /* 
+    // COMENTADO PARA EVITAR CONFLITO COM O ELECTRON (Que já inicia o bot no main.js)
     if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);
         console.log("WhatsApp carregado.");
     } else {
         console.log("WhatsApp desabilitado na nuvem (ENABLE_WHATSAPP não está 'true').");
     }
+    */
 
     server.get('/health', (req, res) => {
         res.json({ status: "ok" });
