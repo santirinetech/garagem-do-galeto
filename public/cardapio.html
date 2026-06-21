@@ -13,7 +13,12 @@
 <header>
     <div class="header-inner">
         <div class="brand-name">GARAGEM DO GALETO</div>
-        <div class="status-badge" style="background: var(--green);">ABERTO</div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <button onclick="toggleTheme()" style="background:none; border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; padding: 4px; border-radius: 50%;">
+                <span class="material-icons-round" id="theme-icon">light_mode</span>
+            </button>
+            <div class="status-badge" style="background: var(--green);">ABERTO</div>
+        </div>
     </div>
 </header>
 
@@ -107,6 +112,30 @@
 
 <script>
     // Site fechado, nenhum JS adicional de modal necessário
+    
+    // ── GESTÃO DO TEMA (Claro/Escuro) ──
+    function toggleTheme() {
+        const isLight = document.body.getAttribute('data-theme') === 'light';
+        const icon = document.getElementById('theme-icon');
+        if (isLight) {
+            document.body.removeAttribute('data-theme');
+            if (icon) icon.textContent = 'light_mode';
+            localStorage.setItem('tema', 'escuro');
+        } else {
+            document.body.setAttribute('data-theme', 'light');
+            if (icon) icon.textContent = 'dark_mode';
+            localStorage.setItem('tema', 'claro');
+        }
+    }
+    
+    // Verifica tema salvo ao carregar
+    if (localStorage.getItem('tema') === 'claro') {
+        document.body.setAttribute('data-theme', 'light');
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('theme-icon');
+            if (icon) icon.textContent = 'dark_mode';
+        });
+    }
 </script>
 
 <script src="js/cardapio.js?v=2"></script>
