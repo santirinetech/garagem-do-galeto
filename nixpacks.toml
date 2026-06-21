@@ -1,9 +1,2 @@
-providers = ["node"]
-
-[variables]
-PUPPETEER_SKIP_DOWNLOAD = "true"
-PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
-PUPPETEER_EXECUTABLE_PATH = "/nix/var/nix/profiles/default/bin/chromium"
-
 [phases.setup]
-nixPkgs = ["...", "nodejs", "npm", "chromium"]
+aptPkgs = ["wget"]
