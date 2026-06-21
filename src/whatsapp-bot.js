@@ -107,7 +107,24 @@ async function enviarMensagemPainel(telefone, mensagem) {
  */
 function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     let authPath = process.env.PORT ? '/app/data/.wwebjs_auth' : './.wwebjs_auth';
-    let execPath = process.env.PORT ? (require('fs').existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/usr/bin/chromium') : undefined;
+    let execPath = undefined;
+    
+    if (process.env.PORT) {
+        const fs = require('fs');
+        const linuxPaths = [
+            '/usr/bin/google-chrome', 
+            '/usr/bin/chromium-browser', 
+            '/usr/bin/chromium', 
+            '/usr/bin/google-chrome-stable'
+        ];
+        for (let p of linuxPaths) {
+            if (fs.existsSync(p)) {
+                execPath = p;
+                break;
+            }
+        }
+        if (!execPath) execPath = 'chromium'; // Fallback para tentar pelo PATH
+    }
 
     // Correções para o ambiente empacotado do Electron (.exe no Windows)
     try {
