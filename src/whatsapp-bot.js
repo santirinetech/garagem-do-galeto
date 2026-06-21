@@ -111,25 +111,33 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     
     if (process.env.PORT) {
         const fs = require('fs');
-        const linuxPaths = [
-            '/nix/var/nix/profiles/default/bin/chromium',
-            '/usr/bin/google-chrome', 
-            '/usr/bin/chromium-browser', 
-            '/usr/bin/chromium', 
-            '/usr/bin/google-chrome-stable'
-        ];
-        for (let p of linuxPaths) {
-            if (fs.existsSync(p)) {
-                execPath = p;
-                break;
-            }
+        
+        // Verifica primeiro se a variável de ambiente do Nixpacks/Railway está definida
+        if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+            execPath = process.env.PUPPETEER_EXECUTABLE_PATH;
         }
-        // Se não encontrar nos caminhos padrão, tenta achar o chromium instalado pelo nixPkgs usando o comando 'command -v'
+
         if (!execPath) {
-            try {
-                execPath = require('child_process').execSync('command -v chromium').toString().trim();
-            } catch (e) {
-                execPath = undefined;
+            const linuxPaths = [
+                '/nix/var/nix/profiles/default/bin/chromium',
+                '/usr/bin/google-chrome', 
+                '/usr/bin/chromium-browser', 
+                '/usr/bin/chromium', 
+                '/usr/bin/google-chrome-stable'
+            ];
+            for (let p of linuxPaths) {
+                if (fs.existsSync(p)) {
+                    execPath = p;
+                    break;
+                }
+            }
+            // Se não encontrar nos caminhos padrão, tenta achar o chromium instalado pelo nixPkgs usando o comando 'command -v'
+            if (!execPath) {
+                try {
+                    execPath = require('child_process').execSync('command -v chromium').toString().trim();
+                } catch (e) {
+                    execPath = undefined;
+                }
             }
         }
     }
