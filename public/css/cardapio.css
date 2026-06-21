@@ -28,6 +28,7 @@
     --radius-card:  18px;
     --radius-sm:    10px;
     --transition:   0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    --header-bg:    rgba(8, 8, 8, 0.85);
 }
 
 [data-theme="light"] {
@@ -39,6 +40,7 @@
     --text-dim:     #64748B;
     --brand-glow:   rgba(227, 38, 42, 0.15);
     --brand-glow-accent: rgba(243, 146, 0, 0.15);
+    --header-bg:    rgba(255, 255, 255, 0.85);
 }
 
 *, *::before, *::after {
@@ -60,7 +62,7 @@ body {
    HEADER
 ───────────────────────────────────────────────────────────────*/
 header {
-    background: rgba(8, 8, 8, 0.85);
+    background: var(--header-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     padding: 18px 24px;
