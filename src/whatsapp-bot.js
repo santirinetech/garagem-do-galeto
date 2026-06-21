@@ -123,8 +123,14 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                 break;
             }
         }
-        // Se não encontrar nenhum executável externo, deixa undefined para o Puppeteer usar o Chromium que ele baixa junto com o npm install
-        if (!execPath) execPath = undefined;
+        // Se não encontrar nos caminhos padrão, tenta achar o chromium instalado pelo nixPkgs usando o comando 'which'
+        if (!execPath) {
+            try {
+                execPath = require('child_process').execSync('which chromium').toString().trim();
+            } catch (e) {
+                execPath = undefined;
+            }
+        }
     }
 
     // Correções para o ambiente empacotado do Electron (.exe no Windows)
