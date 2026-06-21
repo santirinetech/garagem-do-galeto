@@ -112,6 +112,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     if (process.env.PORT) {
         const fs = require('fs');
         const linuxPaths = [
+            '/nix/var/nix/profiles/default/bin/chromium',
             '/usr/bin/google-chrome', 
             '/usr/bin/chromium-browser', 
             '/usr/bin/chromium', 
@@ -123,10 +124,10 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                 break;
             }
         }
-        // Se não encontrar nos caminhos padrão, tenta achar o chromium instalado pelo nixPkgs usando o comando 'which'
+        // Se não encontrar nos caminhos padrão, tenta achar o chromium instalado pelo nixPkgs usando o comando 'command -v'
         if (!execPath) {
             try {
-                execPath = require('child_process').execSync('which chromium').toString().trim();
+                execPath = require('child_process').execSync('command -v chromium').toString().trim();
             } catch (e) {
                 execPath = undefined;
             }
