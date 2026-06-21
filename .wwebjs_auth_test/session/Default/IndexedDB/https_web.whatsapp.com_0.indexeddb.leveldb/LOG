@@ -1,0 +1,59 @@
+2026/06/07-08:23:40.935 31dc Creating DB C:\MeusProjetos\garagem-do-galeto\.wwebjs_auth_test\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb since it was missing.
+2026/06/07-08:23:40.957 31dc Reusing MANIFEST C:\MeusProjetos\garagem-do-galeto\.wwebjs_auth_test\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/06/07-09:40:11.143 31dc Level-0 table #5: started
+2026/06/07-09:40:11.167 31dc Level-0 table #5: 1070141 bytes OK
+2026/06/07-09:40:11.173 31dc Delete type=0 #3
+2026/06/07-10:23:16.888 5840 Level-0 table #7: started
+2026/06/07-10:23:16.906 5840 Level-0 table #7: 814298 bytes OK
+2026/06/07-10:23:16.912 5840 Delete type=0 #4
+2026/06/07-10:25:52.461 31dc Compacting 1@1 + 1@2 files
+2026/06/07-10:25:52.606 31dc Generated table #8@1: 9181 keys, 821807 bytes
+2026/06/07-10:25:52.606 31dc Compacted 1@1 + 1@2 files => 821807 bytes
+2026/06/07-10:25:52.610 31dc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/06/07-10:25:52.611 31dc Delete type=2 #5
+2026/06/07-10:25:52.611 31dc Delete type=2 #7
+2026/06/07-10:58:24.940 31dc Level-0 table #10: started
+2026/06/07-10:58:24.956 31dc Level-0 table #10: 745653 bytes OK
+2026/06/07-10:58:24.962 31dc Delete type=0 #6
+2026/06/07-11:01:00.529 31dc Compacting 1@1 + 1@2 files
+2026/06/07-11:01:00.558 31dc Generated table #11@1: 11196 keys, 1159520 bytes
+2026/06/07-11:01:00.558 31dc Compacted 1@1 + 1@2 files => 1159520 bytes
+2026/06/07-11:01:00.563 31dc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/06/07-11:01:00.564 31dc Delete type=2 #8
+2026/06/07-11:01:00.564 31dc Delete type=2 #10
+2026/06/07-11:26:32.747 5840 Level-0 table #13: started
+2026/06/07-11:26:32.760 5840 Level-0 table #13: 762185 bytes OK
+2026/06/07-11:26:32.765 5840 Delete type=0 #9
+2026/06/07-11:29:08.285 2ecc Compacting 1@1 + 1@2 files
+2026/06/07-11:29:08.332 2ecc Generated table #14@1: 12801 keys, 1534768 bytes
+2026/06/07-11:29:08.332 2ecc Compacted 1@1 + 1@2 files => 1534768 bytes
+2026/06/07-11:29:08.336 2ecc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/06/07-11:29:08.336 2ecc Delete type=2 #11
+2026/06/07-11:29:08.337 2ecc Delete type=2 #13
+2026/06/07-11:53:50.179 31dc Level-0 table #16: started
+2026/06/07-11:53:50.193 31dc Level-0 table #16: 727031 bytes OK
+2026/06/07-11:53:50.200 31dc Delete type=0 #12
+2026/06/07-11:54:35.694 31dc Compacting 1@1 + 1@2 files
+2026/06/07-11:54:35.734 31dc Generated table #17@1: 14286 keys, 1862334 bytes
+2026/06/07-11:54:35.734 31dc Compacted 1@1 + 1@2 files => 1862334 bytes
+2026/06/07-11:54:35.736 31dc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/06/07-11:54:35.737 31dc Delete type=2 #14
+2026/06/07-11:54:35.737 31dc Delete type=2 #16
+2026/06/07-12:15:45.091 31dc Level-0 table #19: started
+2026/06/07-12:15:45.105 31dc Level-0 table #19: 696479 bytes OK
+2026/06/07-12:15:45.110 31dc Delete type=0 #15
+2026/06/07-12:18:20.745 31dc Compacting 1@1 + 1@2 files
+2026/06/07-12:18:20.790 31dc Generated table #20@1: 15636 keys, 2200734 bytes
+2026/06/07-12:18:20.790 31dc Compacted 1@1 + 1@2 files => 2200734 bytes
+2026/06/07-12:18:20.793 31dc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/06/07-12:18:20.794 31dc Delete type=2 #17
+2026/06/07-12:18:20.795 31dc Delete type=2 #19
+2026/06/07-12:36:51.006 31dc Level-0 table #22: started
+2026/06/07-12:36:51.021 31dc Level-0 table #22: 682628 bytes OK
+2026/06/07-12:36:51.024 31dc Delete type=0 #18
+2026/06/07-12:39:26.578 31dc Compacting 1@1 + 1@2 files
+2026/06/07-12:39:26.634 31dc Generated table #23@1: 16836 keys, 2529975 bytes
+2026/06/07-12:39:26.634 31dc Compacted 1@1 + 1@2 files => 2529975 bytes
+2026/06/07-12:39:26.636 31dc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/06/07-12:39:26.637 31dc Delete type=2 #20
+2026/06/07-12:39:26.637 31dc Delete type=2 #22

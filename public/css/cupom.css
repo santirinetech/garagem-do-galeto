@@ -29,6 +29,7 @@ body {
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+        padding-bottom: 40px !important; /* Espaço extra para forçar a impressora a puxar o papel até a lâmina de corte */
     }
     .cupom-container {
         width: 250px !important; /* Largura rígida bem dentro dos 58mm */

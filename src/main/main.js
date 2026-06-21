@@ -100,6 +100,8 @@ ipcMain.on('solicitar-impressao-automatica', (event, dadosPedido) => {
 // ── INICIALIZAÇÃO DO WHATSAPP BOT NO ELECTRON ──────────
 function inicializarBotLocal() {
     try {
+        console.log('[BOT] WhatsApp Bot local desativado a pedido do usuário.');
+        /*
         console.log('[BOT] Inicializando WhatsApp Bot localmente no Electron...');
         
         const mockEmitUpdate = () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('atualizar-dashboard'); };
@@ -111,6 +113,7 @@ function inicializarBotLocal() {
         };
         
         initWhatsApp(db, mockEmitUpdate, mockBroadcastWppEvent);
+        */
     } catch (e) {
         console.error('[ERRO] Falha ao inicializar o Bot localmente:', e);
     }

@@ -12,8 +12,8 @@ async function updateStock() {
         for (const p of produtos) {
             const existing = await queryOne("SELECT id FROM produtos WHERE nome = ?", [p.nome]);
             if (existing) {
-                console.log(`Atualizando estoque de ${p.nome} para ${p.qtd}`);
-                await run("UPDATE produtos SET quantidade_estoque = ?, preco_unitario = ?, status = 1 WHERE id = ?", [p.qtd, p.preco_unitario, existing.id]);
+                console.log(`Atualizando estoque de ${p.nome} para ${p.qtd} e imagem`);
+                await run("UPDATE produtos SET quantidade_estoque = ?, preco_unitario = ?, status = 1, imagem_url = ? WHERE id = ?", [p.qtd, p.preco_unitario, p.img, existing.id]);
             } else {
                 console.log(`Inserindo ${p.nome} com estoque ${p.qtd}`);
                 await run("INSERT INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url, status) VALUES (?, ?, ?, ?, ?, 1)", [p.nome, p.preco_unitario, p.qtd, p.cat, p.img]);

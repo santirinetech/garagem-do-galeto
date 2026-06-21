@@ -189,15 +189,13 @@ function startServer(mainWindow = null) {
     const wppEnv = process.env.ENABLE_WHATSAPP ? process.env.ENABLE_WHATSAPP.toLowerCase() : "";
     const isWppEnabled = wppEnv === "true" || process.env.NODE_ENV !== "production";
     
-    /* 
-    // COMENTADO PARA EVITAR CONFLITO COM O ELECTRON (Que já inicia o bot no main.js)
+    // Descomentado para ativar na Nuvem (Railway)
     if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);
         console.log("WhatsApp carregado.");
     } else {
         console.log("WhatsApp desabilitado na nuvem (ENABLE_WHATSAPP não está 'true').");
     }
-    */
 
     server.get('/health', (req, res) => {
         res.json({ status: "ok" });
@@ -277,7 +275,7 @@ function startServer(mainWindow = null) {
                 INSERT INTO clientes (nome, telefone, compras_qtd, valor_gasto, ultimo_pedido) 
                 VALUES (?, ?, 1, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(telefone) DO UPDATE SET 
-                nome = excluded.nome,
+                nome = CASE WHEN nome LIKE '%' || excluded.nome || '%' THEN nome ELSE nome || ' / ' || excluded.nome END,
                 compras_qtd = compras_qtd + 1,
                 valor_gasto = valor_gasto + excluded.valor_gasto,
                 ultimo_pedido = CURRENT_TIMESTAMP,
