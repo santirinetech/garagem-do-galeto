@@ -1,2 +1,16 @@
+providers = ["node"]
+
 [phases.setup]
-aptPkgs = ["wget"]
+nixPkgs = ["...", "nodejs"]
+
+[phases.install_puppeteer_deps]
+dependsOn = ["setup"]
+cmds = [
+    "apt-get update -y",
+    "apt-get install -y wget gnupg ca-certificates",
+    "apt-get install -y libglib2.0-0 || apt-get install -y libglib2.0-0t64 || true",
+    "apt-get install -y libnss3 libatk-bridge2.0-0 libx11-xcb1 libxcb-dri3-0 libxcomposite1 libxcursor1 libxdamage1 libxfixes3 libxi6 libxrandr2 libgbm1 libasound2 libpangocairo-1.0-0 libpango-1.0-0 libatk1.0-0 libcups2 libdrm2 libxshmfence1 libxss1 libxkbcommon0 || true"
+]
+
+[start]
+cmd = "npm start"
