@@ -123,7 +123,8 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                 break;
             }
         }
-        if (!execPath) execPath = 'chromium'; // Fallback para tentar pelo PATH
+        // Se não encontrar nenhum executável externo, deixa undefined para o Puppeteer usar o Chromium que ele baixa junto com o npm install
+        if (!execPath) execPath = undefined;
     }
 
     // Correções para o ambiente empacotado do Electron (.exe no Windows)
