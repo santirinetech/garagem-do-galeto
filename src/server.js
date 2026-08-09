@@ -91,13 +91,13 @@ function startServer(mainWindow = null) {
     }));
 
     server.use(bodyParser.json());
-    // Habilitar credenciais no CORS para permitir que o Electron (local) envie cookies de sessão para o Railway
+    // Habilitar credenciais no CORS para permitir que o Electron envie cookies de sessão ao servidor remoto
     server.use(cors({ origin: true, credentials: true }));
 
-    // Confiar no Proxy do Railway (necessário para HTTPS e cookies secure)
+    // Confiar no proxy reverso (necessário para HTTPS e cookies seguros)
     server.set('trust proxy', 1);
 
-    // Configuração de Sessão com persistência no SQLite (Evita perda de login no deploy do Railway)
+    // Configuração de sessão com persistência no SQLite
     server.use(session({
         store: new SQLiteStore({
             db: 'sessions.db',
@@ -178,11 +178,11 @@ function startServer(mainWindow = null) {
         });
     };
 
-    // WhatsApp sempre ativo localmente (Dev/Electron) e opcional na Nuvem (Railway) via ENABLE_WHATSAPP
+    // WhatsApp ativo conforme configuração de ambiente
     const wppEnv = process.env.ENABLE_WHATSAPP ? process.env.ENABLE_WHATSAPP.toLowerCase() : "";
     const isWppEnabled = wppEnv === "true" || process.env.NODE_ENV !== "production";
 
-    // Descomentado para ativar na Nuvem (Railway)
+   // Inicializa o WhatsApp quando habilitado
     if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);
         console.log("WhatsApp carregado.");

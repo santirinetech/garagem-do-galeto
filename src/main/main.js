@@ -7,8 +7,8 @@ const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('../whatsap
 const { db } = require('../database');
 
 const PORT = process.env.PORT || 3000;
-// Defina a URL do seu Railway aqui (ou via .env)
-const RAILWAY_URL = process.env.RAILWAY_URL || 'https://www.garagemdomarcao.online'; 
+// Defina a URL do seu servidor remoto aqui (ou via .env)
+const APP_URL = process.env.APP_URL || 'https://www.garagemdomarcao.online';
 
 let mainWindow;
 let workerWindow; // Janela oculta para impressão
@@ -18,7 +18,7 @@ protocol.registerSchemesAsPrivileged([
     { scheme: 'app-media', privileges: { secure: true, standard: true, supportFetchAPI: true } }
 ]);
 
-// Inicializa o Servidor Web Local (Comentado para forçar o uso da nuvem Railway)
+// Inicializa o Servidor Web Local (Comentado para forçar o uso da nuvem servidor remoto)
 // const server = startServer(null);
 
 function createWindow() {
@@ -38,10 +38,10 @@ function createWindow() {
 
         mainWindow.setMenuBarVisibility(false);
         // Agora o Electron consome 100% da Nuvem para o Painel, evitando dados locais antigos
-        const targetUrl = `${RAILWAY_URL.replace(/\/$/, '')}/login.html`;
+        const targetUrl = `${APP_URL.replace(/\/$/, '')}/login.html`;
         console.log('[ELECTRON] Carregando Dashboard da Nuvem:', targetUrl);
         
-        // Limpa o cache para garantir que sempre baixe o dashboard.js mais recente da nuvem (Railway)
+        // Limpa o cache para garantir que sempre baixe o dashboard.js mais recente da nuvem (servidor remoto)
         mainWindow.webContents.session.clearCache().then(() => {
             mainWindow.loadURL(targetUrl);
         });
@@ -125,11 +125,11 @@ ipcMain.handle('get-wpp-status', () => {
     return status;
 });
 
-// ── CONEXÃO COM O SERVIDOR RAILWAY VIA SOCKET.IO ──────────
+// ── CONEXÃO COM O SERVIDOR servidor remoto VIA SOCKET.IO ──────────
 function setupSocketIO() {
-    console.log(`[SOCKET] Conectando ao servidor Railway: ${RAILWAY_URL}...`);
+    console.log(`[SOCKET] Conectando ao servidor: ${APP_URL}...`);
     
-    const socket = ioClient(RAILWAY_URL, {
+    const socket = ioClient(APP_URL, {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
@@ -137,15 +137,15 @@ function setupSocketIO() {
     });
 
     socket.on('connect', () => {
-        console.log('[SOCKET] ✅ Conectado com sucesso ao servidor Railway!');
+        console.log('[SOCKET] ✅ Conectado com sucesso ao servidor servidor remoto!');
     });
 
     socket.on('disconnect', () => {
-        console.warn('[SOCKET] ⚠️ Desconectado do Railway. Tentando reconectar automaticamente...');
+        console.warn('[SOCKET] ⚠️ Desconectado do servidor remoto. Tentando reconectar automaticamente...');
     });
 
     socket.on('painel:novo-pedido', (pedido) => {
-        console.log(`[SOCKET] 🍕 Novo pedido recebido (#${pedido.id}) via Railway Socket!`);
+        console.log(`[SOCKET] 🍕 Novo pedido recebido (#${pedido.id}) via servidor remoto Socket!`);
         
         if (lastPollId === -1 || pedido.id > lastPollId) {
             lastPollId = pedido.id;
@@ -163,7 +163,7 @@ let lastPollId = -1; // -1 indica que ainda não foi inicializado
 function setupContingenciaPolling() {
     setInterval(async () => {
         try {
-            const res = await net.fetch(`${RAILWAY_URL}/api/pedidos/hoje`);
+            const res = await net.fetch(`${APP_URL}/api/pedidos/hoje`);
             if (res.ok) {
                 const pedidos = await res.json();
                 
@@ -209,7 +209,7 @@ function setupContingenciaPolling() {
                 }
             }
         } catch (error) {
-            console.error('[CONTINGÊNCIA ERRO] Falha ao realizar polling na API do Railway:', error.message);
+            console.error('[CONTINGÊNCIA ERRO] Falha ao realizar polling na API do servidor remoto:', error.message);
         }
     }, 30000); // 30 segundos
 }

@@ -1,4 +1,5 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const APP_URL = process.env.APP_URL || 'https://www.garagemdomarcao.online';
 const qrcode = require('qrcode');
 
 // Estado das conversas (memória temporária do bot)
@@ -52,20 +53,20 @@ async function finalizarPedido(client, from, session, db, emitUpdateFunc) {
     };
 
     try {
-        await fetch('https://www.garagemdomarcao.online/api/novo-pedido', {
+        await fetch(`${APP_URL.replace(/\/$/, '')}/api/novo-pedido`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const idPedido = Math.floor(Math.random() * 10000); // Simulando ID já que o Railway é que gera agora
+        const idPedido = Math.floor(Math.random() * 10000); // Simulando ID local do pedido
         if (payment === 'Pix') {
             await client.sendMessage(from, `🎉 *PEDIDO RECEBIDO!*\nO seu pedido foi recebido pelo sistema!\n\nRecebemos a foto do seu comprovante. Nossa equipe fará a conferência e já iniciará o preparo!`);
         } else {
             await client.sendMessage(from, `🎉 *PEDIDO CONFIRMADO!*\nO seu pedido já caiu no nosso sistema!\n\nNossa equipe já recebeu e está preparando com muito carinho. O status será atualizado e te avisaremos quando sair para entrega!`);
         }
     } catch (err) {
-        console.error('Erro ao enviar pedido do bot para o Railway:', err);
+        console.error('Erro ao enviar pedido do bot para o servidor:', err);
         await client.sendMessage(from, "Ops, ocorreu um erro ao registrar seu pedido. Por favor, tente novamente ou fale com um atendente.");
     }
     session.state = 'IDLE'; // Reseta o estado
@@ -112,7 +113,7 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
     if (process.env.PORT) {
         const fs = require('fs');
         
-        // Verifica primeiro se a variável de ambiente do Nixpacks/Railway está definida
+        // Verifica primeiro se a variável de ambiente do executável do Puppeteer está definida
         if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
             execPath = process.env.PUPPETEER_EXECUTABLE_PATH;
         }

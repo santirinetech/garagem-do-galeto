@@ -8,7 +8,7 @@ const isPackaged = process.mainModule && process.mainModule.filename.indexOf('ap
     || (process.resourcesPath && __dirname.includes('app.asar'));
 
 if (process.env.PORT) {
-    // Ambientes Cloud / Railway
+    // Ambiente de produção em servidor
     const dataDir = '/app/data';
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
     dbPath = path.join(dataDir, 'loja.db');
@@ -30,7 +30,7 @@ const db = new sqlite3.Database(dbPath);
 /**
  * Inicializa e estrutura o banco de dados da galeteria, criando as tabelas e inserindo dados padrão.
  * Garante que o banco está pronto para as operações de negócio.
- * 
+ *
  * @returns {void}
  */
 function initDb() {
@@ -45,14 +45,6 @@ function initDb() {
             criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`, () => {
             db.run(`ALTER TABLE usuarios ADD COLUMN criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`, () => {});
-            // Criar admin padrão se vazio
-            db.get("SELECT count(*) as qtd FROM usuarios", (err, row) => {
-                if (row && row.qtd === 0) {
-                    const bcrypt = require('bcryptjs');
-                    const hash = bcrypt.hashSync('admin123', 10);
-                    db.run("INSERT INTO usuarios (usuario, senha) VALUES (?, ?)", ['admin', hash]);
-                }
-            });
         });
 
         // ── Clientes ──────────────────────────────────────────────
@@ -78,7 +70,7 @@ function initDb() {
             // Migração: renomear taxa → taxa_entrega se necessário
             db.run(`ALTER TABLE regioes ADD COLUMN taxa_entrega REAL NOT NULL DEFAULT 0.0`, () => {
                 db.run(`UPDATE regioes SET taxa_entrega = taxa WHERE taxa_entrega = 0.0 AND taxa IS NOT NULL AND taxa > 0`, () => {});
-                
+
                 // Garante que os bairros pré-cadastrados existam após a coluna ser criada
                 const bairrosPadrao = [
                     ['Presidente Médici', 2.0],
@@ -100,6 +92,7 @@ function initDb() {
                     ['Itacibá', 7.0],
                     ['Campo Grande', 10.0]
                 ];
+
                 // Usando db.run em vez de db.prepare para evitar compilação antecipada antes da fila executar
                 bairrosPadrao.forEach(r => {
                     db.run("INSERT OR IGNORE INTO regioes (nome, taxa_entrega) VALUES (?, ?)", r, () => {});
@@ -161,26 +154,31 @@ function initDb() {
             db.run(`ALTER TABLE produtos ADD COLUMN status INTEGER NOT NULL DEFAULT 1`, () => {});
             db.run(`ALTER TABLE produtos ADD COLUMN imagem_url TEXT`, () => {});
             db.run(`ALTER TABLE produtos ADD COLUMN atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`, () => {});
+
             // Se só tem preco (legado), adicionar preco_unitario
             db.run(`ALTER TABLE produtos ADD COLUMN preco_unitario REAL NOT NULL DEFAULT 0.0`, () => {
                 db.run(`UPDATE produtos SET preco_unitario = preco WHERE preco_unitario = 0.0 AND preco IS NOT NULL AND preco > 0`, () => {});
-                
+
                 // Gerenciamento de Produtos: Remove obsoletos e garante os atuais
                 const removerAntigos = ['Galeto Completo Família', 'Galeto Individual', 'Refrigerante 2L', 'Suco Natural'];
                 removerAntigos.forEach(nome => {
                     db.run("DELETE FROM produtos WHERE nome = ?", [nome], () => {});
                 });
-                
+
                 const produtosPadrao = [
                     ['Galeto com Farofa', 55.0, 50, 1, '/img/galeto.png'], // Categoria 1 (Principais)
-                    ['Salpicão',          25.0, 30, 2, '/img/salpicao.png'], // Categoria 2 (Acompanhamentos)
-                    ['Feijão Tropeiro',   25.0, 30, 2, '/img/feijao.png']
+                    ['Salpicão', 25.0, 30, 2, '/img/salpicao.png'], // Categoria 2 (Acompanhamentos)
+                    ['Feijão Tropeiro', 25.0, 30, 2, '/img/feijao.png']
                 ];
-                
+
                 produtosPadrao.forEach(r => {
-                    db.run("INSERT OR IGNORE INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)", r, () => {});
+                    db.run(
+                        "INSERT OR IGNORE INTO produtos (nome, preco_unitario, quantidade_estoque, categoria_id, imagem_url) VALUES (?, ?, ?, ?, ?)",
+                        r,
+                        () => {}
+                    );
                 });
-                
+
                 // Força a atualização do preço caso o produto já exista no banco
                 db.run("UPDATE produtos SET preco_unitario = 55.0 WHERE nome = 'Galeto com Farofa'", () => {});
             });
@@ -255,9 +253,9 @@ function initDb() {
 
         // ── Estoque legado (mantido por compatibilidade) ──────────
         db.run(`CREATE TABLE IF NOT EXISTS estoque (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            item       TEXT,
-            quantidade INTEGER
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            item        TEXT,
+            quantidade  INTEGER
         )`);
 
         // ── Configurações do Sistema ──────────────────────────────
@@ -265,7 +263,7 @@ function initDb() {
             chave TEXT PRIMARY KEY,
             valor TEXT NOT NULL
         )`, () => {
-            // Atualização forçada para clientes existentes (Railway ou Local)
+            // Atualização de configurações para bancos existentes
             db.run(`UPDATE configuracoes SET valor = '5527988100200' WHERE chave = 'whatsapp_dono' AND valor = '5527988573982'`, () => {});
             db.run(`UPDATE configuracoes SET valor = '27988100200' WHERE chave = 'pix_chave' AND valor = '27988573982'`, () => {});
 
@@ -284,7 +282,7 @@ initDb();
 
 /**
  * Executa uma consulta no banco de dados e retorna todos os resultados.
- * 
+ *
  * @param {string} sql A instrução SQL a ser executada.
  * @param {Array} [params=[]] Parâmetros opcionais para a query SQL.
  * @returns {Promise<Array>} Uma promise que resolve para um array de resultados.
@@ -298,9 +296,9 @@ function query(sql, params = []) {
 
 /**
  * Executa uma consulta no banco de dados e retorna o primeiro resultado encontrado.
- * 
+ *
  * @param {string} sql A instrução SQL a ser executada.
- * @param {Array} [params=[]] Parâmetros opcionais para a query SQL.
+ * @param {Array} [params=[]} Parâmetros opcionais para a query SQL.
  * @returns {Promise<Object|undefined>} Uma promise que resolve para a linha resultante ou undefined.
  * @throws {Error} Lança um erro se a execução da consulta falhar.
  */
@@ -311,11 +309,11 @@ function queryOne(sql, params = []) {
 }
 
 /**
- * Executa uma instrução SQL (INSERT, UPDATE, DELETE) que não retorna linhas, 
+ * Executa uma instrução SQL (INSERT, UPDATE, DELETE) que não retorna linhas,
  * devolvendo o contexto da execução.
- * 
+ *
  * @param {string} sql A instrução SQL a ser executada.
- * @param {Array} [params=[]] Parâmetros opcionais para a instrução SQL.
+ * @param {Array} [params=[]} Parâmetros opcionais para a instrução SQL.
  * @returns {Promise<Object>} Uma promise que resolve para o contexto da instrução (`this` do sqlite3).
  * @throws {Error} Lança um erro se a execução da instrução falhar.
  */
