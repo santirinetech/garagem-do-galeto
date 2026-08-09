@@ -11,7 +11,6 @@ const bcrypt = require('bcryptjs');
 const { db, query, queryOne, run } = require('./database');
 const { initWhatsApp, getBotStatus, enviarMensagemPainel } = require('./whatsapp-bot');
 require('dotenv').config(); // Carrega as variaveis de ambiente
-const apiRoutes = require('./api/routes');
 
 // ── SSE: Atualização em tempo real ──────────────────────────
 let clients = [];
@@ -23,7 +22,7 @@ let clients = [];
  */
 function emitUpdate() {
     clients.forEach(c => {
-        try { c.res.write('data: update\n\n'); } catch(e) {}
+        try { c.res.write('data: update\n\n'); } catch (e) { }
     });
 }
 
@@ -44,7 +43,7 @@ if (process.env.NODE_ENV === 'production' && !isPackaged) {
     uploadDir = path.join(__dirname, '../public/uploads/');
 }
 
-if (!fs.existsSync(uploadDir)){
+if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
@@ -66,7 +65,7 @@ function startServer(mainWindow = null) {
     const server = express();
     const http = require('http');
     const httpServer = http.createServer(server);
-    
+
     // Configuração do Socket.io para comunicação em tempo real com o Electron
     const io = new Server(httpServer, {
         cors: {
@@ -84,7 +83,7 @@ function startServer(mainWindow = null) {
 
     server.set('io', io);
 
-    
+
     // Segurança: Configuração de Cabeçalhos
     server.use(helmet({
         contentSecurityPolicy: false, // Desativado para simplificar carregamento de fontes/icones externos por enquanto
@@ -108,7 +107,7 @@ function startServer(mainWindow = null) {
         secret: process.env.SESSION_SECRET || 'secret_fallback_local_inseguro_123',
         resave: false,
         saveUninitialized: false,
-        cookie: { 
+        cookie: {
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             // sameSite 'none' é obrigatório para cross-origin (Electron -> Cloud) junto com secure=true
@@ -140,37 +139,31 @@ function startServer(mainWindow = null) {
         res.status(401).json({ erro: 'Não autorizado. Por favor, faça login.' });
     };
 
-    // Aplicar proteção apenas em rotas /api (exceto as públicas)
-    server.use('/api', authMiddleware);
-
-    // Nova API Multi-Tenant em Postgres (Em transição)
-    server.use('/tenant-api', apiRoutes);
-
     // Rate Limiter: Evitar abusos (Max 15 pedidos por hora por IP)
     const pedidoLimiter = rateLimit({
-        windowMs: 60 * 60 * 1000, 
+        windowMs: 60 * 60 * 1000,
         max: 30, // Aumentado para suportar testes
         message: { erro: 'Muitos pedidos enviados deste IP. Tente novamente em uma hora.' }
     });
 
     // Corrigindo o caminho para subir um nível e achar a pasta public na raiz
     server.use(express.static(path.join(__dirname, '..', 'public')));
-    
+
     // Servir os comprovantes salvos no AppData (ou public/uploads localmente)
     server.use('/uploads', express.static(uploadDir));
-    
+
     // Corrigindo a rota principal do cardápio
     server.get('/', (req, res) => {
         res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
     });
-    
+
     // Endpoint SSE para o Dashboard
     server.get('/api/events', (req, res) => {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.flushHeaders();
-        
+
         const clientId = Date.now();
         clients.push({ id: clientId, res });
         req.on('close', () => {
@@ -181,14 +174,14 @@ function startServer(mainWindow = null) {
     // ──────── INICIALIZAÇÃO DO WHATSAPP BOT ────────
     const broadcastWppEvent = (evt) => {
         clients.forEach(c => {
-            try { c.res.write(`data: ${JSON.stringify(evt)}\n\n`); } catch(e) {}
+            try { c.res.write(`data: ${JSON.stringify(evt)}\n\n`); } catch (e) { }
         });
     };
 
     // WhatsApp sempre ativo localmente (Dev/Electron) e opcional na Nuvem (Railway) via ENABLE_WHATSAPP
     const wppEnv = process.env.ENABLE_WHATSAPP ? process.env.ENABLE_WHATSAPP.toLowerCase() : "";
     const isWppEnabled = wppEnv === "true" || process.env.NODE_ENV !== "production";
-    
+
     // Descomentado para ativar na Nuvem (Railway)
     if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);
@@ -216,7 +209,7 @@ function startServer(mainWindow = null) {
      */
     server.post('/api/login', async (req, res) => {
         const { usuario, senha } = req.body;
-        
+
         try {
             const user = await queryOne("SELECT * FROM usuarios WHERE usuario = ?", [usuario]);
             if (!user) {
@@ -281,7 +274,7 @@ function startServer(mainWindow = null) {
                 ultimo_pedido = CURRENT_TIMESTAMP,
                 deleted_at = NULL
             `, [nome, telefone, total]);
-            
+
             const cliente = await queryOne("SELECT id FROM clientes WHERE telefone = ?", [telefone]);
             const cliente_id = cliente.id;
 
@@ -308,9 +301,9 @@ function startServer(mainWindow = null) {
             } else if (pedido) {
                 // Fallback legado regex
                 const desc = pedido.toLowerCase();
-                if (desc.includes('galeto'))         await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Galeto%'");
+                if (desc.includes('galeto')) await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Galeto%'");
                 if (desc.includes('salpicão') || desc.includes('salpicao')) await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Salpicão%'");
-                if (desc.includes('feijão') || desc.includes('feijao'))     await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Feijão Tropeiro%'");
+                if (desc.includes('feijão') || desc.includes('feijao')) await run("UPDATE produtos SET quantidade_estoque = MAX(0, quantidade_estoque - 1) WHERE nome LIKE '%Feijão Tropeiro%'");
             }
 
             // Emite notificação de novo pedido via Socket.io para o Electron local
@@ -335,10 +328,10 @@ function startServer(mainWindow = null) {
 
             emitUpdate(); // Notifica via SSE (Fallback)
             if (mainWindow) mainWindow.webContents.send('atualizar-dashboard');
-            res.json({ 
-                mensagem: 'Sucesso', 
+            res.json({
+                mensagem: 'Sucesso',
                 id_pedido: pedido_id,
-                comprovante: comprovante 
+                comprovante: comprovante
             });
         } catch (e) {
             console.error("[ERRO] Erro ao registrar pedido:", e);
@@ -355,7 +348,7 @@ function startServer(mainWindow = null) {
                 WHERE id = ?
             `, [pedido_descricao, parseFloat(total), endereco_entrega, forma_pagamento, req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // PATCH /pedido/:id/status
@@ -374,7 +367,7 @@ function startServer(mainWindow = null) {
 
         db.run("UPDATE pedidos SET status = ? WHERE id = ?", [status, id], function (err) {
             if (err) return res.status(500).json({ erro: err.message });
-            
+
             queryOne(`
                 SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
                 FROM pedidos p 
@@ -416,7 +409,7 @@ function startServer(mainWindow = null) {
             const config = {};
             rows.forEach(r => config[r.chave] = r.valor);
             res.json(config);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.post('/api/config', async (req, res) => {
@@ -428,7 +421,7 @@ function startServer(mainWindow = null) {
                 ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor
             `, [chave, valor]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // ──────── APIs DO DASHBOARD ────────
@@ -444,7 +437,7 @@ function startServer(mainWindow = null) {
                 ORDER BY p.id DESC
             `;
             let params = [];
-            
+
             if (dataFiltro) {
                 sql = `
                     SELECT p.*, c.nome as cliente_nome, c.telefone as cliente_tel 
@@ -455,10 +448,10 @@ function startServer(mainWindow = null) {
                 `;
                 params.push(dataFiltro);
             }
-            
+
             const rows = await query(sql, params);
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     /**
@@ -485,20 +478,20 @@ function startServer(mainWindow = null) {
                 WHERE date(data_hora, 'localtime') = date('now','localtime')
             `);
             res.json(row);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.get('/api/estoque', async (req, res) => {
         try {
             const rows = await query("SELECT * FROM estoque ORDER BY item");
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.patch('/api/estoque/:id', (req, res) => {
         const { quantidade } = req.body;
         db.run("UPDATE estoque SET quantidade = ? WHERE id = ?", [parseInt(quantidade), req.params.id], function (err) {
-            if (err) return res.status(500).json({erro: err.message});
+            if (err) return res.status(500).json({ erro: err.message });
             res.json({ status: 'ok' });
         });
     });
@@ -508,7 +501,7 @@ function startServer(mainWindow = null) {
         try {
             const categorias = await query("SELECT * FROM categoria_produtos WHERE status = 1 ORDER BY nome_listagem");
             const produtos = await query("SELECT * FROM produtos WHERE status = 1 ORDER BY nome");
-            
+
             // Format to match old structure or group them easily for the frontend
             const menu = categorias.map(c => ({
                 id: c.id,
@@ -516,9 +509,9 @@ function startServer(mainWindow = null) {
                 descricao: c.descricao,
                 produtos: produtos.filter(p => p.categoria_id === c.id)
             })).filter(c => c.produtos.length > 0);
-            
+
             res.json(menu);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
     server.get('/api/produtos', async (req, res) => {
         try {
@@ -529,48 +522,48 @@ function startServer(mainWindow = null) {
                 ORDER BY c.nome, p.nome
             `);
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.get('/api/produtos/:id', async (req, res) => {
         try {
             const row = await queryOne("SELECT * FROM produtos WHERE id = ?", [req.params.id]);
             res.json(row);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.post('/api/produtos', async (req, res) => {
         const { nome, categoria_id, preco_unitario, preco, quantidade_estoque, imagem_url } = req.body;
         const preco_val = parseFloat(preco_unitario ?? preco ?? 0);
         try {
-            const r = await run("INSERT INTO produtos (nome, categoria_id, preco_unitario, quantidade_estoque, imagem_url) VALUES (?, ?, ?, ?, ?)", 
+            const r = await run("INSERT INTO produtos (nome, categoria_id, preco_unitario, quantidade_estoque, imagem_url) VALUES (?, ?, ?, ?, ?)",
                 [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0, imagem_url || null]);
             res.json({ status: 'ok', id: r.lastID });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.put('/api/produtos/:id', async (req, res) => {
         const { nome, categoria_id, preco_unitario, preco, quantidade_estoque, imagem_url } = req.body;
         const preco_val = parseFloat(preco_unitario ?? preco ?? 0);
         try {
-            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco_unitario = ?, quantidade_estoque = ?, imagem_url = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", 
+            await run("UPDATE produtos SET nome = ?, categoria_id = ?, preco_unitario = ?, quantidade_estoque = ?, imagem_url = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?",
                 [nome, categoria_id || null, preco_val, parseInt(quantidade_estoque) || 0, imagem_url || null, req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.patch('/api/produtos/:id/estoque', async (req, res) => {
         try {
             await run("UPDATE produtos SET quantidade_estoque = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [parseInt(req.body.quantidade) || 0, req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.patch('/api/produtos/:id/status', async (req, res) => {
         try {
             await run("UPDATE produtos SET status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [parseInt(req.body.status), req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // Alias legado
@@ -579,28 +572,28 @@ function startServer(mainWindow = null) {
             const s = parseInt(req.body.ativo);
             await run("UPDATE produtos SET status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [s, req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.get('/api/categorias', async (req, res) => {
         try {
             const rows = await query("SELECT * FROM categoria_produtos ORDER BY nome");
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.post('/api/categorias', async (req, res) => {
         try {
             await run("INSERT INTO categoria_produtos (nome, nome_listagem) VALUES (?, ?)", [req.body.nome, req.body.nome]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.put('/api/categorias/:id', async (req, res) => {
         try {
             await run("UPDATE categoria_produtos SET nome = ?, nome_listagem = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?", [req.body.nome, req.body.nome, req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.delete('/api/categorias/:id', async (req, res) => {
@@ -608,7 +601,7 @@ function startServer(mainWindow = null) {
             await run("UPDATE produtos SET categoria_id = NULL WHERE categoria_id = ?", [req.params.id]);
             await run("DELETE FROM categoria_produtos WHERE id = ?", [req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // ──────── APIs DE DESPESAS ────────
@@ -630,7 +623,7 @@ function startServer(mainWindow = null) {
             }
             sql += ` ORDER BY d.id DESC`;
             res.json(await query(sql, params));
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.post('/api/despesas', async (req, res) => {
@@ -645,7 +638,7 @@ function startServer(mainWindow = null) {
             }
             const r = await run(sql, params);
             res.json({ status: 'ok', id: r.lastID });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.put('/api/despesas/:id', async (req, res) => {
@@ -659,14 +652,14 @@ function startServer(mainWindow = null) {
             }
             await run(sql, params);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.delete('/api/despesas/:id', async (req, res) => {
         try {
             await run("DELETE FROM despesas WHERE id = ?", [req.params.id]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // ──────── APIs DE CATEGORIAS DE DESPESAS ────────
@@ -674,28 +667,28 @@ function startServer(mainWindow = null) {
     server.get('/api/categoria-despesas', async (req, res) => {
         try {
             res.json(await query("SELECT * FROM categoria_despesas WHERE status = 1 ORDER BY nome"));
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.post('/api/categoria-despesas', async (req, res) => {
         try {
             await run("INSERT INTO categoria_despesas (nome) VALUES (?)", [req.body.nome]);
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // ──────── APIs DE GESTÃO DE CLIENTES (LGPD) ────────
-    
+
     server.get('/api/clientes', async (req, res) => {
         try {
             const rows = await query("SELECT * FROM clientes WHERE deleted_at IS NULL ORDER BY nome");
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.delete('/api/clientes/:id', (req, res) => {
         db.run("UPDATE clientes SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?", [req.params.id], function (err) {
-            if (err) return res.status(500).json({erro: err.message});
+            if (err) return res.status(500).json({ erro: err.message });
             res.json({ status: 'ok' });
         });
     });
@@ -710,16 +703,16 @@ function startServer(mainWindow = null) {
                 AND deleted_at IS NULL
             `, [dias]);
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     // ──────── APIs DE REGIÕES E FRETE ────────
-    
+
     server.get('/api/regioes', async (req, res) => {
         try {
             const rows = await query("SELECT * FROM regioes ORDER BY nome");
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.post('/api/regioes', async (req, res) => {
@@ -737,7 +730,7 @@ function startServer(mainWindow = null) {
                 }
             }
             res.json({ status: 'ok', id: r.lastID });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.put('/api/regioes/:id', async (req, res) => {
@@ -754,12 +747,12 @@ function startServer(mainWindow = null) {
                 }
             }
             res.json({ status: 'ok' });
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.delete('/api/regioes/:id', (req, res) => {
         db.run("DELETE FROM regioes WHERE id = ?", [req.params.id], function (err) {
-            if (err) return res.status(500).json({erro: err.message});
+            if (err) return res.status(500).json({ erro: err.message });
             res.json({ status: 'ok' });
         });
     });
@@ -813,7 +806,7 @@ function startServer(mainWindow = null) {
             ]);
 
             const total_entradas = resumo?.total_entradas || 0;
-            const total_saidas   = despesas?.total_despesas || 0;
+            const total_saidas = despesas?.total_despesas || 0;
 
             res.json({
                 periodo: { de, ate },
@@ -844,10 +837,10 @@ function startServer(mainWindow = null) {
             }
             sql += ` ORDER BY p.id DESC LIMIT ?`;
             params.push(limite);
-            
+
             const rows = await query(sql, params);
             res.json(rows);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     server.get('/api/pedido/:id', async (req, res) => {
@@ -858,8 +851,8 @@ function startServer(mainWindow = null) {
                 LEFT JOIN clientes c ON p.cliente_id = c.id 
                 WHERE p.id = ?
             `, [req.params.id]);
-            if (!row) return res.status(404).json({erro: 'Pedido não encontrado'});
-            
+            if (!row) return res.status(404).json({ erro: 'Pedido não encontrado' });
+
             // Buscar itens
             const itens = await query(`
                 SELECT i.*, pr.nome as produto_nome 
@@ -867,10 +860,10 @@ function startServer(mainWindow = null) {
                 LEFT JOIN produtos pr ON i.produto_id = pr.id 
                 WHERE i.pedido_id = ?
             `, [row.id]);
-            
+
             row.itens = itens;
             res.json(row);
-        } catch (e) { res.status(500).json({erro: e.message}); }
+        } catch (e) { res.status(500).json({ erro: e.message }); }
     });
 
     const PORT = process.env.PORT || 3000;
