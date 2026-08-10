@@ -560,10 +560,28 @@ async function carregarProdutos() {
                         </div>
                     </td>
                     <td>
-                        <button class="btn btn-ghost btn-small" onclick="editarProduto(${p.id})"><span class="material-icons-round">edit</span></button>
-                        <button class="btn btn-ghost btn-small" style="color: ${p.status ? 'var(--red)' : 'var(--green)'}" onclick="toggleProdutoAtivo(${p.id}, ${p.status})">
+                        <button
+                            class="btn btn-ghost btn-small"
+                            onclick="editarProduto(${p.id})"
+                            title="Editar produto">
+                            <span class="material-icons-round">edit</span>
+                        </button>
+
+                        <button
+                            class="btn btn-ghost btn-small"
+                            style="color: ${p.status ? 'var(--red)' : 'var(--green)'}"
+                            onclick="toggleProdutoAtivo(${p.id}, ${p.status})"
+                            title="${p.status ? 'Desativar produto' : 'Ativar produto'}">
                             <span class="material-icons-round">${p.status ? 'block' : 'check_circle'}</span>
                         </button>
+
+                        <button
+                            class="btn btn-ghost btn-small"
+                            style="color: var(--red)"
+                            onclick="excluirProduto(${p.id})"
+                            title="Excluir produto">
+                            <span class="material-icons-round">delete</span>
+                        </button> 
                     </td>
                 </tr>
             `).join('');
@@ -599,6 +617,42 @@ async function ajustarEstoque(id, novaQtd) {
 }
 
 let produtosAtuais = []; // Para a edição
+async function excluirProduto(id) {
+    const confirmar = confirm(
+        'Tem certeza que deseja excluir este produto?\n\n' +
+        'Ele será removido da gestão e do cardápio, mas o histórico dos pedidos será preservado.'
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/produtos/${id}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.erro || 'Erro ao excluir produto.'
+            );
+        }
+
+        await carregarProdutos();
+
+    } catch (erro) {
+        console.error(
+            'Erro ao excluir produto:',
+            erro
+        );
+
+        alert(
+            erro.message
+        );
+    }
+}
 async function editarProduto(id) {
     try {
         const p = await fetch('/api/produtos/' + id).then(r => r.json());
@@ -1199,4 +1253,4 @@ async function carregarRelatorios() {
         document.getElementById('rel-kpis').style.display = '';
         document.getElementById('rel-rankings').style.display = 'grid';
     } catch(e) { console.error('Erro relatórios:', e); alert('Erro ao gerar relatório.'); }
-}
+}
