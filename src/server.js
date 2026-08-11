@@ -297,6 +297,55 @@ function startServer(mainWindow = null) {
             }
 
             try {
+
+                // ── Validação de estoque antes de criar o pedido ──
+                if (itens) {
+                    const parsedItens = JSON.parse(itens);
+
+                    for (const item of parsedItens) {
+                        const quantidadeSolicitada = parseInt(item.quantidade) || 1;
+
+                        const produto = await queryOne(
+                            `
+                            SELECT
+                                id,
+                                nome,
+                                quantidade_estoque,
+                                status,
+                                deleted_at
+                            FROM produtos
+                            WHERE (nome = ? OR id = ?)
+                            AND deleted_at IS NULL
+                            `,
+                            [
+                                item.nome,
+                                item.id
+                            ]
+                        );
+
+                        if (!produto) {
+                            return res.status(404).json({
+                                erro: `Produto "${item.nome}" não encontrado.`
+                            });
+                        }
+
+                        if (produto.status !== 1) {
+                            return res.status(400).json({
+                                erro: `O produto "${produto.nome}" está inativo.`
+                            });
+                        }
+
+                        if (produto.quantidade_estoque < quantidadeSolicitada) {
+                            return res.status(400).json({
+                                erro:
+                                    `Estoque insuficiente para "${produto.nome}". ` +
+                                    `Disponível: ${produto.quantidade_estoque}. ` +
+                                    `Solicitado: ${quantidadeSolicitada}.`
+                            });
+                        }
+                    }
+                }
+
                 await run(`
                     INSERT INTO clientes (
                         nome,
@@ -400,16 +449,19 @@ function startServer(mainWindow = null) {
                                 ]
                             );
 
+                            const quantidadeComprada = item.quantidade || 1;
+
                             await run(
                                 `
                                 UPDATE produtos
                                 SET quantidade_estoque =
-                                    MAX(0, quantidade_estoque - ?)
+                                        MAX(0, quantidade_estoque - ?),
+                                    atualizado_em = CURRENT_TIMESTAMP
                                 WHERE id = ?
-                                  AND deleted_at IS NULL
+                                AND deleted_at IS NULL
                                 `,
                                 [
-                                    item.quantidade || 1,
+                                    quantidadeComprada,
                                     prod.id
                                 ]
                             );
@@ -434,44 +486,6 @@ function startServer(mainWindow = null) {
                         ]
                     );
 
-                } else if (pedido) {
-                    const desc = pedido.toLowerCase();
-
-                    if (desc.includes('galeto')) {
-                        await run(`
-                            UPDATE produtos
-                            SET quantidade_estoque =
-                                MAX(0, quantidade_estoque - 1)
-                            WHERE nome LIKE '%Galeto%'
-                              AND deleted_at IS NULL
-                        `);
-                    }
-
-                    if (
-                        desc.includes('salpicão') ||
-                        desc.includes('salpicao')
-                    ) {
-                        await run(`
-                            UPDATE produtos
-                            SET quantidade_estoque =
-                                MAX(0, quantidade_estoque - 1)
-                            WHERE nome LIKE '%Salpicão%'
-                              AND deleted_at IS NULL
-                        `);
-                    }
-
-                    if (
-                        desc.includes('feijão') ||
-                        desc.includes('feijao')
-                    ) {
-                        await run(`
-                            UPDATE produtos
-                            SET quantidade_estoque =
-                                MAX(0, quantidade_estoque - 1)
-                            WHERE nome LIKE '%Feijão Tropeiro%'
-                              AND deleted_at IS NULL
-                        `);
-                    }
                 }
 
                 console.log(
