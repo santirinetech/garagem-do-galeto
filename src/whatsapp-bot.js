@@ -6,11 +6,32 @@ const qrcode = require('qrcode');
 const userSessions = {};
 
 // Preços simulados ou buscados do DB (Simplificado para o bot)
-const menuPrecos = {
-    '1': { nome: 'Galeto com Farofa', preco: 55 },
-    '2': { nome: 'Salpicão', preco: 25 },
-    '3': { nome: 'Feijão Tropeiro', preco: 25 }
-};
+function carregarProdutosDoMenu(db) {
+    return new Promise((resolve, reject) => {
+        db.all(
+            `
+            SELECT
+                id,
+                nome,
+                preco_unitario,
+                quantidade_estoque
+            FROM produtos
+            WHERE deleted_at IS NULL
+              AND status = 1
+            ORDER BY categoria_id, nome
+            `,
+            [],
+            (err, rows) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+
+                resolve(rows);
+            }
+        );
+    });
+}
 
 let qrCodeDataUrl = null;
 let isReady = false;
@@ -29,48 +50,128 @@ let wppClient = null;
  * @returns {Promise<void>}
  */
 async function finalizarPedido(client, from, session, db, emitUpdateFunc) {
-    const { name, items, total, payment, address, comprovanteUrl, deliveryType, freight, changeFor } = session.order;
-    const phone = from; // ex: 552799999999@c.us
+    const {
+        name,
+        items,
+        total,
+        payment,
+        address,
+        deliveryType,
+        freight,
+        changeFor
+    } = session.order;
+
+    const telefone = from.replace('@c.us', '');
     const itemsDesc = items.join(', ');
-    
+
     let pagamentoDesc = payment;
-    if (payment === 'Dinheiro' && changeFor && changeFor.toLowerCase() !== 'não' && changeFor.toLowerCase() !== 'nao') {
+
+    if (
+        payment === 'Dinheiro' &&
+        changeFor &&
+        changeFor.toLowerCase() !== 'não' &&
+        changeFor.toLowerCase() !== 'nao'
+    ) {
         pagamentoDesc = `Dinheiro (Troco para R$ ${changeFor})`;
     }
 
-    let enderecoFormatado = deliveryType === 'Entrega' ? `${address} (Taxa: R$ ${freight})` : 'Retirada no Local';
+    const enderecoFormatado =
+        deliveryType === 'Entrega'
+            ? `${address} (Taxa: R$ ${freight})`
+            : 'Retirada no Local';
+
+    // Agrupa produtos repetidos.
+    // Ex.: ["Galeto", "Galeto"] vira quantidade 2.
+    const itensAgrupados = {};
+
+    for (const nomeProduto of items) {
+        if (!itensAgrupados[nomeProduto]) {
+            itensAgrupados[nomeProduto] = {
+                nome: nomeProduto,
+                quantidade: 0
+            };
+        }
+
+        itensAgrupados[nomeProduto].quantidade += 1;
+    }
+
+    const itensPayload = Object.values(itensAgrupados);
 
     const payload = {
-        cliente_nome: name,
-        cliente_tel: phone,
+        nome: name,
+        telefone: telefone,
         pedido: itemsDesc,
-        itens: JSON.stringify(session.order.items.map(i => ({ produto_nome: i, quantidade: 1, preco_unitario: 0 }))),
-        taxa_aplicada: freight,
+        itens: JSON.stringify(itensPayload),
+        taxa: freight,
         total: total,
-        forma_pagamento: pagamentoDesc,
-        endereco_entrega: enderecoFormatado,
+        pagamento: pagamentoDesc,
+        endereco: enderecoFormatado,
         origem: 'WhatsApp (Robô)'
     };
 
     try {
-        await fetch(`${APP_URL.replace(/\/$/, '')}/api/novo-pedido`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const response = await fetch(
+            `${APP_URL.replace(/\/$/, '')}/api/novo-pedido`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            }
+        );
 
-        const idPedido = Math.floor(Math.random() * 10000); // Simulando ID local do pedido
-        if (payment === 'Pix') {
-            await client.sendMessage(from, `🎉 *PEDIDO RECEBIDO!*\nO seu pedido foi recebido pelo sistema!\n\nRecebemos a foto do seu comprovante. Nossa equipe fará a conferência e já iniciará o preparo!`);
-        } else {
-            await client.sendMessage(from, `🎉 *PEDIDO CONFIRMADO!*\nO seu pedido já caiu no nosso sistema!\n\nNossa equipe já recebeu e está preparando com muito carinho. O status será atualizado e te avisaremos quando sair para entrega!`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            await client.sendMessage(
+                from,
+                `❌ Não foi possível concluir seu pedido.\n\n${data.erro || 'Verifique os itens e tente novamente.'}`
+            );
+
+            return;
         }
+
+        if (payment === 'Pix') {
+            await client.sendMessage(
+                from,
+                `🎉 *PEDIDO RECEBIDO!*\n` +
+                `Pedido #${data.id_pedido} recebido pelo sistema!\n\n` +
+                `Nossa equipe fará a conferência e iniciará o preparo.`
+            );
+        } else {
+            await client.sendMessage(
+                from,
+                `🎉 *PEDIDO CONFIRMADO!*\n` +
+                `Pedido #${data.id_pedido} registrado com sucesso!\n\n` +
+                `Nossa equipe já recebeu o pedido.`
+            );
+        }
+
+        session.state = 'IDLE';
+
+        session.order = {
+            items: [],
+            total: 0,
+            payment: '',
+            address: '',
+            name: session.order.name,
+            deliveryType: '',
+            freight: 0,
+            changeFor: ''
+        };
+
     } catch (err) {
-        console.error('Erro ao enviar pedido do bot para o servidor:', err);
-        await client.sendMessage(from, "Ops, ocorreu um erro ao registrar seu pedido. Por favor, tente novamente ou fale com um atendente.");
+        console.error(
+            'Erro ao enviar pedido do bot para o servidor:',
+            err
+        );
+
+        await client.sendMessage(
+            from,
+            "Ops, ocorreu um erro ao registrar seu pedido. Por favor, tente novamente ou fale com um atendente."
+        );
     }
-    session.state = 'IDLE'; // Reseta o estado
-    session.order = { items: [], total: 0, payment: '', address: '', name: session.order.name, deliveryType: '', freight: 0, changeFor: '' };
 }
 
 /**
@@ -259,28 +360,104 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                 break;
 
             case 'MENU':
-                if (text === '1') {
-                    let cardapioText = "🍗 *NOSSO CARDÁPIO*\n\nResponda com os *números* dos itens que deseja (Ex: 1, 4, 6).\n\n";
-                    for (const [key, item] of Object.entries(menuPrecos)) {
-                        cardapioText += `*${key}* - ${item.nome} (R$ ${item.preco.toFixed(2)})\n`;
-                    }
-                    cardapioText += "\nOu digite *Cancelar* para sair.";
-                    await client.sendMessage(from, cardapioText);
-                    session.state = 'ORDER_ITEMS';
-                } else if (text === '2') {
-                    db.all("SELECT item, quantidade FROM estoque", [], async (err, rows) => {
-                        if (err) {
-                            await client.sendMessage(from, "Desculpe, ocorreu um erro ao consultar o estoque.");
-                        } else {
-                            let estoqueText = "📦 *ESTOQUE EM TEMPO REAL*\n\n";
-                            rows.forEach(r => {
-                                estoqueText += `• ${r.item}: ${r.quantidade > 0 ? r.quantidade + ' unidades' : '🚫 ESGOTADO'}\n`;
-                            });
-                            estoqueText += "\nSe quiser fazer um pedido, digite *1*.";
-                            await client.sendMessage(from, estoqueText);
+               if (text === '1') {
+                    try {
+                        const produtos = await carregarProdutosDoMenu(db);
+
+                        if (produtos.length === 0) {
+                            await client.sendMessage(
+                                from,
+                                "No momento não temos produtos disponíveis no cardápio."
+                            );
+
                             session.state = 'MENU';
+                            break;
                         }
-                    });
+
+                        session.menuCache = {};
+
+                        let cardapioText =
+                            "🍗 *NOSSO CARDÁPIO*\n\n" +
+                            "Responda com os *números* dos itens que deseja.\n\n";
+
+                        produtos.forEach((produto, index) => {
+                            const numero = String(index + 1);
+
+                            session.menuCache[numero] = {
+                                id: produto.id,
+                                nome: produto.nome,
+                                preco: Number(produto.preco_unitario),
+                                estoque: Number(produto.quantidade_estoque)
+                            };
+
+                            let avisoEstoque = "";
+
+                            if (produto.quantidade_estoque <= 0) {
+                                avisoEstoque = " - 🚫 ESGOTADO";
+                            } else if (produto.quantidade_estoque <= 5) {
+                                avisoEstoque =
+                                    ` - 🔥 ÚLTIMAS ${produto.quantidade_estoque} UNIDADES`;
+                            }
+
+                            cardapioText +=
+                                `*${numero}* - ${produto.nome} ` +
+                                `(R$ ${Number(produto.preco_unitario).toFixed(2)})` +
+                                `${avisoEstoque}\n`;
+                        });
+
+                        cardapioText += "\nOu digite *Cancelar* para sair.";
+
+                        await client.sendMessage(from, cardapioText);
+
+                        session.state = 'ORDER_ITEMS';
+
+                    } catch (err) {
+                        console.error(
+                            'Erro ao carregar cardápio do WhatsApp:',
+                            err
+                        );
+
+                        await client.sendMessage(
+                            from,
+                            "Desculpe, ocorreu um erro ao carregar o cardápio."
+                        );
+                    }
+                } else if (text === '2') {
+                        db.all(
+                            `
+                            SELECT nome, quantidade_estoque
+                            FROM produtos
+                            WHERE deleted_at IS NULL
+                            AND status = 1
+                            ORDER BY nome
+                            `,
+                            [],
+                            async (err, rows) => {
+                                if (err) {
+                                    await client.sendMessage(
+                                        from,
+                                        "Desculpe, ocorreu um erro ao consultar o estoque."
+                                    );
+                                } else {
+                                    let estoqueText = "📦 *ESTOQUE EM TEMPO REAL*\n\n";
+
+                                    rows.forEach(r => {
+                                        if (r.quantidade_estoque <= 0) {
+                                            estoqueText += `• ${r.nome}: 🚫 ESGOTADO\n`;
+                                        } else if (r.quantidade_estoque <= 5) {
+                                            estoqueText += `• ${r.nome}: 🔥 ÚLTIMAS ${r.quantidade_estoque} UNIDADES\n`;
+                                        } else {
+                                            estoqueText += `• ${r.nome}: ${r.quantidade_estoque} unidades\n`;
+                                        }
+                                    });
+
+                                    estoqueText += "\nSe quiser fazer um pedido, digite *1*.";
+
+                                    await client.sendMessage(from, estoqueText);
+                                    session.state = 'MENU';
+                                }
+                            }
+                        );
                 } else if (text === '3') {
                     await client.sendMessage(from, "Ok! Vou te transferir para um atendente humano. Por favor, aguarde um momento.\n\n*(Se quiser voltar a falar com o robô a qualquer momento, basta digitar *Menu* ou *Sair*)*");
                     session.state = 'HUMAN';
@@ -289,69 +466,167 @@ function initWhatsApp(db, emitUpdateFunc, broadcastFunc) {
                 }
                 break;
 
-            case 'ORDER_ITEMS':
-                // Extrai números
-                const escolhas = text.split(/[\s,]+/).filter(v => menuPrecos[v]);
+            case 'ORDER_ITEMS': {
+                const escolhas = text
+                    .split(/[\s,]+/)
+                    .filter(v => session.menuCache?.[v]);
+
                 if (escolhas.length === 0) {
-                    await client.sendMessage(from, "Não entendi os itens. Por favor, digite apenas os *números* separados por vírgula ou espaço. Exemplo: 1, 3, 5");
+                    await client.sendMessage(
+                        from,
+                        "Não entendi os itens. Digite apenas os números exibidos no cardápio."
+                    );
                     return;
                 }
-                
-                escolhas.forEach(num => {
-                    const item = menuPrecos[num];
+
+                for (const num of escolhas) {
+                    const item = session.menuCache[num];
+
+                    if (item.estoque <= 0) {
+                        await client.sendMessage(
+                            from,
+                            `🚫 O produto *${item.nome}* está esgotado no momento.`
+                        );
+                        continue;
+                    }
+
                     session.order.items.push(item.nome);
                     session.order.total += item.preco;
-                });
 
-                await client.sendMessage(from, `Você escolheu:\n${session.order.items.map(i => `• ${i}`).join('\n')}\n*Total parcial: R$ ${session.order.total.toFixed(2)}*\n\nSe quiser adicionar mais itens, digite os números. Se já terminou, digite *OK*.`);
+                    item.estoque -= 1;
+                }
+
+                if (session.order.items.length === 0) {
+                    await client.sendMessage(
+                        from,
+                        "Nenhum item disponível foi adicionado ao pedido."
+                    );
+                    return;
+                }
+
+                await client.sendMessage(
+                    from,
+                    `Você escolheu:\n${session.order.items.map(i => `• ${i}`).join('\n')}` +
+                    `\n*Total parcial: R$ ${session.order.total.toFixed(2)}*` +
+                    `\n\nSe quiser adicionar mais itens, digite os números.` +
+                    ` Se já terminou, digite *OK*.`
+                );
+
                 session.state = 'ORDER_CONFIRM_ITEMS';
                 break;
+            }
 
             case 'ORDER_CONFIRM_ITEMS':
-                if (text.toLowerCase() === 'ok' || text.toLowerCase() === 'pronto' || text.toLowerCase() === 'finalizar') {
-                    await client.sendMessage(from, `🛵 *TIPO DE PEDIDO*\n\nComo você deseja receber o pedido?\n\n*1* - Entrega\n*2* - Retirar no Local`);
+                if (
+                    text.toLowerCase() === 'ok' ||
+                    text.toLowerCase() === 'pronto' ||
+                    text.toLowerCase() === 'finalizar'
+                ) {
+                    await client.sendMessage(
+                        from,
+                        `🛵 *TIPO DE PEDIDO*\n\nComo você deseja receber o pedido?\n\n*1* - Entrega\n*2* - Retirar no Local`
+                    );
+
                     session.state = 'ORDER_DELIVERY_TYPE';
+
                 } else {
-                    // Try to add more items
-                    const extras = text.split(/[\s,]+/).filter(v => menuPrecos[v]);
+                    const extras = text
+                        .split(/[\s,]+/)
+                        .filter(v => session.menuCache?.[v]);
+
                     if (extras.length > 0) {
-                        extras.forEach(num => {
-                            const item = menuPrecos[num];
+                        let adicionouAlgum = false;
+
+                        for (const num of extras) {
+                            const item = session.menuCache[num];
+
+                            if (item.estoque <= 0) {
+                                await client.sendMessage(
+                                    from,
+                                    `🚫 O produto *${item.nome}* está esgotado no momento.`
+                                );
+                                continue;
+                            }
+
                             session.order.items.push(item.nome);
                             session.order.total += item.preco;
-                        });
-                        await client.sendMessage(from, `Itens adicionados!\n*Novo Total: R$ ${session.order.total.toFixed(2)}*\n\nDigite *OK* para avançar.`);
+
+                            item.estoque -= 1;
+                            adicionouAlgum = true;
+                        }
+
+                        if (adicionouAlgum) {
+                            await client.sendMessage(
+                                from,
+                                `Itens adicionados!\n*Novo Total: R$ ${session.order.total.toFixed(2)}*` +
+                                `\n\nDigite *OK* para avançar.`
+                            );
+                        }
+
                     } else {
-                        await client.sendMessage(from, "Por favor, digite *OK* para avançar, ou digite o número de mais itens.");
+                        await client.sendMessage(
+                            from,
+                            "Por favor, digite *OK* para avançar, ou digite o número de mais itens."
+                        );
                     }
                 }
+
                 break;
 
             case 'ORDER_DELIVERY_TYPE':
                 if (text === '1') {
                     session.order.deliveryType = 'Entrega';
-                    db.all("SELECT id, nome, taxa_entrega as taxa FROM regioes ORDER BY nome", [], async (err, rows) => {
-                        if (err || rows.length === 0) {
-                            await client.sendMessage(from, `💳 *FORMA DE PAGAMENTO*\n\nComo deseja pagar o total de R$ ${session.order.total.toFixed(2)}?\n\n*1* - Pix\n*2* - Cartão\n*3* - Dinheiro`);
-                            session.state = 'ORDER_PAYMENT';
-                        } else {
-                            session.regioesCache = rows;
-                            let regText = `🗺️ *REGIÃO DE ENTREGA*\n\nPor favor, digite o *número* do seu bairro/região:\n\n`;
-                            rows.forEach((r, i) => {
-                                regText += `*${i+1}* - ${r.nome} (Taxa: R$ ${r.taxa.toFixed(2)})\n`;
-                            });
-                            await client.sendMessage(from, regText);
-                            session.state = 'ORDER_REGION';
+
+                    db.all(
+                        "SELECT id, nome, taxa_entrega as taxa FROM regioes ORDER BY nome",
+                        [],
+                        async (err, rows) => {
+                            if (err || rows.length === 0) {
+                                await client.sendMessage(
+                                    from,
+                                    `💳 *FORMA DE PAGAMENTO*\n\nComo deseja pagar o total de R$ ${session.order.total.toFixed(2)}?\n\n*1* - Pix\n*2* - Cartão\n*3* - Dinheiro`
+                                );
+
+                                session.state = 'ORDER_PAYMENT';
+
+                            } else {
+                                session.regioesCache = rows;
+
+                                let regText =
+                                    `🗺️ *REGIÃO DE ENTREGA*\n\n` +
+                                    `Por favor, digite o *número* do seu bairro/região:\n\n`;
+
+                                rows.forEach((r, i) => {
+                                    regText +=
+                                        `*${i + 1}* - ${r.nome} ` +
+                                        `(Taxa: R$ ${r.taxa.toFixed(2)})\n`;
+                                });
+
+                                await client.sendMessage(from, regText);
+
+                                session.state = 'ORDER_REGION';
+                            }
                         }
-                    });
+                    );
+
                 } else if (text === '2') {
                     session.order.deliveryType = 'Retirada';
                     session.order.address = 'RETIRADA';
-                    await client.sendMessage(from, `💳 *FORMA DE PAGAMENTO*\n\nComo deseja pagar o total de R$ ${session.order.total.toFixed(2)}?\n\n*1* - Pix\n*2* - Cartão\n*3* - Dinheiro`);
+
+                    await client.sendMessage(
+                        from,
+                        `💳 *FORMA DE PAGAMENTO*\n\nComo deseja pagar o total de R$ ${session.order.total.toFixed(2)}?\n\n*1* - Pix\n*2* - Cartão\n*3* - Dinheiro`
+                    );
+
                     session.state = 'ORDER_PAYMENT';
+
                 } else {
-                    await client.sendMessage(from, "Opção inválida. Digite 1 para Entrega ou 2 para Retirada.");
+                    await client.sendMessage(
+                        from,
+                        "Opção inválida. Digite 1 para Entrega ou 2 para Retirada."
+                    );
                 }
+
                 break;
 
             case 'ORDER_REGION':
