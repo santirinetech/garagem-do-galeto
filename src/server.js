@@ -179,8 +179,7 @@ function startServer(mainWindow = null) {
         : "";
 
     const isWppEnabled =
-        wppEnv === "true" ||
-        process.env.NODE_ENV !== "production";
+        wppEnv === "true";
 
     if (isWppEnabled) {
         initWhatsApp(db, emitUpdate, broadcastWppEvent);
@@ -296,6 +295,8 @@ function startServer(mainWindow = null) {
                 });
             }
 
+            let transacaoAtiva = false;
+
             try {
 
                 // ── Validação de estoque antes de criar o pedido ──
@@ -345,6 +346,9 @@ function startServer(mainWindow = null) {
                         }
                     }
                 }
+                
+                await run('BEGIN IMMEDIATE TRANSACTION');
+                transacaoAtiva = true;
 
                 await run(`
                     INSERT INTO clientes (
@@ -449,22 +453,45 @@ function startServer(mainWindow = null) {
                                 ]
                             );
 
-                            const quantidadeComprada = item.quantidade || 1;
+                            const quantidadeComprada =
+                                Number(item.quantidade) || 1;
 
-                            await run(
+                            const resultadoEstoque = await run(
                                 `
                                 UPDATE produtos
                                 SET quantidade_estoque =
-                                        MAX(0, quantidade_estoque - ?),
+                                        quantidade_estoque - ?,
                                     atualizado_em = CURRENT_TIMESTAMP
                                 WHERE id = ?
                                 AND deleted_at IS NULL
+                                AND quantidade_estoque >= ?
                                 `,
                                 [
                                     quantidadeComprada,
-                                    prod.id
+                                    prod.id,
+                                    quantidadeComprada
                                 ]
                             );
+
+                            if (resultadoEstoque.changes === 0) {
+                                const estoqueAtual = await queryOne(
+                                    `
+                                    SELECT
+                                        nome,
+                                        quantidade_estoque
+                                    FROM produtos
+                                    WHERE id = ?
+                                    AND deleted_at IS NULL
+                                    `,
+                                    [prod.id]
+                                );
+
+                                throw new Error(
+                                    `Estoque insuficiente para "${item.nome}". ` +
+                                    `Disponível: ${estoqueAtual?.quantidade_estoque ?? 0}. ` +
+                                    `Solicitado: ${quantidadeComprada}.`
+                                );
+                            }
                         }
 
                         pedidoDescStr +=
@@ -487,6 +514,8 @@ function startServer(mainWindow = null) {
                     );
 
                 }
+                await run('COMMIT');
+                transacaoAtiva = false;
 
                 console.log(
                     `[INFO] Recebido novo pedido do site (#${pedido_id}). Despachando para Electron via Socket.io...`
@@ -531,14 +560,31 @@ function startServer(mainWindow = null) {
                 });
 
             } catch (e) {
+                if (transacaoAtiva) {
+                    try {
+                        await run('ROLLBACK');
+                        transacaoAtiva = false;
+                    } catch (rollbackError) {
+                        console.error(
+                            '[ERRO] Falha ao executar rollback:',
+                            rollbackError
+                        );
+                    }
+                }
+
                 console.error(
-                    "[ERRO] Erro ao registrar pedido:",
+                    '[ERRO] Erro ao registrar pedido:',
                     e
                 );
 
-                res.status(500).json({
-                    erro: e.message
-                });
+                const estoqueInsuficiente =
+                    e.message?.includes('Estoque insuficiente');
+
+                res
+                    .status(estoqueInsuficiente ? 409 : 500)
+                    .json({
+                        erro: e.message
+                    });
             }
         }
     );
